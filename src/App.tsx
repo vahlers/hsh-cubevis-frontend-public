@@ -1,24 +1,25 @@
 import React from 'react';
-import logo from './logo.svg';
 import './App.css';
-import './TestComponent';
-import TestComponent from './TestComponent';
+
+import ParallelCoords from './components/parallelCoords/ParallelCoords';
+import Filters from './components/filters/Filters';
+import ChartsView from './components/chartsView/ChartsView';
 
 function App(): JSX.Element {
 	return (
 		<div className="App">
-			<header className="App-header">
-				<img src={logo} className="App-logo" alt="logo" />
-				<p>
-					Edit <code>src/App.tsx</code> and save to reload.
-				</p>
-				<a className="App-link" href="https://reactjs.org" target="_blank" rel="noopener noreferrer">
-					Learn React
-				</a>
-				<TestComponent></TestComponent>
-			</header>
+			<div className="row bg-primary w-75 align-items-center">
+				<div className="col bg-primary">
+					<div className="row">
+						<Filters></Filters>
+						<ChartsView></ChartsView>
+					</div>
+					<div className="row">
+						<ParallelCoords></ParallelCoords>
+					</div>
+				</div>
+			</div>
 		</div>
 	);
 }
-
 export default App;
