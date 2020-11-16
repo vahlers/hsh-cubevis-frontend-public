@@ -12,7 +12,7 @@ const convertAnomalyScore = (rows, key) => {
 	});
 };
 
-const convertToNominal = (rows, keyName) => {
+const convertToNominal = (rows, keyName, label) => {
 	const rawData = unpack(rows, keyName);
 	const uniqueData = rawData.filter((v, i, a) => a.indexOf(v) === i);
 	const sortedData = uniqueData.filter((v, i, a) => a.indexOf(v) === i);
@@ -30,7 +30,7 @@ const convertToNominal = (rows, keyName) => {
 
 	return {
 		range: [0, idxData.length - 1],
-		label: keyName,
+		label: label,
 		ticktext: sortedData,
 		tickvals: idxData,
 		values: converted,
@@ -38,11 +38,11 @@ const convertToNominal = (rows, keyName) => {
 	};
 };
 
-const convertToNumeric = (rows, key) => {
+const convertToNumeric = (rows, key, label) => {
 	const rawData = unpack(rows, key);
 	return {
 		range: [Math.min(...rawData), Math.max(...rawData)],
-		label: key,
+		label: label,
 		values: rawData,
 		constraintrange: [],
 		visible: true,
@@ -50,7 +50,8 @@ const convertToNumeric = (rows, key) => {
 };
 
 const activeWildCard = (rows, key) => {
-	return unpack(rows, key).includes('*');
+	const dimension = unpack(rows, key);
+	return dimension && dimension.includes('*');
 };
 
 export { activeWildCard, convertAnomalyScore, convertToNominal, unpack, convertToNumeric };
