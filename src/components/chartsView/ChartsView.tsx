@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import PlotlyChart from 'react-plotlyjs-ts';
+import './ChartsView.css';
 
 class ChartsView extends Component {
 	render(): JSX.Element {
@@ -15,22 +16,20 @@ class ChartsView extends Component {
 			},
 		];
 		const layout = {
-			plot_bgcolor: 'rgb(212,212,212)',
-			paper_bgcolor: 'rgb(212,212,212)',
-			title: 'simple example',
+			margin: {
+				t: 0,
+				r: 25,
+				l: 25,
+			},
 			xaxis: {
 				title: 'time',
 			},
 		};
 		// Use bootstrap classes
 		return (
-			<div className="col bg-white">
-				<div className="row align-items-center h-100">
-					<div className="border border-dark">
-						<PlotlyChart data={data} layout={layout} />
-					</div>
-				</div>
-				<h2>ChartsView</h2>
+			<div className="col chart-container">
+				<h1>ChartView</h1>
+				<PlotlyChart data={data} layout={layout} />
 			</div>
 		);
 	}

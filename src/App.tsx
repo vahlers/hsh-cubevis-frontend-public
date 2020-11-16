@@ -53,15 +53,13 @@ class App extends React.Component<unknown> {
 	render() {
 		return (
 			<div className="App">
-				<div className="row bg-primary w-75 align-items-center">
-					<div className="col bg-primary">
-						<div className="row">
-							<Filters />
-							<ChartsView />
-						</div>
-						<div className="row">
-							<ParallelCoords metadata={this.state.metadata} data={this.state.data}></ParallelCoords>
-						</div>
+				<div className="container">
+					<div className="row">
+						<Filters />
+						<ChartsView />
+					</div>
+					<div className="row">
+						<ParallelCoords metadata={this.state.metadata} data={this.state.data}></ParallelCoords>
 					</div>
 				</div>
 			</div>

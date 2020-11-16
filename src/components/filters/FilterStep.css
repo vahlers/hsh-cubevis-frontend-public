@@ -1,0 +1,19 @@
+.collapsible {
+	margin-bottom: 0.25em;
+}
+
+.add-step-btn {
+	margin-top: 1em;
+}
+
+.overflow-visible {
+	overflow: visible !important;
+}
+
+.filter-text {
+	margin: 0px;
+	height: 100%;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}

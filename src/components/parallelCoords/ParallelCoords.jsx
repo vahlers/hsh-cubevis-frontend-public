@@ -121,7 +121,7 @@ class ParallelCoords extends React.Component {
 
 	render() {
 		return (
-			<div>
+			<div className="col coords-container">
 				{this.state.graphIsLoading ? (
 					<div>
 						<p>Loading...</p>
