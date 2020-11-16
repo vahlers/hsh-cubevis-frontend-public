@@ -27,13 +27,13 @@ export class DataFilterService {
 			cellTypes.forEach((w) => {
 				switch (w.type) {
 					case CellTypes.DESTINATION_IP:
-						filtered = w.value === v.destinationIp;
+						filtered = w.value === v.destinationIp.toString();
 						break;
 					case CellTypes.DESTINATION_PORT:
 						filtered = w.value === v.destinationPort;
 						break;
 					case CellTypes.SOURCE_IP:
-						filtered = w.value === v.sourceIp;
+						filtered = w.value === v.sourceIp.toString();
 						break;
 					case CellTypes.SOURCE_PORT:
 						filtered = w.value === v.sourcePort;
@@ -79,16 +79,16 @@ export class DataFilterService {
 		let valueA, valueB;
 		switch (type) {
 			case CellTypes.DESTINATION_IP:
-				valueA = a.destinationIp;
-				valueB = b.destinationIp;
+				valueA = a.destinationIp.toString();
+				valueB = b.destinationIp.toString();
 				break;
 			case CellTypes.DESTINATION_PORT:
 				valueA = a.destinationPort;
 				valueB = b.destinationPort;
 				break;
 			case CellTypes.SOURCE_IP:
-				valueA = a.sourceIp;
-				valueB = b.sourceIp;
+				valueA = a.sourceIp.toString();
+				valueB = b.sourceIp.toString();
 				break;
 			case CellTypes.SOURCE_PORT:
 				valueA = a.sourcePort;

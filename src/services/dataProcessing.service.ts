@@ -4,6 +4,7 @@ import { SortType } from '../enums/sortType.enum';
 
 import { CubeCellModel } from '../models/cell.model';
 import { DataFilterService } from './dataFilter.service';
+import { convertToNominal } from '../helpers/helpers';
 
 export class DataProcessingService {
 	private csvService: CsvRetrievalService;
@@ -12,7 +13,7 @@ export class DataProcessingService {
 	/**
 	 * Returns Singleton instance of DataProcessingServic
 	 * Unzipped .csv files must be place in public/data and "_" must be Symbol for cubed Dimensions
-	 * @example public/data/estimates/epoch_0/scores_8_or_larger/(_, _, _, _, _, _, _).csv
+	 * @example public/data/estimates/epoch_0/full_anomaly_cube/(_, _, _, _, _, _, _).csv
 	 */
 	public static instance(): DataProcessingService {
 		if (DataProcessingService.singleton === undefined)
@@ -39,7 +40,8 @@ export class DataProcessingService {
 	 * 			[{ type: CellTypes.SOURCE_PORT, value: '2048' }],
 	 * 			)
 	 * 			.then((v) => console.log(v));
-	 * @returns Returns an Promise with an Object of Type CubeCellModel.
+	 * @returns Returns a promise with an object of type CubeCellModel.
+	 * @remarks Numeric attributevalues are 'Infinity' for question marks and 'NaN' for undefined values.
 	 */
 	public getCuboid(
 		dimensions: { type: CellTypes; sorting?: SortType }[],
@@ -47,6 +49,36 @@ export class DataProcessingService {
 	): Promise<CubeCellModel[]> {
 		const cellTypes: CellTypes[] = dimensions.map((v) => v.type);
 		return this.csvService.getAnomalyData(cellTypes).then((v) => {
+			let sortedCuboid: CubeCellModel[] = DataFilterService.getSortedCells(v, dimensions);
+			if (filter) {
+				sortedCuboid = DataFilterService.getFilteredCells(sortedCuboid, filter);
+			}
+			return sortedCuboid;
+		});
+	}
+	/**
+	 * Returns a Promise which contains a Cuboid of data. Only the countMean and countStandardDeviation fields are filled with this function.
+	 * @param dimensions An array of Objects defining the cubed dimensions of the result.
+	 * @param dimension[].type Dimension that is cubed.
+	 * @param dimension[].sorting Sorting order of this dimension. Is optional.
+	 * @param filter An array which contains objects that define filter criteria for certain cubed Attributes. Is optional.
+	 * @param filter[].type Dimension of the specific filter.
+	 * @param filter[].value Value the data is searched for.
+	 * @example //logs Cuboid of SourceIp and SourcePort sorted by SourceIp ascending and filtered for port 2048.
+	 * 			getCuboid(
+	 * 			[{ type: CellTypes.SOURCE_IP, sorting: SortType.ASC }, { type: CellTypes.SOURCE_PORT }],
+	 * 			[{ type: CellTypes.SOURCE_PORT, value: '2048' }],
+	 * 			)
+	 * 			.then((v) => console.log(v));
+	 * @returns Returns an Promise with an Object of Type CubeCellModel.
+	 * @remarks Numeric attributevalues are 'Infinity' for question marks and 'NaN' for undefined values.
+	 */
+	public getCuboidWithCount(
+		dimensions: { type: CellTypes; sorting?: SortType }[],
+		filter?: { type: CellTypes; value: number | string }[],
+	): Promise<CubeCellModel[]> {
+		const cellTypes: CellTypes[] = dimensions.map((v) => v.type);
+		return this.csvService.getCounterData(cellTypes).then((v) => {
 			let sortedCuboid: CubeCellModel[] = DataFilterService.getSortedCells(v, dimensions);
 			if (filter) {
 				sortedCuboid = DataFilterService.getFilteredCells(sortedCuboid, filter);
@@ -77,5 +109,36 @@ export class DataProcessingService {
 			});
 			return result;
 		});
+	}
+
+	/**
+	 * Returns an Dictionary with MetaData for all dimensions
+	 * @example //Log label and Type of Dimension SourcePort
+	 * 			const mdata = service.getMetadata();
+	 *			console.log(mdata[CellTypes.SOURCE_PORT].label);
+	 *			//output here is either "nominal", "numeric" or "ip"
+	 *			console.log(mdata[CellTypes.SOURCE_PORT].type);
+	 */
+	public getMetadata(): { [id: string]: { label: string; type: string } } {
+		const result = {};
+		Array.from(Array(CellTypes.CELLTYPE_CNT).keys()).forEach((key) => {
+			result[key] = {
+				label: CsvRetrievalService.dimLabel(key),
+				type: this.typeForClass(CsvRetrievalService.expectedType(key)),
+			};
+		});
+		return result;
+	}
+
+	private typeForClass(c: string): string {
+		switch (c) {
+			default:
+			case 'string':
+				return 'nominal';
+			case 'number':
+				return 'numeric';
+			case 'ip':
+				return 'ip';
+		}
 	}
 }

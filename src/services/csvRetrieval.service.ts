@@ -1,8 +1,7 @@
 import { CellTypes } from '../enums/cellTypes.enum';
 import { CubeCellModel } from '../models/cell.model';
 import { csv } from 'd3';
-import { platform } from 'os';
-import { Type } from 'typescript';
+import { Ip } from '../models/ip.modell';
 
 export enum CsvLibrary {
 	D3 /*,
@@ -62,9 +61,9 @@ export abstract class CsvRetrievalService {
 	public static expectedType(dim: CellTypes): string {
 		switch (dim) {
 			case CellTypes.SOURCE_IP:
-				return 'string';
+				return 'ip';
 			case CellTypes.DESTINATION_IP:
-				return 'string';
+				return 'ip';
 			case CellTypes.SOURCE_PORT:
 				return 'number';
 			case CellTypes.DESTINATION_PORT:
@@ -75,6 +74,25 @@ export abstract class CsvRetrievalService {
 				return 'string';
 			case CellTypes.ARGUS_TRANSACTION_STATE:
 				return 'string';
+		}
+	}
+
+	public static dimLabel(dim: CellTypes): string {
+		switch (dim) {
+			case CellTypes.SOURCE_IP:
+				return 'Source Ip';
+			case CellTypes.DESTINATION_IP:
+				return 'Destination Ip';
+			case CellTypes.SOURCE_PORT:
+				return 'Source Port';
+			case CellTypes.DESTINATION_PORT:
+				return 'Destination Port';
+			case CellTypes.NETWORK_PROTOCOL:
+				return 'Network Protocol';
+			case CellTypes.NETWORK_TRANSPORT:
+				return 'Network Transport';
+			case CellTypes.ARGUS_TRANSACTION_STATE:
+				return 'Argus Transaction State';
 		}
 	}
 
@@ -99,6 +117,10 @@ export abstract class CsvRetrievalService {
 		return './data/estimates/epoch_0/full_anomaly_cube/';
 	}
 
+	protected countFilePath(): string {
+		return '/data/checkpoints/epoch_0/';
+	}
+
 	public abstract getAnomalyData(dimensions: CellTypes[]): Promise<CubeCellModel[]>;
 	public abstract getCounterData(dimensions: CellTypes[]): Promise<CubeCellModel[]>;
 }
@@ -109,10 +131,15 @@ class D3CsvRetrievalService extends CsvRetrievalService {
 			const models: CubeCellModel[] = [];
 			data.forEach((row) => {
 				const model: Record<string, unknown> = {}; //Dont know how to initialize types in typescript
-				dimensions.forEach(
-					(dim: CellTypes) =>
-						(model[CsvRetrievalService.modelKeyName(dim)] = row[CsvRetrievalService.dimName(dim)]),
-				);
+				dimensions.forEach((dim: CellTypes) => {
+					const e = row[CsvRetrievalService.dimName(dim)];
+					if (CsvRetrievalService.expectedType(dim) === 'number') {
+						if (e === '?') model[CsvRetrievalService.modelKeyName(dim)] = Infinity;
+						else model[CsvRetrievalService.modelKeyName(dim)] = parseInt(e);
+					} else if (CsvRetrievalService.expectedType(dim) === 'ip')
+						model[CsvRetrievalService.modelKeyName(dim)] = new Ip(e);
+					else model[CsvRetrievalService.modelKeyName(dim)] = e;
+				});
 				model.anomalyScore = parseFloat(row['count_z_score'].replace('[', '').replace(']', ''));
 				model.count = null;
 				models.push(<CubeCellModel>model);
@@ -123,6 +150,30 @@ class D3CsvRetrievalService extends CsvRetrievalService {
 		return result;
 	}
 	public getCounterData(dimensions: CellTypes[]): Promise<CubeCellModel[]> {
-		throw new Error('Unsupported operation. Come back later.');
+		// DOes only have two files and I think cell_models is the correct one.
+		const result = csv(this.countFilePath() + 'cell_models.csv').then((data) => {
+			const models: CubeCellModel[] = [];
+			data.forEach((row) => {
+				const model: Record<string, unknown> = {}; //Dont know how to initialize types in typescript
+				let addToModel = true;
+				dimensions.forEach((dim: CellTypes) => {
+					const e = row[CsvRetrievalService.dimName(dim)];
+					if (e === '*') addToModel = false;
+					if (CsvRetrievalService.expectedType(dim) === 'number') {
+						if (e === '?') model[CsvRetrievalService.modelKeyName(dim)] = Infinity;
+						else model[CsvRetrievalService.modelKeyName(dim)] = parseInt(e);
+					} else if (CsvRetrievalService.expectedType(dim) === 'ip')
+						model[CsvRetrievalService.modelKeyName(dim)] = new Ip(e);
+					else model[CsvRetrievalService.modelKeyName(dim)] = e;
+				});
+				model.count = null;
+				model.countMean = parseFloat(row['count_z_score_mean']);
+				model.countStandardDeviation = parseFloat(row['count_z_score_standard_deviation']);
+				if (addToModel) models.push(<CubeCellModel>model);
+			});
+			return models;
+		});
+
+		return result;
 	}
 }

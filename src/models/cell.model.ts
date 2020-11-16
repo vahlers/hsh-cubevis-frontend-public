@@ -1,6 +1,8 @@
+import { Ip } from './ip.modell';
+
 export type CubeCellModel = {
-	sourceIp?: string;
-	destinationIp?: string;
+	sourceIp?: Ip;
+	destinationIp?: Ip;
 	sourcePort?: number;
 	destinationPort?: number;
 	networkProtocol?: string;
@@ -8,4 +10,6 @@ export type CubeCellModel = {
 	argusTransaction?: string;
 	anomalyScore: number;
 	count: number;
+	countMean?: number;
+	countStandardDeviation?: number;
 };
