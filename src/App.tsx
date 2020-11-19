@@ -2,7 +2,6 @@ import React from 'react';
 import './App.css';
 
 import { DataProcessingService } from './services/dataProcessing.service';
-import { CsvRetrievalService } from './services/csvRetrieval.service';
 import { CellTypes } from './enums/cellTypes.enum';
 
 import ParallelCoords from './components/parallelCoords/ParallelCoords';
@@ -12,54 +11,70 @@ import ChartsView from './components/chartsView/ChartsView';
 class App extends React.Component<unknown> {
 	constructor(props: unknown) {
 		super(props);
-		this.getData();
+		this.setup();
 	}
+
 	state = {
-		data: [],
 		metadata: {},
+		data: [],
+		filters: [],
+		filteredData: [],
 	};
-	getData = async () => {
-		console.log('getData() called');
 
-		// this will at some point be provided by the <Filter></Filter> component
-		const dimensions = [
-			{ type: CellTypes.SOURCE_IP },
-			{ type: CellTypes.DESTINATION_IP },
-			{ type: CellTypes.SOURCE_PORT },
-			{ type: CellTypes.DESTINATION_PORT },
-			{ type: CellTypes.NETWORK_PROTOCOL },
-			{ type: CellTypes.NETWORK_TRANSPORT },
-			{ type: CellTypes.ARGUS_TRANSACTION_STATE },
-		];
-
-		// this metadata should be provided by the data service
-		const metadata = {};
-		dimensions.forEach((dim) => {
-			const key = CsvRetrievalService.modelKeyName(dim.type);
-			metadata[key] = {
-				label: key,
-				type: ['sourcePort', 'destinationPort'].includes(key) ? 'numeric' : 'nominal',
-			};
+	// kinda hacky, but does its job. is there a better alternative?
+	setStateAsync(state) {
+		return new Promise((resolve) => {
+			this.setState(state, resolve);
 		});
+	}
 
+	setup = async () => {
+		await this.getMetadata();
+		await this.getData();
+	};
+
+	handleFilterChange = async (filters) => {
+		await this.setStateAsync({ filters });
+
+		this.getFilteredData();
+	};
+
+	getMetadata = async () => {
 		const dataService = DataProcessingService.instance();
+		const metadata = await dataService.getMetadata();
+
+		await this.setStateAsync({ metadata });
+	};
+
+	getFilteredData = async () => {
+		const dataService = DataProcessingService.instance();
+		const dimensions = this.state.filters.map(({ type }) => ({ type }));
+		const filteredData = await dataService.getCuboid(dimensions, this.state.filters);
+
+		await this.setStateAsync({ filteredData });
+	};
+
+	getData = async () => {
+		const dataService = DataProcessingService.instance();
+		const dimensions = Object.keys(this.state.metadata).map((type) => ({ type: parseInt(type) as CellTypes }));
 		const data = await dataService.getCuboid(dimensions);
 
-		this.setState({
-			data,
-			metadata,
-		});
+		await this.setStateAsync({ data });
 	};
 	render() {
 		return (
 			<div className="App">
 				<div className="container">
 					<div className="row">
-						<Filters />
+						<Filters onChange={this.handleFilterChange} />
 						<ChartsView />
 					</div>
 					<div className="row">
-						<ParallelCoords metadata={this.state.metadata} data={this.state.data}></ParallelCoords>
+						<ParallelCoords
+							metadata={this.state.metadata}
+							data={this.state.data}
+							filters={this.state.filters}
+						></ParallelCoords>
 					</div>
 				</div>
 			</div>

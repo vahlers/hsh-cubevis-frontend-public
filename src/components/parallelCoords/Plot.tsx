@@ -1,9 +1,23 @@
-import React, { Component } from 'react';
+import React from 'react';
+
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Plotly = require('plotly.js-dist');
 
-class Plot extends React.Component {
-	constructor(props) {
+type ParCoordPlotProps = {
+	data: any;
+};
+
+type ParCoordPlotState = {
+	plotConfig: {
+		layout: {
+			height: number;
+		};
+	};
+	graphLoaded: boolean;
+};
+
+class Plot extends React.Component<ParCoordPlotProps, ParCoordPlotState> {
+	constructor(props: ParCoordPlotProps) {
 		super(props);
 		this.state = {
 			plotConfig: {
@@ -15,7 +29,7 @@ class Plot extends React.Component {
 		};
 	}
 
-	componentDidUpdate(prevProps) {
+	componentDidUpdate(): void {
 		if (this.state.graphLoaded) {
 			Plotly.redraw(document.getElementById('parCoord'), [this.props.data], 0);
 		} else {
@@ -24,14 +38,8 @@ class Plot extends React.Component {
 		}
 	}
 
-	// Use bootstrap classes
-	render() {
+	render(): JSX.Element {
 		return <div id="parCoord"></div>;
 	}
 }
-
-Plot.propTypes = {
-	data: Array,
-};
-
-export default Plot; // Don’t forget to use export default!
+export default Plot;

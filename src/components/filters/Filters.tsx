@@ -1,6 +1,7 @@
 import React from 'react';
 import { FilterStep, FilterStepProps } from './FilterStep';
 import { Accordion } from 'react-bootstrap';
+import { CellTypes } from '../../enums/cellTypes.enum';
 import './Filters.css';
 
 type FilterState = {
@@ -8,8 +9,12 @@ type FilterState = {
 	currentIndex: number;
 };
 
-export class Filters extends React.Component<unknown, FilterState> {
-	constructor(props: unknown) {
+type FilterProps = {
+	onChange: any;
+};
+
+export class Filters extends React.Component<FilterProps, FilterState> {
+	constructor(props: FilterProps) {
 		super(props);
 
 		this.state = {
@@ -45,6 +50,20 @@ export class Filters extends React.Component<unknown, FilterState> {
 		});
 	}
 
+	handleClick = (): void => {
+		// TODO rename to onChange
+		this.props.onChange([
+			{
+				type: CellTypes.SOURCE_PORT,
+				value: 20,
+			},
+			{
+				type: CellTypes.ARGUS_TRANSACTION_STATE,
+				value: 'REQ',
+			},
+		]);
+	};
+
 	render(): React.ReactNode {
 		// Use bootstrap classes
 
@@ -61,8 +80,11 @@ export class Filters extends React.Component<unknown, FilterState> {
 						/>
 					))}
 				</Accordion>
-				<button onClick={this.addFilter} type="submit" className="btn btn-primary add-step-btn">
+				<button onClick={this.addFilter} type="submit" className="btn btn-primary add-step-btn m-2">
 					Add Step
+				</button>
+				<button onClick={this.handleClick} className="btn btn-primary add-step-btn m-2">
+					Exec filter
 				</button>
 			</div>
 		);

@@ -1,21 +1,48 @@
 import React from 'react';
-
+import './ParallelCoords.css';
 import { Dots } from 'react-activity';
 import 'react-activity/dist/react-activity.css';
 
-import { convertToNominal, convertToNumeric, unpack } from '../../helpers/helpers.js';
-import './ParallelCoords.css';
+import { convertDimension, unpack, convertToWildcard } from '../../helpers/helpers';
+
+import { SCORE_KEY, SCORE_MIN, SCORE_MAX } from '../../helpers/constants';
+import { CellTypes } from '../../enums/cellTypes.enum';
+import { Filter } from '../../models/filter.model';
+import { Dimension } from '../../models/dimension.model';
 
 import Plot from './Plot';
-import { SCORE_KEY, SCORE_MIN, SCORE_MAX } from '../../helpers/constants';
-class ParallelCoords extends React.Component {
-	componentDidUpdate(prevProps) {
-		if (prevProps.data !== this.props.data) this.preProcess();
+
+type ParCoordProps = {
+	data: Array<Record<string, number | string>>;
+	metadata: { [id: string]: { key: string; label: string; type: string } };
+	filters: Filter[];
+};
+
+type ParCoordState = {
+	data: {
+		type: string;
+		line: {
+			color: any;
+			showscale: boolean;
+			colorscale: Array<Array<string>>;
+			cmin: number;
+			cmax: number;
+		};
+		dimensions: Dimension[];
+	};
+	graphIsLoading: boolean;
+};
+
+class ParallelCoords extends React.Component<ParCoordProps, ParCoordState> {
+	componentDidUpdate(prevProps: ParCoordProps): void {
+		if (prevProps.data !== this.props.data || prevProps.filters !== this.props.filters) {
+			this.preProcess();
+		}
 	}
 
 	// once new props came into the component, the data has to be preprocessed.
 	// afterwards it is published to the child component
-	preProcess() {
+	preProcess(): void {
 		if (this.props.data == null) return;
 
 		const rows = this.props.data;
@@ -25,23 +52,24 @@ class ParallelCoords extends React.Component {
 
 		const metaData = this.props.metadata;
 
-		// loop over dimensions and preprocess each of it, depending on type (numeric, nominal)
+		const activeFilters = this.activeFilters();
 		Object.keys(metaData).forEach((dim) => {
-			if (metaData[dim].type === 'nominal') {
-				data.dimensions.push(convertToNominal(rows, dim, metaData[dim].label));
-			} else {
-				data.dimensions.push(convertToNumeric(rows, dim, metaData[dim].label));
-			}
+			const filter = this.getFilterValues(dim);
+			const dimension = this.isWildcard(activeFilters, dim)
+				? convertToWildcard(rows, metaData[dim].key, metaData[dim].label)
+				: convertDimension(rows, metaData[dim], filter);
+			data.dimensions.push(dimension);
 		});
 		this.setState({ data: data });
 	}
 
-	constructor(props) {
+	constructor(props: ParCoordProps) {
 		super(props);
 		this.state = {
 			data: {
 				type: 'parcoords',
 				line: {
+					color: null,
 					showscale: true,
 					colorscale: [
 						['0.0', '#00ff00'],
@@ -52,15 +80,37 @@ class ParallelCoords extends React.Component {
 					cmin: SCORE_MIN,
 					cmax: SCORE_MAX,
 				},
+				dimensions: [],
 			},
 			graphIsLoading: false,
 		};
 	}
-	enableActivityIndicator = () => {
+
+	enableActivityIndicator = (): void => {
 		this.setState({ graphIsLoading: true });
 	};
-	disableActivityIndicator = () => {
+
+	disableActivityIndicator = (): void => {
 		this.setState({ graphIsLoading: false });
+	};
+
+	activeFilters = (): Array<CellTypes> => {
+		const activeFilters = [];
+		this.props.filters.map((f) => {
+			if (f) activeFilters.push(f.type);
+		});
+		return activeFilters;
+	};
+
+	getFilterValues = (dim: string): Filter => {
+		const filters = this.props.filters.filter((f) => {
+			return f.type === parseInt(dim);
+		});
+		return filters !== null ? filters[0] : null;
+	};
+
+	isWildcard = (activeFilters: Array<CellTypes>, dimension: string): boolean => {
+		return activeFilters.length > 0 && activeFilters.indexOf(parseInt(dimension)) === -1;
 	};
 
 	// /*** BUTTON HANDLERS ***/
@@ -119,7 +169,7 @@ class ParallelCoords extends React.Component {
 	// 	this.updateGraph(dimensions);
 	// };
 
-	render() {
+	render(): JSX.Element {
 		return (
 			<div className="col coords-container">
 				{this.state.graphIsLoading ? (
@@ -134,10 +184,5 @@ class ParallelCoords extends React.Component {
 		);
 	}
 }
-
-ParallelCoords.propTypes = {
-	data: Array,
-	metadata: Object,
-};
 
 export default ParallelCoords;

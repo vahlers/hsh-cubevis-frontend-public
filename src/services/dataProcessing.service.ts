@@ -4,7 +4,6 @@ import { SortType } from '../enums/sortType.enum';
 
 import { CubeCellModel } from '../models/cell.model';
 import { DataFilterService } from './dataFilter.service';
-import { convertToNominal } from '../helpers/helpers';
 
 export class DataProcessingService {
 	private csvService: CsvRetrievalService;
@@ -119,10 +118,11 @@ export class DataProcessingService {
 	 *			//output here is either "nominal", "numeric" or "ip"
 	 *			console.log(mdata[CellTypes.SOURCE_PORT].type);
 	 */
-	public getMetadata(): { [id: string]: { label: string; type: string } } {
+	public getMetadata(): { [id: string]: { key: string; label: string; type: string } } {
 		const result = {};
 		Array.from(Array(CellTypes.CELLTYPE_CNT).keys()).forEach((key) => {
 			result[key] = {
+				key: CsvRetrievalService.modelKeyName(key),
 				label: CsvRetrievalService.dimLabel(key),
 				type: this.typeForClass(CsvRetrievalService.expectedType(key)),
 			};
