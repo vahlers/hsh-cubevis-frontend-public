@@ -34,9 +34,7 @@ class App extends React.Component<unknown> {
 	};
 
 	handleFilterChange = async (filters) => {
-		await this.setStateAsync({ filters });
-
-		this.getFilteredData();
+		this.getFilteredData(filters);
 	};
 
 	getMetadata = async () => {
@@ -46,17 +44,21 @@ class App extends React.Component<unknown> {
 		await this.setStateAsync({ metadata });
 	};
 
-	getFilteredData = async () => {
+	getFilteredData = async (filters) => {
 		const dataService = DataProcessingService.instance();
-		const dimensions = this.state.filters.map(({ type }) => ({ type }));
-		const filteredData = await dataService.getCuboid(dimensions, this.state.filters);
-
-		await this.setStateAsync({ filteredData });
+		const dimensions = filters.map(({ type }) => ({ type }));
+		const filteredData = await dataService.getCuboid(dimensions, filters);
+		const data = await dataService.getCuboid(dimensions);
+		// caution: if you call setState once for each of the props, all children will rerender multiple times
+		// this is probably not a desired behavior and costs performance
+		await this.setStateAsync({ filteredData, data, filters });
 	};
 
 	getData = async () => {
 		const dataService = DataProcessingService.instance();
+
 		const dimensions = Object.keys(this.state.metadata).map((type) => ({ type: parseInt(type) as CellTypes }));
+
 		const data = await dataService.getCuboid(dimensions);
 
 		await this.setStateAsync({ data });

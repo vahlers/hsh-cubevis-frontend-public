@@ -32,31 +32,50 @@ const convertDimension = (
 };
 
 const _convertToNominal = (
-	rawData: Array<string>,
+	rawData: Array<string | number>,
 	label: string,
 	filter: { type: CellTypes; value: number | string } = null,
+	replacements: Record<number, string> = {},
 ): NominalDimension => {
-	const uniqueData: Array<string> = rawData.filter((v, i, a) => a.indexOf(v) === i);
-	const sortedData: Array<string> = uniqueData.filter((v, i, a) => a.indexOf(v) === i);
-	const idxData = Array.from(Array(sortedData.length).keys());
+	const unique: Array<string | number> = rawData.filter((v, i, a) => a.indexOf(v) === i);
+	const sorted: Array<string | number> = unique.sort((a, b) => (a > b ? 1 : -1));
+	const indices = Array.from(Array(unique.length).keys());
+
 	let i = 0;
-	const map: Record<string, number> = {};
-	sortedData.forEach((np) => {
-		map[np] = idxData[i++];
+	const valueMapping: Record<string, number> = {};
+	unique.forEach((v) => {
+		valueMapping[v] = indices[i++];
 	});
 
-	const converted = [];
-	rawData.forEach((a) => {
-		converted.push(map[a]);
+	const converted = rawData.map((a) => valueMapping[a]);
+
+	Object.keys(replacements).forEach((idx) => {
+		sorted[idx] = replacements[idx];
 	});
+
+	let constraintrange = [];
+	if (filter && filter.value) {
+		if (!valueMapping[filter.value as string]) {
+			// hacky approach, to be discussed
+			console.error(
+				`The requested filter value '${filter.value}' of dimension '${label}' is not in the data. None of the records match!`,
+			);
+			const fictive = Math.max(...indices) + 1;
+			indices.push(fictive);
+			constraintrange = [fictive, fictive];
+		} else {
+			const value = valueMapping[filter.value as string];
+			constraintrange = [value, value];
+		}
+	}
 
 	return {
-		range: [0, idxData.length - 1],
-		constraintrange: filter && filter.value ? [map[filter.value as string], map[filter.value as string]] : [],
+		range: [Math.min(...indices), Math.max(...indices)],
 		label: label,
-		ticktext: sortedData,
-		tickvals: idxData,
 		values: converted,
+		tickvals: indices,
+		ticktext: sorted as Array<string>,
+		constraintrange: constraintrange,
 		visible: true,
 	};
 };
@@ -104,21 +123,12 @@ const convertToNumeric = (
 ): NumericDimension => {
 	const rawData: Array<number> = unpack(rows, key) as Array<number>;
 
-	// TODO: remove this if a solution was found
-	rawData.forEach((d) => {
-		if (d === Number.POSITIVE_INFINITY) {
-			const idx = rawData.indexOf(d);
-			rawData[idx] = -1000;
-		}
-	});
+	const minimum = Math.min(...rawData) - 1;
+	const converted: Array<number> = rawData.map((d) =>
+		d === Number.POSITIVE_INFINITY ? (rawData[rawData.indexOf(d)] = minimum) : d,
+	);
 
-	return {
-		range: [Math.min(...rawData), Math.max(...rawData)],
-		label: label,
-		values: rawData,
-		constraintrange: filter && filter.value ? [filter.value as number, filter.value as number] : [],
-		visible: true,
-	};
+	return _convertToNominal(converted, label, filter, { 0: '?' });
 };
 
 export { convertDimension, convertAnomalyScore, unpack, convertToWildcard };

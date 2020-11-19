@@ -51,15 +51,14 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 	}
 
 	handleClick = (): void => {
-		// TODO rename to onChange
 		this.props.onChange([
 			{
 				type: CellTypes.SOURCE_PORT,
-				value: 20,
+				value: 2048,
 			},
 			{
 				type: CellTypes.ARGUS_TRANSACTION_STATE,
-				value: 'REQ',
+				value: 'ECO',
 			},
 		]);
 	};
