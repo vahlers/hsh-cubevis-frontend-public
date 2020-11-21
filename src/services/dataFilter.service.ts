@@ -1,6 +1,8 @@
 import { CellTypes } from '../enums/cellTypes.enum';
 import { SortType } from '../enums/sortType.enum';
 import { CubeCellModel } from '../models/cell.model';
+import { Ip } from '../models/ip.modell';
+import { RangeFilter } from '../models/rangeFilter.model';
 
 export class DataFilterService {
 	public static getSortedCells(
@@ -20,37 +22,64 @@ export class DataFilterService {
 
 	public static getFilteredCells(
 		cellModel: CubeCellModel[],
-		cellTypes: { type: CellTypes; value: number | string }[],
+		cellTypes: { type: CellTypes; value: number | string | Ip | RangeFilter<number | string | Ip> }[],
 	): CubeCellModel[] {
 		return cellModel.filter((v) => {
 			let filtered = false;
 			cellTypes.forEach((w) => {
 				switch (w.type) {
 					case CellTypes.DESTINATION_IP:
-						filtered = w.value === v.destinationIp.toString();
+						filtered = this.evaluateFilter(w.value, v.destinationIp);
 						break;
 					case CellTypes.DESTINATION_PORT:
-						filtered = w.value === v.destinationPort;
+						filtered = this.evaluateFilter(w.value, v.destinationPort);
 						break;
 					case CellTypes.SOURCE_IP:
-						filtered = w.value === v.sourceIp.toString();
+						filtered = this.evaluateFilter(w.value, v.sourceIp);
 						break;
 					case CellTypes.SOURCE_PORT:
-						filtered = w.value === v.sourcePort;
+						filtered = this.evaluateFilter(w.value, v.sourcePort);
 						break;
 					case CellTypes.ARGUS_TRANSACTION_STATE:
-						filtered = w.value === v.argusTransaction;
+						filtered = this.evaluateFilter(w.value, v.argusTransaction);
 						break;
 					case CellTypes.NETWORK_PROTOCOL:
-						filtered = w.value === v.networkProtocol;
+						filtered = this.evaluateFilter(w.value, v.networkProtocol);
 						break;
 					case CellTypes.NETWORK_TRANSPORT:
-						filtered = w.value === v.networkTransport;
+						filtered = this.evaluateFilter(w.value, v.networkTransport);
 						break;
 				}
 			});
 			return filtered;
 		});
+	}
+
+	private static evaluateFilter(
+		value: number | string | RangeFilter<number | string | Ip> | Ip,
+		property: number | string | Ip,
+	): boolean {
+		if (value instanceof Ip) {
+			return property === value.toString();
+		} else if (typeof value === 'number' || typeof value === 'string') {
+			return property === value;
+		} else if (<RangeFilter<number | string | Ip>>value !== undefined) {
+			const tempValue = <RangeFilter<number | string | Ip>>value;
+			if (tempValue.from instanceof Ip && tempValue.to instanceof Ip) {
+				return (
+					(property as Ip).getFirstBit() >= (tempValue.from as Ip).getFirstBit() &&
+					(property as Ip).getFirstBit() <= (tempValue.to as Ip).getFirstBit() &&
+					(property as Ip).getSecondBit() >= (tempValue.from as Ip).getSecondBit() &&
+					(property as Ip).getSecondBit() <= (tempValue.to as Ip).getSecondBit() &&
+					(property as Ip).getThirdBit() >= (tempValue.from as Ip).getThirdBit() &&
+					(property as Ip).getThirdBit() <= (tempValue.to as Ip).getThirdBit() &&
+					(property as Ip).getFourthBit() >= (tempValue.from as Ip).getFourthBit() &&
+					(property as Ip).getFourthBit() <= (tempValue.to as Ip).getFourthBit()
+				);
+			}
+
+			return property >= tempValue.from && property <= tempValue.to;
+		}
 	}
 
 	private static sortFunction(sorting: SortType, a: CubeCellModel, b: CubeCellModel, type: CellTypes) {

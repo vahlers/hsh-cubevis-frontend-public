@@ -127,52 +127,65 @@ export abstract class CsvRetrievalService {
 
 class D3CsvRetrievalService extends CsvRetrievalService {
 	public getAnomalyData(dimensions: CellTypes[]): Promise<CubeCellModel[]> {
-		const result = csv(this.anomalyFilePath() + this.fileName(dimensions)).then((data) => {
-			const models: CubeCellModel[] = [];
-			data.forEach((row) => {
-				const model: Record<string, unknown> = {}; //Dont know how to initialize types in typescript
-				dimensions.forEach((dim: CellTypes) => {
-					const e = row[CsvRetrievalService.dimName(dim)];
-					if (CsvRetrievalService.expectedType(dim) === 'number') {
-						if (e === '?') model[CsvRetrievalService.modelKeyName(dim)] = Infinity;
-						else model[CsvRetrievalService.modelKeyName(dim)] = parseInt(e);
-					} else if (CsvRetrievalService.expectedType(dim) === 'ip')
-						model[CsvRetrievalService.modelKeyName(dim)] = new Ip(e);
-					else model[CsvRetrievalService.modelKeyName(dim)] = e;
+		const result = csv(this.anomalyFilePath() + this.fileName(dimensions))
+			.then((data) => {
+				const models: CubeCellModel[] = [];
+				data.forEach((row) => {
+					const model: Record<string, unknown> = {}; //Dont know how to initialize types in typescript
+					dimensions.forEach((dim: CellTypes) => {
+						const e = row[CsvRetrievalService.dimName(dim)];
+						if (CsvRetrievalService.expectedType(dim) === 'number') {
+							if (e === '?') model[CsvRetrievalService.modelKeyName(dim)] = Infinity;
+							else model[CsvRetrievalService.modelKeyName(dim)] = parseInt(e);
+						} else if (CsvRetrievalService.expectedType(dim) === 'ip')
+							model[CsvRetrievalService.modelKeyName(dim)] = new Ip(e);
+						else model[CsvRetrievalService.modelKeyName(dim)] = e;
+					});
+					model.anomalyScore = parseFloat(row['count_z_score'].replace('[', '').replace(']', ''));
+					model.count = null;
+					models.push(<CubeCellModel>model);
 				});
-				model.anomalyScore = parseFloat(row['count_z_score'].replace('[', '').replace(']', ''));
-				model.count = null;
-				models.push(<CubeCellModel>model);
+				return models;
+			})
+			.catch(() => {
+				console.error(
+					'Cannot read csv-file "' + this.fileName(dimensions) + '" from "' + this.anomalyFilePath() + '".',
+				);
+				return [];
 			});
-			return models;
-		});
 
 		return result;
 	}
 	public getCounterData(dimensions: CellTypes[]): Promise<CubeCellModel[]> {
 		// DOes only have two files and I think cell_models is the correct one.
-		const result = csv(this.countFilePath() + 'cell_models.csv').then((data) => {
-			const models: CubeCellModel[] = [];
-			data.forEach((row) => {
-				const model: Record<string, unknown> = {}; //Dont know how to initialize types in typescript
-				let addToModel = true;
-				dimensions.forEach((dim: CellTypes) => {
-					const e = row[CsvRetrievalService.dimName(dim)];
-					if (e === '*') addToModel = false;
-					if (CsvRetrievalService.expectedType(dim) === 'number') {
-						if (e === '?') model[CsvRetrievalService.modelKeyName(dim)] = Infinity;
-						else model[CsvRetrievalService.modelKeyName(dim)] = parseInt(e);
-					} else if (CsvRetrievalService.expectedType(dim) === 'ip')
-						model[CsvRetrievalService.modelKeyName(dim)] = new Ip(e);
-					else model[CsvRetrievalService.modelKeyName(dim)] = e;
+		const filename = 'cell_models.csv';
+		const result = csv(this.countFilePath() + filename)
+			.then((data) => {
+				const models: CubeCellModel[] = [];
+				data.forEach((row) => {
+					const model: Record<string, unknown> = {}; //Dont know how to initialize types in typescript
+					let addToModel = true;
+					dimensions.forEach((dim: CellTypes) => {
+						const e = row[CsvRetrievalService.dimName(dim)];
+						if (e === '*') addToModel = false;
+						if (CsvRetrievalService.expectedType(dim) === 'number') {
+							if (e === '?') model[CsvRetrievalService.modelKeyName(dim)] = Infinity;
+							else model[CsvRetrievalService.modelKeyName(dim)] = parseInt(e);
+						} else if (CsvRetrievalService.expectedType(dim) === 'ip')
+							model[CsvRetrievalService.modelKeyName(dim)] = new Ip(e);
+						else model[CsvRetrievalService.modelKeyName(dim)] = e;
+					});
+					model.count = null;
+					model.countMean = parseFloat(row['count_z_score_mean']);
+					model.countStandardDeviation = parseFloat(row['count_z_score_standard_deviation']);
+					if (addToModel) models.push(<CubeCellModel>model);
 				});
-				model.count = null;
-				model.countMean = parseFloat(row['count_z_score_mean']);
-				model.countStandardDeviation = parseFloat(row['count_z_score_standard_deviation']);
-				if (addToModel) models.push(<CubeCellModel>model);
+				return models;
+			})
+			.catch(() => {
+				console.error('Cannot read csv-file "' + filename + '" from "' + this.countFilePath() + '".');
+				return [];
 			});
-			return models;
-		});
 
 		return result;
 	}

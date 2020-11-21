@@ -4,6 +4,8 @@ import { SortType } from '../enums/sortType.enum';
 
 import { CubeCellModel } from '../models/cell.model';
 import { DataFilterService } from './dataFilter.service';
+import { Ip } from '../models/ip.modell';
+import { RangeFilter } from '../models/rangeFilter.model';
 
 export class DataProcessingService {
 	private csvService: CsvRetrievalService;
@@ -44,7 +46,7 @@ export class DataProcessingService {
 	 */
 	public getCuboid(
 		dimensions: { type: CellTypes; sorting?: SortType }[],
-		filter?: { type: CellTypes; value: number | string }[],
+		filter?: { type: CellTypes; value: number | string | Ip | RangeFilter<number | string | Ip> }[],
 	): Promise<CubeCellModel[]> {
 		const cellTypes: CellTypes[] = dimensions.map((v) => v.type);
 		return this.csvService.getAnomalyData(cellTypes).then((v) => {
@@ -74,7 +76,7 @@ export class DataProcessingService {
 	 */
 	public getCuboidWithCount(
 		dimensions: { type: CellTypes; sorting?: SortType }[],
-		filter?: { type: CellTypes; value: number | string }[],
+		filter?: { type: CellTypes; value: number | string | Ip | RangeFilter<number | string | Ip> }[],
 	): Promise<CubeCellModel[]> {
 		const cellTypes: CellTypes[] = dimensions.map((v) => v.type);
 		return this.csvService.getCounterData(cellTypes).then((v) => {
