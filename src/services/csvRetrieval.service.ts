@@ -22,25 +22,6 @@ export class CsvRetrievalServiceFactory {
 export abstract class CsvRetrievalService {
 	private static groupedSymbol = '_';
 	protected static dimName(dim: CellTypes): string {
-		if (USE_OLD_DATA_SCHEMA) {
-			switch (dim) {
-				case CellTypes.SOURCE_IP:
-					return 'source_ip';
-				case CellTypes.DESTINATION_IP:
-					return 'destination_ip';
-				case CellTypes.SOURCE_PORT:
-					return 'source_port';
-				case CellTypes.DESTINATION_PORT:
-					return 'destination_port';
-				case CellTypes.NETWORK_PROTOCOL:
-					return 'network_protocol';
-				case CellTypes.NETWORK_TRANSPORT:
-					return 'network_transport';
-				case CellTypes.ARGUS_TRANSACTION_STATE:
-					return 'Argus_transaction_state';
-			}
-		}
-
 		switch (dim) {
 			case CellTypes.SOURCE_IP:
 				return 'source.ip';
@@ -117,8 +98,10 @@ export abstract class CsvRetrievalService {
 
 	protected fileName(dimensions: CellTypes[]): string {
 		const isGrouped = (dim: CellTypes) => {
-			if (dimensions.includes(dim)) return CsvRetrievalService.dimName(dim);
-			else return CsvRetrievalService.groupedSymbol;
+			if (dimensions.includes(dim)) {
+				const dimName = CsvRetrievalService.dimName(dim);
+				return USE_OLD_DATA_SCHEMA ? dimName.replaceAll('.', '_') : dimName;
+			} else return CsvRetrievalService.groupedSymbol;
 		};
 
 		if (USE_OLD_DATA_SCHEMA) {
@@ -145,11 +128,17 @@ export abstract class CsvRetrievalService {
 	}
 
 	protected anomalyFilePath(): string {
-		return './data/estimates/epoch_0/full_anomaly_cube/';
+		if (USE_OLD_DATA_SCHEMA) {
+			return './data/v1/estimates/epoch_0/batch_0_estimate_0/';
+		}
+		return './data/v2/estimates/epoch_0/full_anomaly_cube/';
 	}
 
 	protected countFilePath(): string {
-		return '/data/checkpoints/epoch_0/';
+		if (USE_OLD_DATA_SCHEMA) {
+			return '/data/v1/checkpoints/epoch_0/';
+		}
+		return '/data/v2/checkpoints/epoch_0/';
 	}
 
 	public abstract getAnomalyData(dimensions: CellTypes[]): Promise<CubeCellModel[]>;
