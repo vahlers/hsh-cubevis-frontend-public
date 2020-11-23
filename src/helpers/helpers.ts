@@ -2,6 +2,7 @@ import { CellTypes } from '../enums/cellTypes.enum';
 import { Ip } from '../models/ip.modell';
 import { Dimension, NominalDimension, NumericDimension } from '../models/dimension.model';
 import { DataRecord } from '../models/datarecord.model';
+import { USE_OLD_DATA_SCHEMA } from '../helpers/constants';
 
 const unpack = (rows: Array<DataRecord>, key: string): Array<string | number | Ip> => {
 	return rows.map(function (row) {
@@ -101,7 +102,11 @@ const convertToNominal = (
 	return _convertToNominal(rawData, label, filter);
 };
 
-const convertToWildcard = (rows: Array<DataRecord>, key: string, label: string): NominalDimension => {
+const convertToWildcard = (
+	rows: Array<DataRecord>,
+	key: string,
+	label: string,
+): NominalDimension | NumericDimension => {
 	const recordCnt = rows.length;
 	const idxData = Array(recordCnt).fill(0);
 	return {
@@ -123,11 +128,24 @@ const convertToNumeric = (
 ): NumericDimension => {
 	const rawData: Array<number> = unpack(rows, key) as Array<number>;
 
+	if (USE_OLD_DATA_SCHEMA) {
+		let constraintrange = [];
+		if (filter && filter.value) {
+			constraintrange = [filter.value, filter.value];
+		}
+		return {
+			range: [Math.min(...rawData), Math.max(...rawData)],
+			label: label,
+			values: rawData as Array<number>,
+			constraintrange: constraintrange,
+			visible: true,
+		};
+	}
+
 	const minimum = Math.min(...rawData) - 1;
 	const converted: Array<number> = rawData.map((d) =>
 		d === Number.POSITIVE_INFINITY ? (rawData[rawData.indexOf(d)] = minimum) : d,
 	);
-
 	return _convertToNominal(converted, label, filter, { 0: '?' });
 };
 

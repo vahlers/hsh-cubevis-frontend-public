@@ -5,7 +5,7 @@ import 'react-activity/dist/react-activity.css';
 
 import { convertDimension, unpack, convertToWildcard } from '../../helpers/helpers';
 
-import { SCORE_KEY, SCORE_MIN, SCORE_MAX } from '../../helpers/constants';
+import { SCORE_KEY, SCORE_MIN, SCORE_MAX, USE_OLD_DATA_SCHEMA } from '../../helpers/constants';
 import { CellTypes } from '../../enums/cellTypes.enum';
 import { Filter } from '../../models/filter.model';
 import { Dimension } from '../../models/dimension.model';
@@ -55,9 +55,10 @@ class ParallelCoords extends React.Component<ParCoordProps, ParCoordState> {
 		const activeFilters = this.activeFilters();
 		Object.keys(metaData).forEach((dim) => {
 			const filter = this.getFilterValues(dim);
-			const dimension = this.isWildcard(activeFilters, dim)
-				? convertToWildcard(rows, metaData[dim].key, metaData[dim].label)
-				: convertDimension(rows, metaData[dim], filter);
+			const dimension =
+				this.isWildcard(activeFilters, dim) && !USE_OLD_DATA_SCHEMA
+					? convertToWildcard(rows, metaData[dim].key, metaData[dim].label)
+					: convertDimension(rows, metaData[dim], filter);
 			data.dimensions.push(dimension);
 		});
 		this.setState({ data: data });

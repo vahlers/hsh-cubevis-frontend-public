@@ -8,6 +8,8 @@ import ParallelCoords from './components/parallelCoords/ParallelCoords';
 import Filters from './components/filters/Filters';
 import ChartsView from './components/chartsView/ChartsView';
 
+import { USE_OLD_DATA_SCHEMA } from './helpers/constants';
+
 class App extends React.Component<unknown> {
 	constructor(props: unknown) {
 		super(props);
@@ -48,10 +50,15 @@ class App extends React.Component<unknown> {
 		const dataService = DataProcessingService.instance();
 		const dimensions = filters.map(({ type }) => ({ type }));
 		const filteredData = await dataService.getCuboid(dimensions, filters);
-		const data = await dataService.getCuboid(dimensions);
-		// caution: if you call setState once for each of the props, all children will rerender multiple times
-		// this is probably not a desired behavior and costs performance
-		await this.setStateAsync({ filteredData, data, filters });
+
+		if (USE_OLD_DATA_SCHEMA) {
+			await this.setStateAsync({ filteredData, filters });
+		} else {
+			const data = await dataService.getCuboid(dimensions);
+			// caution: if you call setState once for each of the props, all children will rerender multiple times
+			// this is probably not a desired behavior and costs performance
+			await this.setStateAsync({ filteredData, data, filters });
+		}
 	};
 
 	getData = async () => {
