@@ -1,0 +1,10 @@
+cell_index,source.ip,source.port,destination.ip,destination.port,network.protocol,network.transport,Argus.transaction.state,count_z_score
+0,*,*,*,*,dhcp,*,*,[10]
+1,*,*,*,*,dns,*,*,[0.5518189314878061]
+2,*,*,*,*,ftp,*,*,[3.585667528039018]
+3,*,*,*,*,http,*,*,[3.405012863392446]
+4,*,*,*,*,pop3,*,*,[10]
+5,*,*,*,*,smtp,*,*,[3.8046427467512167]
+6,*,*,*,*,snmp,*,*,[10]
+7,*,*,*,*,ssh,*,*,[1.051800279461208]
+8,*,*,*,*,unknown,*,*,[4.042966459749527]

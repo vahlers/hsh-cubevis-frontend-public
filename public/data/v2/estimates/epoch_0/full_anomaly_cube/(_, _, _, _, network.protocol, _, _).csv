@@ -1,0 +1,8 @@
+index,source.ip,destination.ip,source.port,destination.port,network.protocol,network.transport,Argus.transaction.state,count_z_score
+0,*,*,*,*,dns,*,*,[1.432549239967455]
+1,*,*,*,*,ftp,*,*,[0.5837300238472755]
+2,*,*,*,*,http,*,*,[4.692318623339308]
+3,*,*,*,*,smtp,*,*,[1.8526788897280513]
+4,*,*,*,*,ssh,*,*,[0.7993754403911871]
+5,*,*,*,*,unknown,*,*,[1.7881000657720414]
+6,*,*,*,*,?,*,*,[10]

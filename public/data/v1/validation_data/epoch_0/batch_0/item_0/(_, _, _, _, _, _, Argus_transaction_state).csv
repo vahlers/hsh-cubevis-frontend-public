@@ -1,0 +1,12 @@
+cell_index,source.ip,source.port,destination.ip,destination.port,network.protocol,network.transport,Argus.transaction.state,count
+0,*,*,*,*,*,*,ACC,[1]
+1,*,*,*,*,*,*,CLO,[10]
+2,*,*,*,*,*,*,CON,[8048]
+3,*,*,*,*,*,*,ECO,[8]
+4,*,*,*,*,*,*,ECR,[2]
+5,*,*,*,*,*,*,FIN,[19040]
+6,*,*,*,*,*,*,INT,[6964]
+7,*,*,*,*,*,*,PAR,[2]
+8,*,*,*,*,*,*,REQ,[104]
+9,*,*,*,*,*,*,RST,[1]
+10,*,*,*,*,*,*,TST,[2]
