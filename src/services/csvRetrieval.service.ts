@@ -2,6 +2,7 @@ import { CellTypes } from '../enums/cellTypes.enum';
 import { CubeCellModel } from '../models/cell.model';
 import { csv } from 'd3';
 import { Ip } from '../models/ip.modell';
+import { USE_OLD_DATA_SCHEMA } from '../helpers/constants';
 
 export enum CsvLibrary {
 	D3 /*,
@@ -15,13 +16,31 @@ export class CsvRetrievalServiceFactory {
 			case CsvLibrary.D3:
 				return new D3CsvRetrievalService();
 		}
-		throw new Error('Undefined CsvLibrary.');
 	}
 }
 
 export abstract class CsvRetrievalService {
 	private static groupedSymbol = '_';
 	protected static dimName(dim: CellTypes): string {
+		if (USE_OLD_DATA_SCHEMA) {
+			switch (dim) {
+				case CellTypes.SOURCE_IP:
+					return 'source_ip';
+				case CellTypes.DESTINATION_IP:
+					return 'destination_ip';
+				case CellTypes.SOURCE_PORT:
+					return 'source_port';
+				case CellTypes.DESTINATION_PORT:
+					return 'destination_port';
+				case CellTypes.NETWORK_PROTOCOL:
+					return 'network_protocol';
+				case CellTypes.NETWORK_TRANSPORT:
+					return 'network_transport';
+				case CellTypes.ARGUS_TRANSACTION_STATE:
+					return 'Argus_transaction_state';
+			}
+		}
+
 		switch (dim) {
 			case CellTypes.SOURCE_IP:
 				return 'source.ip';
@@ -101,6 +120,18 @@ export abstract class CsvRetrievalService {
 			if (dimensions.includes(dim)) return CsvRetrievalService.dimName(dim);
 			else return CsvRetrievalService.groupedSymbol;
 		};
+
+		if (USE_OLD_DATA_SCHEMA) {
+			return encodeURI(
+				`(${isGrouped(CellTypes.SOURCE_IP)}, ` +
+					`${isGrouped(CellTypes.SOURCE_PORT)}, ` +
+					`${isGrouped(CellTypes.DESTINATION_IP)}, ` +
+					`${isGrouped(CellTypes.DESTINATION_PORT)}, ` +
+					`${isGrouped(CellTypes.NETWORK_PROTOCOL)}, ` +
+					`${isGrouped(CellTypes.NETWORK_TRANSPORT)}, ` +
+					`${isGrouped(CellTypes.ARGUS_TRANSACTION_STATE)}).csv`,
+			);
+		}
 
 		return encodeURI(
 			`(${isGrouped(CellTypes.SOURCE_IP)}, ` +
