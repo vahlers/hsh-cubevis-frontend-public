@@ -8,9 +8,10 @@ import { convertDimension, unpack, convertToWildcard } from '../../helpers/helpe
 import { SCORE_KEY, SCORE_MIN, SCORE_MAX } from '../../helpers/constants';
 import { CellTypes } from '../../enums/cellTypes.enum';
 import { Filter } from '../../models/filter.model';
-import { Dimension } from '../../models/dimension.model';
+import { Dimension, NominalDimension } from '../../models/dimension.model';
 
-import Plot from './Plot';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const Plotly = require('plotly.js-dist');
 
 type ParCoordProps = {
 	data: Array<Record<string, number | string>>;
@@ -30,19 +31,49 @@ type ParCoordState = {
 		};
 		dimensions: Dimension[];
 	};
+	plotConfig: {
+		layout: {
+			height: number;
+		};
+	};
 	graphIsLoading: boolean;
+	graphLoaded: boolean;
 };
 
 class ParallelCoords extends React.Component<ParCoordProps, ParCoordState> {
 	componentDidUpdate(prevProps: ParCoordProps): void {
-		if (prevProps.data !== this.props.data || prevProps.filters !== this.props.filters) {
+		// filters AND data have changed
+		if (prevProps.filters !== this.props.filters && prevProps.data !== this.props.data) {
 			this.preProcess();
+		}
+		// only data has changed
+		else if (prevProps.data !== this.props.data) {
+			this.preProcess();
+		}
+		// only filters have changed
+		else if (prevProps.filters !== this.props.filters) {
+			this.filterData();
 		}
 	}
 
-	// once new props came into the component, the data has to be preprocessed.
-	// afterwards it is published to the child component
-	preProcess(): void {
+	filterData = (): void => {
+		const data = this.state.data;
+		const metaData = this.props.metadata;
+		Object.keys(metaData).forEach((dim) => {
+			const filter = this.getFilterValues(dim);
+			const dimension = data.dimensions.find((d) => d.label == metaData[dim].label);
+			if (filter) {
+				const filterVal = (dimension as NominalDimension).map[filter.value as string];
+				dimension.constraintrange = [filterVal, filterVal];
+			} else {
+				dimension.constraintrange = [];
+			}
+		});
+
+		this.setState({ data: data }, () => this.draw());
+	};
+
+	preProcess = (): void => {
 		if (this.props.data == null) return;
 
 		const rows = this.props.data;
@@ -60,8 +91,9 @@ class ParallelCoords extends React.Component<ParCoordProps, ParCoordState> {
 				: convertDimension(rows, metaData[dim], filter);
 			data.dimensions.push(dimension);
 		});
-		this.setState({ data: data });
-	}
+
+		this.setState({ data: data }, () => this.draw());
+	};
 
 	constructor(props: ParCoordProps) {
 		super(props);
@@ -82,7 +114,13 @@ class ParallelCoords extends React.Component<ParCoordProps, ParCoordState> {
 				},
 				dimensions: [],
 			},
+			plotConfig: {
+				layout: {
+					height: 800,
+				},
+			},
 			graphIsLoading: false,
+			graphLoaded: false,
 		};
 	}
 
@@ -111,6 +149,17 @@ class ParallelCoords extends React.Component<ParCoordProps, ParCoordState> {
 
 	isWildcard = (activeFilters: Array<CellTypes>, dimension: string): boolean => {
 		return activeFilters.length > 0 && activeFilters.indexOf(parseInt(dimension)) === -1;
+	};
+
+	draw = (): void => {
+		if (this.state.graphLoaded) {
+			console.log('Redrawing component ...');
+			Plotly.redraw(document.getElementById('parCoord'), [this.state.data], 0);
+		} else {
+			console.log('Drawing component ...');
+			Plotly.newPlot('parCoord', [this.state.data], this.state.plotConfig.layout);
+			this.setState({ graphLoaded: true });
+		}
 	};
 
 	// /*** BUTTON HANDLERS ***/
@@ -172,14 +221,7 @@ class ParallelCoords extends React.Component<ParCoordProps, ParCoordState> {
 	render(): JSX.Element {
 		return (
 			<div className="col coords-container">
-				{this.state.graphIsLoading ? (
-					<div>
-						<p>Loading...</p>
-						<Dots />
-					</div>
-				) : (
-					<Plot data={this.state.data}></Plot>
-				)}
+				<div id="parCoord"></div>
 			</div>
 		);
 	}

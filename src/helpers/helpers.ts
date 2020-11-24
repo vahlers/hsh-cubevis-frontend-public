@@ -77,6 +77,7 @@ const _convertToNominal = (
 		ticktext: sorted as Array<string>,
 		constraintrange: constraintrange,
 		visible: true,
+		map: valueMapping,
 	};
 };
 
@@ -112,6 +113,7 @@ const convertToWildcard = (rows: Array<DataRecord>, key: string, label: string):
 		tickvals: [0],
 		values: idxData,
 		visible: true,
+		map: {},
 	};
 };
 
