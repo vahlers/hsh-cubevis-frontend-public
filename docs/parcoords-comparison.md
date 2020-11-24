@@ -20,7 +20,6 @@ The chart always displays the same cube: the full cube. When filters are chosen,
 - more cluttered
 - less performant
 
-
 ## Iceberg Model Cube
 
 Shows the cube containing all dimensions that have existing filters. When a filter is added, a new cube with different entries is loaded. Has to use stars for dims that do not have a filter applied yet.
@@ -32,8 +31,7 @@ Shows the cube containing all dimensions that have existing filters. When a filt
 ### Pros
 
 - visualizes past decisions
-- less cluttered
-
+- (less cluttered)
 
 ### Cons
 
