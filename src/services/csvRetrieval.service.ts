@@ -37,6 +37,10 @@ export abstract class CsvRetrievalService {
 				return 'network.transport';
 			case CellTypes.ARGUS_TRANSACTION_STATE:
 				return 'Argus.transaction.state';
+			default: {
+				console.error('Invalid CellType as argument.');
+				return '';
+			}
 		}
 	}
 	public static modelKeyName(dim: CellTypes): string {
@@ -74,6 +78,10 @@ export abstract class CsvRetrievalService {
 				return 'string';
 			case CellTypes.ARGUS_TRANSACTION_STATE:
 				return 'string';
+			default: {
+				console.error('Invalid CellType as argument.');
+				return 'string';
+			}
 		}
 	}
 
@@ -93,6 +101,10 @@ export abstract class CsvRetrievalService {
 				return 'Network Transport';
 			case CellTypes.ARGUS_TRANSACTION_STATE:
 				return 'Argus Transaction State';
+			default: {
+				console.error('Invalid CellType as argument.');
+				return '';
+			}
 		}
 	}
 

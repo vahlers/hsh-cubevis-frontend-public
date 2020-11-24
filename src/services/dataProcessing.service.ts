@@ -96,16 +96,24 @@ export class DataProcessingService {
 	 * 				.then((v) => console.log(v[CellType.SourceIP]))
 	 * @returns An Promise with an Object Containing Pairs of Dimension and Attributevalues
 	 */
-	public getAvailableValues(dimension: CellTypes[]): Promise<{ [id: string]: (string | number)[] }> {
+	public getAvailableValues(dimension: CellTypes[]): Promise<{ [id: string]: (string | number | Ip)[] }> {
 		return this.csvService.getAnomalyData(dimension).then((anomaly) => {
-			const result: { [id: string]: (string | number)[] } = {};
+			const result: { [id: string]: (string | number | Ip)[] } = {};
 			dimension.forEach((dim) => (result[dim] = []));
 
 			anomaly.forEach((value) => {
 				dimension.forEach((element) => {
 					const val = value[CsvRetrievalService.modelKeyName(element)];
-					if (!result[element].includes(val))
-						result[element].push(value[CsvRetrievalService.modelKeyName(element)]);
+					if (val instanceof Ip) {
+						if (
+							result[element].find((v) => v instanceof Ip && v.toString() === val.toString()) ===
+							undefined
+						) {
+							result[element].push(val);
+						}
+					} else if (!result[element].includes(val)) {
+						result[element].push(val);
+					}
 				});
 			});
 			return result;
