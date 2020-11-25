@@ -1,6 +1,7 @@
 import { CsvRetrievalService, CsvRetrievalServiceFactory } from './csvRetrieval.service';
 import { CellTypes } from '../enums/cellTypes.enum';
 import { SortType } from '../enums/sortType.enum';
+import { DataType } from '../enums/dataType.enum';
 
 import { CubeCellModel } from '../models/cell.model';
 import { DataFilterService } from './dataFilter.service';
@@ -125,30 +126,18 @@ export class DataProcessingService {
 	 * @example //Log label and Type of Dimension SourcePort
 	 * 			const mdata = service.getMetadata();
 	 *			console.log(mdata[CellTypes.SOURCE_PORT].label);
-	 *			//output here is either "nominal", "numeric" or "ip"
+	 *			//output here is the value of DataType enum
 	 *			console.log(mdata[CellTypes.SOURCE_PORT].type);
 	 */
-	public getMetadata(): { [id: string]: { key: string; label: string; type: string } } {
+	public getMetadata(): { [id: string]: { key: string; label: string; type: DataType } } {
 		const result = {};
 		Array.from(Array(CellTypes.CELLTYPE_CNT).keys()).forEach((key) => {
 			result[key] = {
 				key: CsvRetrievalService.modelKeyName(key),
 				label: CsvRetrievalService.dimLabel(key),
-				type: this.typeForClass(CsvRetrievalService.expectedType(key)),
+				type: CsvRetrievalService.typeForDimension(key),
 			};
 		});
 		return result;
-	}
-
-	private typeForClass(c: string): string {
-		switch (c) {
-			default:
-			case 'string':
-				return 'nominal';
-			case 'number':
-				return 'numeric';
-			case 'ip':
-				return 'ip';
-		}
 	}
 }

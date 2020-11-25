@@ -1,7 +1,8 @@
 import { CellTypes } from '../enums/cellTypes.enum';
 import { Ip } from '../models/ip.modell';
-import { Dimension, NominalDimension, NumericDimension } from '../models/dimension.model';
+import { Dimension, NominalDimension, NumericDimension, OrdinalDimension } from '../models/dimension.model';
 import { DataRecord } from '../models/datarecord.model';
+import { DataType } from '../enums/dataType.enum';
 
 const unpack = (rows: Array<DataRecord>, key: string): Array<string | number | Ip> => {
 	return rows.map(function (row) {
@@ -20,12 +21,15 @@ const convertDimension = (
 	dimension: { key: string; label: string; type: string },
 	filter: { type: CellTypes; value: number | string } = null,
 ): Dimension => {
+	console.log(dimension);
 	switch (dimension.type) {
-		case 'ip':
+		case DataType.IP:
 			return convertToIp(rows, dimension.key, dimension.label, filter);
-		case 'numeric':
+		case DataType.ORDINAL:
+			return convertToOrdinal(rows, dimension.key, dimension.label, filter);
+		case DataType.NUMERIC:
 			return convertToNumeric(rows, dimension.key, dimension.label, filter);
-		case 'nominal':
+		case DataType.NOMINAL:
 		default:
 			return convertToNominal(rows, dimension.key, dimension.label, filter);
 	}
@@ -117,12 +121,12 @@ const convertToWildcard = (rows: Array<DataRecord>, key: string, label: string):
 	};
 };
 
-const convertToNumeric = (
+const convertToOrdinal = (
 	rows: Array<DataRecord>,
 	key: string,
 	label: string,
 	filter: { type: CellTypes; value: number | string } = null,
-): NumericDimension => {
+): OrdinalDimension => {
 	const rawData: Array<number> = unpack(rows, key) as Array<number>;
 
 	const minimum = Math.min(...rawData) - 1;
@@ -131,6 +135,15 @@ const convertToNumeric = (
 	);
 
 	return _convertToNominal(converted, label, filter, { 0: '?' });
+};
+
+const convertToNumeric = (
+	rows: Array<DataRecord>,
+	key: string,
+	label: string,
+	filter: { type: CellTypes; value: number | string } = null,
+): NumericDimension => {
+	throw new Error('not implemented');
 };
 
 export { convertDimension, convertAnomalyScore, unpack, convertToWildcard };

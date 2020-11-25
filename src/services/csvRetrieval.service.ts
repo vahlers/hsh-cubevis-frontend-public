@@ -1,4 +1,5 @@
 import { CellTypes } from '../enums/cellTypes.enum';
+import { DataType } from '../enums/dataType.enum';
 import { CubeCellModel } from '../models/cell.model';
 import { csv } from 'd3';
 import { Ip } from '../models/ip.modell';
@@ -21,6 +22,7 @@ export class CsvRetrievalServiceFactory {
 
 export abstract class CsvRetrievalService {
 	private static groupedSymbol = '_';
+
 	protected static dimName(dim: CellTypes): string {
 		switch (dim) {
 			case CellTypes.SOURCE_IP:
@@ -63,24 +65,41 @@ export abstract class CsvRetrievalService {
 	}
 
 	public static expectedType(dim: CellTypes): string {
-		switch (dim) {
-			case CellTypes.SOURCE_IP:
+		const dataType = CsvRetrievalService.typeForDimension(dim);
+		switch (dataType) {
+			case DataType.IP:
 				return 'ip';
-			case CellTypes.DESTINATION_IP:
-				return 'ip';
-			case CellTypes.SOURCE_PORT:
+			case DataType.NUMERIC:
+			case DataType.ORDINAL:
 				return 'number';
-			case CellTypes.DESTINATION_PORT:
-				return 'number';
-			case CellTypes.NETWORK_PROTOCOL:
-				return 'string';
-			case CellTypes.NETWORK_TRANSPORT:
-				return 'string';
-			case CellTypes.ARGUS_TRANSACTION_STATE:
+			case DataType.NOMINAL:
 				return 'string';
 			default: {
 				console.error('Invalid CellType as argument.');
 				return 'string';
+			}
+		}
+	}
+
+	public static typeForDimension(ct: CellTypes): DataType {
+		switch (ct) {
+			case CellTypes.SOURCE_IP:
+				return DataType.IP;
+			case CellTypes.DESTINATION_IP:
+				return DataType.IP;
+			case CellTypes.SOURCE_PORT:
+				return DataType.ORDINAL;
+			case CellTypes.DESTINATION_PORT:
+				return DataType.ORDINAL;
+			case CellTypes.NETWORK_PROTOCOL:
+				return DataType.NOMINAL;
+			case CellTypes.NETWORK_TRANSPORT:
+				return DataType.NOMINAL;
+			case CellTypes.ARGUS_TRANSACTION_STATE:
+				return DataType.NOMINAL;
+			default: {
+				console.error('Invalid CellType as argument.');
+				return DataType.NOMINAL;
 			}
 		}
 	}
