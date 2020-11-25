@@ -1,0 +1,22 @@
+name: build latest app
+on:
+  push:
+    branches:
+      - "main"
+  workflow_dispatch:
+
+jobs:
+  build-docker:
+    name: build docker image
+    runs-on: ubuntu-latest
+    container: docker:latest
+    env:
+      REGISTRY_TOKEN: ${{secrets.GITHUB_TOKEN}}
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@master
+      - name: build and push docker image
+        run: |
+          docker login -u publisher -p $REGISTRY_TOKEN docker.pkg.github.com
+          docker build -t docker.pkg.github.com/manuelottlik/hsh-cubevis-frontend/hsh-cubevis-frontend:latest .
+          docker push docker.pkg.github.com/manuelottlik/hsh-cubevis-frontend/hsh-cubevis-frontend:latest
