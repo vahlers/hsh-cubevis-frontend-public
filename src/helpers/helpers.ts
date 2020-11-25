@@ -143,7 +143,18 @@ const convertToNumeric = (
 	label: string,
 	filter: { type: CellTypes; value: number | string } = null,
 ): NumericDimension => {
-	throw new Error('not implemented');
+	const rawData: Array<number> = unpack(rows, key) as Array<number>;
+	const minimum = Math.min(...rawData) - 1;
+	const converted: Array<number> = rawData.map((d) =>
+		d === Number.POSITIVE_INFINITY ? (rawData[rawData.indexOf(d)] = minimum) : d,
+	);
+	return {
+		range: [Math.min(...converted), Math.max(...converted)],
+		label: label,
+		values: converted,
+		constraintrange: filter && filter.value ? [filter.value as number, filter.value as number] : [],
+		visible: true,
+	};
 };
 
 export { convertDimension, convertAnomalyScore, unpack, convertToWildcard };

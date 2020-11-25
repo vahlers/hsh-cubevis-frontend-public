@@ -9,6 +9,7 @@ import { SCORE_KEY, SCORE_MIN, SCORE_MAX } from '../../helpers/constants';
 import { CellTypes } from '../../enums/cellTypes.enum';
 import { Filter } from '../../models/filter.model';
 import { Dimension, NominalDimension } from '../../models/dimension.model';
+import { DataType } from '../../enums/dataType.enum';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Plotly = require('plotly.js-dist');
@@ -63,7 +64,18 @@ class ParallelCoords extends React.Component<ParCoordProps, ParCoordState> {
 			const filter = this.getFilterValues(dim);
 			const dimension = data.dimensions.find((d) => d.label == metaData[dim].label);
 			if (filter) {
-				const filterVal = (dimension as NominalDimension).map[filter.value as string];
+				let filterVal;
+				switch (metaData[dim].type) {
+					case DataType.NUMERIC:
+						filterVal = filter.value as number;
+						break;
+					case DataType.IP:
+					case DataType.NOMINAL:
+					case DataType.ORDINAL:
+					default:
+						filterVal = (dimension as NominalDimension).map[filter.value as string];
+						break;
+				}
 				dimension.constraintrange = [filterVal, filterVal];
 			} else {
 				dimension.constraintrange = [];
