@@ -32,10 +32,11 @@ type ParCoordState = {
 		};
 		dimensions: Dimension[];
 	};
-	plotConfig: {
-		layout: {
-			height: number;
-		};
+	layout: {
+		height: 800;
+	};
+	config: {
+		responsive: boolean;
 	};
 	graphIsLoading: boolean;
 	graphLoaded: boolean;
@@ -126,10 +127,11 @@ class ParallelCoords extends React.Component<ParCoordProps, ParCoordState> {
 				},
 				dimensions: [],
 			},
-			plotConfig: {
-				layout: {
-					height: 800,
-				},
+			layout: {
+				height: 800,
+			},
+			config: {
+				responsive: true,
 			},
 			graphIsLoading: false,
 			graphLoaded: false,
@@ -169,7 +171,7 @@ class ParallelCoords extends React.Component<ParCoordProps, ParCoordState> {
 			Plotly.redraw(document.getElementById('parCoord'), [this.state.data], 0);
 		} else {
 			console.log('Drawing component ...');
-			Plotly.newPlot('parCoord', [this.state.data], this.state.plotConfig.layout);
+			Plotly.newPlot('parCoord', [this.state.data], this.state.layout, this.state.config);
 			this.setState({ graphLoaded: true });
 		}
 	};
