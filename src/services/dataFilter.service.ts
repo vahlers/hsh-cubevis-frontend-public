@@ -59,27 +59,29 @@ export class DataFilterService {
 		value: number | string | RangeFilter<number | string | Ip> | Ip,
 		property: number | string | Ip,
 	): boolean {
-		if (value instanceof Ip) {
-			return property === value.toString();
-		} else if (typeof value === 'number' || typeof value === 'string') {
-			return property === value;
-		} else if (<RangeFilter<number | string | Ip>>value !== undefined) {
-			const tempValue = <RangeFilter<number | string | Ip>>value;
-			if (tempValue.from instanceof Ip && tempValue.to instanceof Ip) {
-				return (
-					(property as Ip).getFirstBit() >= (tempValue.from as Ip).getFirstBit() &&
-					(property as Ip).getFirstBit() <= (tempValue.to as Ip).getFirstBit() &&
-					(property as Ip).getSecondBit() >= (tempValue.from as Ip).getSecondBit() &&
-					(property as Ip).getSecondBit() <= (tempValue.to as Ip).getSecondBit() &&
-					(property as Ip).getThirdBit() >= (tempValue.from as Ip).getThirdBit() &&
-					(property as Ip).getThirdBit() <= (tempValue.to as Ip).getThirdBit() &&
-					(property as Ip).getFourthBit() >= (tempValue.from as Ip).getFourthBit() &&
-					(property as Ip).getFourthBit() <= (tempValue.to as Ip).getFourthBit()
-				);
+		if (value) {
+			if (value instanceof Ip) {
+				return property === value.toString();
+			} else if (typeof value === 'number' || typeof value === 'string') {
+				return property === value;
+			} else if (<RangeFilter<number | string | Ip>>value !== undefined) {
+				const tempValue = <RangeFilter<number | string | Ip>>value;
+				if (tempValue.from instanceof Ip && tempValue.to instanceof Ip) {
+					return (
+						(property as Ip).getFirstBit() >= (tempValue.from as Ip).getFirstBit() &&
+						(property as Ip).getFirstBit() <= (tempValue.to as Ip).getFirstBit() &&
+						(property as Ip).getSecondBit() >= (tempValue.from as Ip).getSecondBit() &&
+						(property as Ip).getSecondBit() <= (tempValue.to as Ip).getSecondBit() &&
+						(property as Ip).getThirdBit() >= (tempValue.from as Ip).getThirdBit() &&
+						(property as Ip).getThirdBit() <= (tempValue.to as Ip).getThirdBit() &&
+						(property as Ip).getFourthBit() >= (tempValue.from as Ip).getFourthBit() &&
+						(property as Ip).getFourthBit() <= (tempValue.to as Ip).getFourthBit()
+					);
+				}
+				return property >= tempValue.from && property <= tempValue.to;
 			}
-
-			return property >= tempValue.from && property <= tempValue.to;
 		}
+		return false;
 	}
 
 	private static sortFunction(sorting: SortType, a: CubeCellModel, b: CubeCellModel, type: CellTypes) {

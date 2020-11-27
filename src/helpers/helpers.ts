@@ -1,8 +1,8 @@
-import { CellTypes } from '../enums/cellTypes.enum';
 import { Ip } from '../models/ip.modell';
 import { Dimension, NominalDimension, NumericDimension, OrdinalDimension } from '../models/dimension.model';
 import { DataRecord } from '../models/datarecord.model';
 import { DataType } from '../enums/dataType.enum';
+import { Filter } from '../models/filter.model';
 
 const unpack = (rows: Array<DataRecord>, key: string): Array<string | number | Ip> => {
 	return rows.map(function (row) {
@@ -19,9 +19,8 @@ const convertAnomalyScore = (rows: Array<unknown>, key: string): Array<number> =
 const convertDimension = (
 	rows: Array<DataRecord>,
 	dimension: { key: string; label: string; type: string },
-	filter: { type: CellTypes; value: number | string } = null,
+	filter: Filter = null,
 ): Dimension => {
-	console.log(dimension);
 	switch (dimension.type) {
 		case DataType.IP:
 			return convertToIp(rows, dimension.key, dimension.label, filter);
@@ -38,7 +37,7 @@ const convertDimension = (
 const _convertToNominal = (
 	rawData: Array<string | number>,
 	label: string,
-	filter: { type: CellTypes; value: number | string } = null,
+	filter: Filter = null,
 	replacements: Record<number, string> = {},
 ): NominalDimension => {
 	const unique: Array<string | number> = rawData.filter((v, i, a) => a.indexOf(v) === i);
@@ -89,7 +88,7 @@ const convertToIp = (
 	rows: Array<DataRecord>,
 	keyName: string,
 	label: string,
-	filter: { type: CellTypes; value: number | string } = null,
+	filter: Filter = null,
 ): NominalDimension => {
 	const rawData: Array<Ip> = unpack(rows, keyName) as Array<Ip>;
 	const convertedIPs: Array<string> = rawData.map((ip) => ip.toString());
@@ -100,7 +99,7 @@ const convertToNominal = (
 	rows: Array<DataRecord>,
 	keyName: string,
 	label: string,
-	filter: { type: CellTypes; value: number | string } = null,
+	filter: Filter = null,
 ): NominalDimension => {
 	const rawData: Array<string> = unpack(rows, keyName) as Array<string>;
 	return _convertToNominal(rawData, label, filter);
@@ -125,7 +124,7 @@ const convertToOrdinal = (
 	rows: Array<DataRecord>,
 	key: string,
 	label: string,
-	filter: { type: CellTypes; value: number | string } = null,
+	filter: Filter = null,
 ): OrdinalDimension => {
 	const rawData: Array<number> = unpack(rows, key) as Array<number>;
 
@@ -141,7 +140,7 @@ const convertToNumeric = (
 	rows: Array<DataRecord>,
 	key: string,
 	label: string,
-	filter: { type: CellTypes; value: number | string } = null,
+	filter: Filter = null,
 ): NumericDimension => {
 	const rawData: Array<number> = unpack(rows, key) as Array<number>;
 	const minimum = Math.min(...rawData) - 1;

@@ -2,9 +2,7 @@ import React from 'react';
 import './ParallelCoords.css';
 import { Dots } from 'react-activity';
 import 'react-activity/dist/react-activity.css';
-
 import { convertDimension, unpack, convertToWildcard } from '../../helpers/helpers';
-
 import { SCORE_KEY, SCORE_MIN, SCORE_MAX } from '../../helpers/constants';
 import { CellTypes } from '../../enums/cellTypes.enum';
 import { Filter } from '../../models/filter.model';
@@ -32,8 +30,16 @@ type ParCoordState = {
 		};
 		dimensions: Dimension[];
 	};
+
 	layout: {
-		height: 800;
+		margin: {
+			l: number;
+			r: number;
+			b: number;
+			t: number;
+			pad: number;
+		};
+		height: number;
 	};
 	config: {
 		responsive: boolean;
@@ -127,8 +133,16 @@ class ParallelCoords extends React.Component<ParCoordProps, ParCoordState> {
 				},
 				dimensions: [],
 			},
+
 			layout: {
-				height: 800,
+				margin: {
+					l: 80,
+					r: 10,
+					b: 20,
+					t: 50,
+					pad: 0,
+				},
+				height: 450,
 			},
 			config: {
 				responsive: true,
@@ -234,7 +248,7 @@ class ParallelCoords extends React.Component<ParCoordProps, ParCoordState> {
 
 	render(): JSX.Element {
 		return (
-			<div className="col coords-container">
+			<div className="coords">
 				<div id="parCoord"></div>
 			</div>
 		);
