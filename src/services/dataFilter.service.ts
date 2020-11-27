@@ -24,61 +24,61 @@ export class DataFilterService {
 		cellModel: CubeCellModel[],
 		cellTypes: { type: CellTypes; value: number | string | Ip | RangeFilter<number | string | Ip> }[],
 	): CubeCellModel[] {
-		return cellModel.filter((v) => {
-			let filtered = false;
-			cellTypes.forEach((w) => {
-				switch (w.type) {
+		return cellModel.filter((cell) => {
+			let filtered = 0;
+			cellTypes.forEach((filter) => {
+				switch (filter.type) {
 					case CellTypes.DESTINATION_IP:
-						filtered = this.evaluateFilter(w.value, v.destinationIp);
+						filtered += this.evaluateFilter(filter.value, cell.destinationIp) ? 1 : 0;
 						break;
 					case CellTypes.DESTINATION_PORT:
-						filtered = this.evaluateFilter(w.value, v.destinationPort);
+						filtered += this.evaluateFilter(filter.value, cell.destinationPort) ? 1 : 0;
 						break;
 					case CellTypes.SOURCE_IP:
-						filtered = this.evaluateFilter(w.value, v.sourceIp);
+						filtered += this.evaluateFilter(filter.value, cell.sourceIp) ? 1 : 0;
 						break;
 					case CellTypes.SOURCE_PORT:
-						filtered = this.evaluateFilter(w.value, v.sourcePort);
+						filtered += this.evaluateFilter(filter.value, cell.sourcePort) ? 1 : 0;
 						break;
 					case CellTypes.ARGUS_TRANSACTION_STATE:
-						filtered = this.evaluateFilter(w.value, v.argusTransaction);
+						filtered += this.evaluateFilter(filter.value, cell.argusTransaction) ? 1 : 0;
 						break;
 					case CellTypes.NETWORK_PROTOCOL:
-						filtered = this.evaluateFilter(w.value, v.networkProtocol);
+						filtered += this.evaluateFilter(filter.value, cell.networkProtocol) ? 1 : 0;
 						break;
 					case CellTypes.NETWORK_TRANSPORT:
-						filtered = this.evaluateFilter(w.value, v.networkTransport);
+						filtered += this.evaluateFilter(filter.value, cell.networkTransport) ? 1 : 0;
 						break;
 				}
 			});
-			return filtered;
+			return filtered === cellTypes.length;
 		});
 	}
 
 	private static evaluateFilter(
-		value: number | string | RangeFilter<number | string | Ip> | Ip,
-		property: number | string | Ip,
+		filterValue: number | string | RangeFilter<number | string | Ip> | Ip,
+		cellValue: number | string | Ip,
 	): boolean {
-		if (value) {
-			if (value instanceof Ip) {
-				return property === value.toString();
-			} else if (typeof value === 'number' || typeof value === 'string') {
-				return property === value;
-			} else if (<RangeFilter<number | string | Ip>>value !== undefined) {
-				const tempValue = <RangeFilter<number | string | Ip>>value;
+		if (filterValue !== undefined || filterValue !== null) {
+			if (filterValue instanceof Ip) {
+				return cellValue.toString() === filterValue.toString();
+			} else if (typeof filterValue === 'number' || typeof filterValue === 'string') {
+				return cellValue === filterValue || cellValue?.toString() === filterValue;
+			} else if (<RangeFilter<number | string | Ip>>filterValue !== undefined) {
+				const tempValue = <RangeFilter<number | string | Ip>>filterValue;
 				if (tempValue.from instanceof Ip && tempValue.to instanceof Ip) {
 					return (
-						(property as Ip).getFirstBit() >= (tempValue.from as Ip).getFirstBit() &&
-						(property as Ip).getFirstBit() <= (tempValue.to as Ip).getFirstBit() &&
-						(property as Ip).getSecondBit() >= (tempValue.from as Ip).getSecondBit() &&
-						(property as Ip).getSecondBit() <= (tempValue.to as Ip).getSecondBit() &&
-						(property as Ip).getThirdBit() >= (tempValue.from as Ip).getThirdBit() &&
-						(property as Ip).getThirdBit() <= (tempValue.to as Ip).getThirdBit() &&
-						(property as Ip).getFourthBit() >= (tempValue.from as Ip).getFourthBit() &&
-						(property as Ip).getFourthBit() <= (tempValue.to as Ip).getFourthBit()
+						(cellValue as Ip).getFirstBit() >= (tempValue.from as Ip).getFirstBit() &&
+						(cellValue as Ip).getFirstBit() <= (tempValue.to as Ip).getFirstBit() &&
+						(cellValue as Ip).getSecondBit() >= (tempValue.from as Ip).getSecondBit() &&
+						(cellValue as Ip).getSecondBit() <= (tempValue.to as Ip).getSecondBit() &&
+						(cellValue as Ip).getThirdBit() >= (tempValue.from as Ip).getThirdBit() &&
+						(cellValue as Ip).getThirdBit() <= (tempValue.to as Ip).getThirdBit() &&
+						(cellValue as Ip).getFourthBit() >= (tempValue.from as Ip).getFourthBit() &&
+						(cellValue as Ip).getFourthBit() <= (tempValue.to as Ip).getFourthBit()
 					);
 				}
-				return property >= tempValue.from && property <= tempValue.to;
+				return cellValue >= tempValue.from && cellValue <= tempValue.to;
 			}
 		}
 		return false;
