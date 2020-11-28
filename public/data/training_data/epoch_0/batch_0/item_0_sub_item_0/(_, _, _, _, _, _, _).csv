@@ -1,2 +1,0 @@
-index,source.ip,destination.ip,source.port,destination.port,network.protocol,network.transport,Argus.transaction.state,count
-0,*,*,*,*,*,*,*,"[34319, 30472, 28355, 27501, 36655, 50118, 36973, 34107, 27843, 28388, 37889, 43063, 40314, 29791, 28917, 26146, 37296, 39669]"

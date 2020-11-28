@@ -2,6 +2,8 @@ import React from 'react';
 import './ParallelCoords.css';
 import { Dots } from 'react-activity';
 import 'react-activity/dist/react-activity.css';
+
+import { FaArrowDown, FaArrowUp } from 'react-icons/fa';
 import { convertDimension, unpack, convertToWildcard } from '../../helpers/helpers';
 import { SCORE_KEY, SCORE_MIN, SCORE_MAX } from '../../helpers/constants';
 import { CellTypes } from '../../enums/cellTypes.enum';
@@ -142,7 +144,7 @@ class ParallelCoords extends React.Component<ParCoordProps, ParCoordState> {
 					t: 50,
 					pad: 0,
 				},
-				height: 450,
+				height: 350,
 			},
 			config: {
 				responsive: true,
@@ -246,10 +248,53 @@ class ParallelCoords extends React.Component<ParCoordProps, ParCoordState> {
 	// 	this.updateGraph(dimensions);
 	// };
 
+	sortDimension = (dimension: { label: string }): void => {
+		const data = this.state.data;
+
+		data.dimensions = data.dimensions.map((d) => {
+			if (d.label !== dimension.label) return d;
+			return {
+				...d,
+				range: [d.range[1], d.range[0]],
+			};
+		});
+
+		this.setState({ data: data }, () => this.draw());
+	};
+
+	createButtons = (): JSX.Element[] => {
+		const buttons = [];
+
+		if (!this.state.graphLoaded) return buttons;
+
+		Object.keys(this.props.metadata).forEach((m) => {
+			const dimLabel = this.props.metadata[m].label;
+			const dimension = this.state.data.dimensions.find((d) => d.label == dimLabel);
+			let ascendingOrder = true;
+			if (dimension && dimension.range[0] > dimension.range[1]) {
+				ascendingOrder = false;
+			}
+			buttons.push(
+				<button
+					disabled={this.isWildcard(this.activeFilters(), m)}
+					key={m}
+					className="btn btn-primary add-step-btn m-2"
+					onClick={() => this.sortDimension(this.props.metadata[m])}
+				>
+					{ascendingOrder ? <FaArrowUp className="m-2" /> : <FaArrowDown className="m-2" />}
+					{dimLabel}
+				</button>,
+			);
+		});
+
+		return buttons;
+	};
+
 	render(): JSX.Element {
 		return (
-			<div className="coords">
+			<div>
 				<div id="parCoord"></div>
+				<div className="sort-buttons">{this.createButtons()}</div>
 			</div>
 		);
 	}
