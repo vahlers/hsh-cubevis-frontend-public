@@ -1,0 +1,9 @@
+index,source.ip,destination.ip,source.port,destination.port,network.protocol,network.transport,Argus.transaction.state,count_z_score
+0,*,*,0,*,unknown,arp,CON,[10]
+1,*,*,0,*,unknown,arp,INT,[8.09396654698548]
+2,*,*,0,*,unknown,ospf,INT,[10]
+3,*,*,0,*,unknown,ospf,REQ,[10]
+4,*,*,0,*,unknown,?,INT,[10]
+5,*,*,?,*,?,?,?,[10]
+6,*,*,?,*,unknown,udp,INT,[8.35713206738561]
+7,*,*,?,*,dns,udp,INT,[10]

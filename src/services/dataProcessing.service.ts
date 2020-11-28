@@ -1,6 +1,7 @@
 import { CsvRetrievalService, CsvRetrievalServiceFactory } from './csvRetrieval.service';
 import { CellTypes } from '../enums/cellTypes.enum';
 import { SortType } from '../enums/sortType.enum';
+import { DataType } from '../enums/dataType.enum';
 
 import { CubeCellModel } from '../models/cell.model';
 import { DataFilterService } from './dataFilter.service';
@@ -96,16 +97,24 @@ export class DataProcessingService {
 	 * 				.then((v) => console.log(v[CellType.SourceIP]))
 	 * @returns An Promise with an Object Containing Pairs of Dimension and Attributevalues
 	 */
-	public getAvailableValues(dimension: CellTypes[]): Promise<{ [id: string]: (string | number)[] }> {
+	public getAvailableValues(dimension: CellTypes[]): Promise<{ [id: string]: (string | number | Ip)[] }> {
 		return this.csvService.getAnomalyData(dimension).then((anomaly) => {
-			const result: { [id: string]: (string | number)[] } = {};
+			const result: { [id: string]: (string | number | Ip)[] } = {};
 			dimension.forEach((dim) => (result[dim] = []));
 
 			anomaly.forEach((value) => {
 				dimension.forEach((element) => {
 					const val = value[CsvRetrievalService.modelKeyName(element)];
-					if (!result[element].includes(val))
-						result[element].push(value[CsvRetrievalService.modelKeyName(element)]);
+					if (val instanceof Ip) {
+						if (
+							result[element].find((v) => v instanceof Ip && v.toString() === val.toString()) ===
+							undefined
+						) {
+							result[element].push(val);
+						}
+					} else if (!result[element].includes(val)) {
+						result[element].push(val);
+					}
 				});
 			});
 			return result;
@@ -117,30 +126,18 @@ export class DataProcessingService {
 	 * @example //Log label and Type of Dimension SourcePort
 	 * 			const mdata = service.getMetadata();
 	 *			console.log(mdata[CellTypes.SOURCE_PORT].label);
-	 *			//output here is either "nominal", "numeric" or "ip"
+	 *			//output here is the value of DataType enum
 	 *			console.log(mdata[CellTypes.SOURCE_PORT].type);
 	 */
-	public getMetadata(): { [id: string]: { key: string; label: string; type: string } } {
+	public getMetadata(): { [id: string]: { key: string; label: string; type: DataType } } {
 		const result = {};
 		Array.from(Array(CellTypes.CELLTYPE_CNT).keys()).forEach((key) => {
 			result[key] = {
 				key: CsvRetrievalService.modelKeyName(key),
 				label: CsvRetrievalService.dimLabel(key),
-				type: this.typeForClass(CsvRetrievalService.expectedType(key)),
+				type: CsvRetrievalService.typeForDimension(key),
 			};
 		});
 		return result;
-	}
-
-	private typeForClass(c: string): string {
-		switch (c) {
-			default:
-			case 'string':
-				return 'nominal';
-			case 'number':
-				return 'numeric';
-			case 'ip':
-				return 'ip';
-		}
 	}
 }

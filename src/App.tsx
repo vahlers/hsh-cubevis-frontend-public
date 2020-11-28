@@ -7,10 +7,19 @@ import { CellTypes } from './enums/cellTypes.enum';
 import ParallelCoords from './components/parallelCoords/ParallelCoords';
 import Filters from './components/filters/Filters';
 import ChartsView from './components/chartsView/ChartsView';
+import { CubeCellModel } from './models/cell.model';
+import { Filter } from './models/filter.model';
 
 import { USE_OLD_DATA_SCHEMA } from './helpers/constants';
 
-class App extends React.Component<unknown> {
+type AppState = {
+	metadata: any;
+	data: any;
+	filters: Filter[];
+	filteredData: CubeCellModel[];
+};
+
+class App extends React.Component<unknown, AppState> {
 	constructor(props: unknown) {
 		super(props);
 		this.setup();
@@ -33,10 +42,11 @@ class App extends React.Component<unknown> {
 	setup = async () => {
 		await this.getMetadata();
 		await this.getData();
+		this.setState({ filteredData: this.state.data });
 	};
 
 	handleFilterChange = async (filters) => {
-		this.getFilteredData(filters);
+		this.setFilteredData(filters);
 	};
 
 	getMetadata = async () => {
@@ -46,7 +56,7 @@ class App extends React.Component<unknown> {
 		await this.setStateAsync({ metadata });
 	};
 
-	getFilteredData = async (filters) => {
+	setFilteredData = async (filters) => {
 		const dataService = DataProcessingService.instance();
 		const dimensions = filters.map(({ type }) => ({ type }));
 		const filteredData = await dataService.getCuboid(dimensions, filters);
@@ -70,21 +80,21 @@ class App extends React.Component<unknown> {
 
 		await this.setStateAsync({ data });
 	};
-	render() {
+	render(): React.ReactNode {
 		return (
-			<div className="App">
-				<div className="container">
-					<div className="row">
-						<Filters onChange={this.handleFilterChange} />
-						<ChartsView />
-					</div>
-					<div className="row">
-						<ParallelCoords
-							metadata={this.state.metadata}
-							data={this.state.data}
-							filters={this.state.filters}
-						></ParallelCoords>
-					</div>
+			<div className="App grid-container">
+				<div className="filter-container item-container">
+					<Filters onChange={this.handleFilterChange} metadata={this.state.metadata} />
+				</div>
+				<div className="chart-container item-container">
+					<ChartsView data={this.state.filteredData} filters={this.state.filters} />
+				</div>
+				<div className="parallel-container item-container">
+					<ParallelCoords
+						metadata={this.state.metadata}
+						data={this.state.data}
+						filters={this.state.filters}
+					/>
 				</div>
 			</div>
 		);

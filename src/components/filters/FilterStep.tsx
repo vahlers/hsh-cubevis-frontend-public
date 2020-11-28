@@ -4,74 +4,35 @@ import './FilterStep.css';
 import { FaAngleRight, FaRegEye } from 'react-icons/fa';
 import { ImCross } from 'react-icons/im';
 import Select, { ValueType } from 'react-select';
+import { Filter } from '../../models/filter.model';
+import { CellTypes } from '../../enums/cellTypes.enum';
+import { Dimension, DimensionValue, OptionType } from './Filters';
 
 export interface FilterStepProps {
-	onChange: (event: React.ChangeEvent<HTMLSelectElement>) => void;
-	onDelete: (event: number) => void;
 	id: number;
+	dimensions: Dimension[];
+	values: OptionType[];
+	onChange: (id: number, event: Filter) => void;
+	onDelete: (event: number) => void;
+	metadata: { [p: string]: { key: string; label: string; type: string } };
 }
 
-type StepState = {
-	dimension: string;
-	value: string;
-};
-
-type OptionType = {
-	value: string;
-	label: string;
-};
-
-const dimensions: OptionType[] = [
-	{
-		value: 'source_ip',
-		label: 'Source IP',
-	},
-	{
-		value: 'source_port',
-		label: 'Source Port',
-	},
-	{
-		value: 'destination_ip',
-		label: 'Destination IP',
-	},
-	{
-		value: 'destination_port',
-		label: 'Destination Port',
-	},
-	{
-		value: 'network_protocol',
-		label: 'Network Protocol',
-	},
-	{
-		value: 'network_transport',
-		label: 'Network Transport',
-	},
-	{
-		value: 'Argus_transaction_state',
-		label: 'Argus Transaction State',
-	},
-];
-const dim_values: OptionType[] = [
-	{
-		value: 'a',
-		label: 'a',
-	},
-	{
-		value: 'b',
-		label: 'b',
-	},
-];
-
-export class FilterStep extends Component<FilterStepProps, StepState> {
+export class FilterStep extends Component<FilterStepProps, Filter> {
 	constructor(props: FilterStepProps) {
 		super(props);
+
 		this.state = {
-			dimension: 'source_ip',
-			value: '*',
+			type: this.props.dimensions[0].value,
+			value: null,
 		};
+
+		// trigger the onChange to register the default selection as a filter
+		this.props.onChange(this.props.id, this.state);
+
 		this.changeDimension = this.changeDimension.bind(this);
 		this.changeValue = this.changeValue.bind(this);
 		this.notifyDelete = this.notifyDelete.bind(this);
+		this.getDims = this.getDims.bind(this);
 	}
 
 	// Unused Parameter 'event', Jetbrains IDE doesn't recognize standard underscore notation
@@ -81,24 +42,49 @@ export class FilterStep extends Component<FilterStepProps, StepState> {
 	}
 
 	changeDimension(event: React.ChangeEvent<HTMLSelectElement>): void {
-		this.setState({ dimension: event.currentTarget.value });
-		this.props.onChange(event);
+		// first set the state by casting the event value to an enum
+
+		const newType: CellTypes = parseInt(event.currentTarget.value);
+
+		this.setState({ type: newType, value: null });
+
+		// then publish the state to the onChange
+		this.props.onChange(this.props.id, { type: newType, value: null });
 	}
 
-	changeValue(selected?: ValueType<OptionType> | OptionType[] | null): void {
-		const value = (selected as OptionType).value;
-		if (value === null || value === undefined) {
-			this.setState({ value: '*' });
-		} else if (Array.isArray(value)) {
+	changeValue(selected?: ValueType<DimensionValue> | DimensionValue[] | null): void {
+		if (selected === null || selected === undefined) {
+			this.setState({ value: null });
+			return;
+		}
+		const value = (selected as DimensionValue).value;
+		if (Array.isArray(value)) {
 			// we don't allow multi selection, so this should never happen
 			throw new Error('Unexpected type passed to ReactSelect onChange handler');
 		} else {
 			this.setState({ value: value });
 		}
+		this.props.onChange(this.props.id, { type: this.state.type, value: value });
+	}
+
+	getDims(): OptionType[] {
+		const options = this.props.dimensions;
+		const selfOption = this.props.metadata[this.state.type];
+
+		// If option for current CellType is already present just return
+		for (let i = 0; i < options.length; i++) {
+			if (options[i].value === this.state.type) {
+				return options;
+			}
+		}
+		// Otherwise insert our option at index: this.state.type
+		options.splice(this.state.type, 0, { label: selfOption.label, value: this.state.type });
+		return options;
 	}
 
 	render(): React.ReactNode {
 		return (
+			//TODO workaround if only letting the user select valid dimensions is impossible: bg={this.props.invalidState}
 			<Card id={this.props.id.toString()} className="overflow-visible">
 				<Card.Header className="filter-header">
 					<Row>
@@ -109,9 +95,9 @@ export class FilterStep extends Component<FilterStepProps, StepState> {
 						</Col>
 						<Col xs={4}>
 							<Form>
-								<Form.Control as="select">
-									{dimensions.map((dim) => (
-										<option key={dim.value} value={dim.value}>
+								<Form.Control as="select" onChange={this.changeDimension}>
+									{this.getDims().map((dim) => (
+										<option key={this.props.id + '.' + dim.value} value={dim.value}>
 											{dim.label}
 										</option>
 									))}
@@ -119,7 +105,9 @@ export class FilterStep extends Component<FilterStepProps, StepState> {
 							</Form>
 						</Col>
 						<Col xs={3}>
-							<h5 className="text-center filter-text">{this.state.value}</h5>
+							<h5 className="text-center filter-text">
+								{this.state.value !== null ? this.state.value : '*'}
+							</h5>
 						</Col>
 						<Col xs={3}>
 							<Button variant="link">
@@ -131,9 +119,15 @@ export class FilterStep extends Component<FilterStepProps, StepState> {
 						</Col>
 					</Row>
 				</Card.Header>
-				<Accordion.Collapse eventKey={'' + this.props.id}>
+				<Accordion.Collapse eventKey={this.props.id.toString()}>
 					<Card.Body className="filter-body">
-						<Select options={dim_values} isSearchable={true} onChange={this.changeValue} />
+						<Select
+							options={this.props.values}
+							isSearchable={true}
+							isClearable={true}
+							onChange={this.changeValue}
+							placeholder={'*'}
+						/>
 					</Card.Body>
 				</Accordion.Collapse>
 			</Card>

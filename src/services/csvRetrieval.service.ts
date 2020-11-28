@@ -1,4 +1,5 @@
 import { CellTypes } from '../enums/cellTypes.enum';
+import { DataType } from '../enums/dataType.enum';
 import { CubeCellModel } from '../models/cell.model';
 import { csv } from 'd3';
 import { Ip } from '../models/ip.modell';
@@ -21,6 +22,7 @@ export class CsvRetrievalServiceFactory {
 
 export abstract class CsvRetrievalService {
 	private static groupedSymbol = '_';
+
 	protected static dimName(dim: CellTypes): string {
 		switch (dim) {
 			case CellTypes.SOURCE_IP:
@@ -37,6 +39,10 @@ export abstract class CsvRetrievalService {
 				return 'network.transport';
 			case CellTypes.ARGUS_TRANSACTION_STATE:
 				return 'Argus.transaction.state';
+			default: {
+				console.error('Invalid CellType as argument.');
+				return '';
+			}
 		}
 	}
 	public static modelKeyName(dim: CellTypes): string {
@@ -59,21 +65,42 @@ export abstract class CsvRetrievalService {
 	}
 
 	public static expectedType(dim: CellTypes): string {
-		switch (dim) {
+		const dataType = CsvRetrievalService.typeForDimension(dim);
+		switch (dataType) {
+			case DataType.IP:
+				return 'ip';
+			case DataType.NUMERIC:
+			case DataType.ORDINAL:
+				return 'number';
+			case DataType.NOMINAL:
+				return 'string';
+			default: {
+				console.error('Invalid CellType as argument.');
+				return 'string';
+			}
+		}
+	}
+
+	public static typeForDimension(ct: CellTypes): DataType {
+		switch (ct) {
 			case CellTypes.SOURCE_IP:
-				return 'ip';
+				return DataType.IP;
 			case CellTypes.DESTINATION_IP:
-				return 'ip';
+				return DataType.IP;
 			case CellTypes.SOURCE_PORT:
-				return 'number';
+				return DataType.ORDINAL;
 			case CellTypes.DESTINATION_PORT:
-				return 'number';
+				return DataType.ORDINAL;
 			case CellTypes.NETWORK_PROTOCOL:
-				return 'string';
+				return DataType.NOMINAL;
 			case CellTypes.NETWORK_TRANSPORT:
-				return 'string';
+				return DataType.NOMINAL;
 			case CellTypes.ARGUS_TRANSACTION_STATE:
-				return 'string';
+				return DataType.NOMINAL;
+			default: {
+				console.error('Invalid CellType as argument.');
+				return DataType.NOMINAL;
+			}
 		}
 	}
 
@@ -93,6 +120,10 @@ export abstract class CsvRetrievalService {
 				return 'Network Transport';
 			case CellTypes.ARGUS_TRANSACTION_STATE:
 				return 'Argus Transaction State';
+			default: {
+				console.error('Invalid CellType as argument.');
+				return '';
+			}
 		}
 	}
 

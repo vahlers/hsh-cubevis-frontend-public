@@ -1,0 +1,7 @@
+index,source.ip,destination.ip,source.port,destination.port,network.protocol,network.transport,Argus.transaction.state,count
+0,*,*,*,*,*,*,CON,[8070]
+1,*,*,*,*,*,*,ECO,[20]
+2,*,*,*,*,*,*,ECR,[2]
+3,*,*,*,*,*,*,FIN,[22336]
+4,*,*,*,*,*,*,INT,[15169]
+5,*,*,*,*,*,*,REQ,[897]

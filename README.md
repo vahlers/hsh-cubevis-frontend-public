@@ -1,5 +1,13 @@
 # hsh-cubevis-frontend
+
 HsH Master Project "CubeVis" Frontend.
+
+## Running the stable application
+
+To run the application in a stable way, you should **not** use `npm start` as it includes hot module reloading etc. This is more appropiate for developing purposes. *Instead*, you can use one of the two scripts provided under [/scripts](/scripts). `run-container.[sh|bat]` downloads the latest version from the GitHub Package Registry. `build-and-run-local.[sh|bat]` builds the container on your machine and then runs it. This will take a lot of time (5-10 min) and memory (2-4 GB). 
+
+**If possible, use `run-container.[sh|bat]`.**
+Hint: You need to sign in into the Docker Registry from GitHub. [Click this link for a tutorial.](https://docs.github.com/en/free-pro-team@latest/packages/using-github-packages-with-your-projects-ecosystem/configuring-docker-for-use-with-github-packages).
 
 ## Getting Started with Create React App
 
@@ -21,6 +29,10 @@ You will also see any lint errors in the console.
 
 Launches the test runner in the interactive watch mode.\
 See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+
+### `npm run lint`
+
+Runs ESLint to check for errors.
 
 ### `npm run build`
 

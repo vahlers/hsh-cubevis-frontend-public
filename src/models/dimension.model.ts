@@ -9,11 +9,10 @@ interface Dimension {
 interface NominalDimension extends Dimension {
 	tickvals: Array<number>;
 	ticktext: Array<string>;
+	map: Record<string, number>;
 }
 
-/** Currently, nominal dimensions and numeric dimensions have the same format.
- * This is a subject to change, so it makes sense to always use the proper interface
- * type right now. */
+type OrdinalDimension = NominalDimension;
 type NumericDimension = Dimension;
 
-export type { Dimension, NominalDimension, NumericDimension };
+export type { Dimension, NominalDimension, NumericDimension, OrdinalDimension };
