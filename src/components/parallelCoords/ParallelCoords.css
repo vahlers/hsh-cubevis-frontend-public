@@ -2,8 +2,20 @@
 	margin-top: 16px;
 }
 
-#parCoord {
+#par-coord {
 	margin: 0 auto 0 auto;
+}
+
+.hide-plot {
+	display: none;
+}
+
+.no-match {
+  padding: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
 }
 
 .coords-container {

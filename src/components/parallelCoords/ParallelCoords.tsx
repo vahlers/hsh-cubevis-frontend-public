@@ -3,8 +3,10 @@ import './ParallelCoords.css';
 import { Dots } from 'react-activity';
 import 'react-activity/dist/react-activity.css';
 
+import { ParallelCoordsUtils } from './ParallelCoordsUtils';
+import { FilterOutOfRangeError } from '../../errors/FilterOutOfRangeError';
 import { FaArrowDown, FaArrowUp } from 'react-icons/fa';
-import { convertDimension, unpack, convertToWildcard } from '../../helpers/helpers';
+
 import { SCORE_KEY, SCORE_MIN, SCORE_MAX } from '../../helpers/constants';
 import { CellTypes } from '../../enums/cellTypes.enum';
 import { Filter } from '../../models/filter.model';
@@ -48,6 +50,9 @@ type ParCoordState = {
 	};
 	graphIsLoading: boolean;
 	graphLoaded: boolean;
+	filtersMatch: boolean;
+	plotContainerName: string;
+	errorMessage: string;
 };
 
 class ParallelCoords extends React.Component<ParCoordProps, ParCoordState> {
@@ -100,25 +105,33 @@ class ParallelCoords extends React.Component<ParCoordProps, ParCoordState> {
 		const rows = this.props.data;
 		const data = this.state.data;
 		data.dimensions = [];
-		data.line.color = unpack(rows, SCORE_KEY);
+		data.line.color = ParallelCoordsUtils.unpack(rows, SCORE_KEY);
 
 		const metaData = this.props.metadata;
 
 		const activeFilters = this.activeFilters();
-		Object.keys(metaData).forEach((dim) => {
-			const filter = this.getFilterValues(dim);
-			const dimension = this.isWildcard(activeFilters, dim)
-				? convertToWildcard(rows, metaData[dim].key, metaData[dim].label)
-				: convertDimension(rows, metaData[dim], filter);
-			data.dimensions.push(dimension);
-		});
 
-		this.setState({ data: data }, () => this.draw());
+		try {
+			Object.keys(metaData).forEach((dim) => {
+				const filter = this.getFilterValues(dim);
+				const dimension = this.isWildcard(activeFilters, dim)
+					? ParallelCoordsUtils.convertToWildcard(rows, metaData[dim].label)
+					: ParallelCoordsUtils.convertDimension(rows, metaData[dim], filter);
+				data.dimensions.push(dimension);
+			});
+
+			this.setState({ data: data, filtersMatch: true }, () => this.draw());
+		} catch (e) {
+			if (e instanceof FilterOutOfRangeError)
+				this.setState({ filtersMatch: false, graphLoaded: false, errorMessage: e.message });
+			console.error(e.message);
+		}
 	};
 
 	constructor(props: ParCoordProps) {
 		super(props);
 		this.state = {
+			plotContainerName: 'par-coord',
 			data: {
 				type: 'parcoords',
 				line: {
@@ -151,6 +164,8 @@ class ParallelCoords extends React.Component<ParCoordProps, ParCoordState> {
 			},
 			graphIsLoading: false,
 			graphLoaded: false,
+			filtersMatch: true,
+			errorMessage: '',
 		};
 	}
 
@@ -182,71 +197,16 @@ class ParallelCoords extends React.Component<ParCoordProps, ParCoordState> {
 	};
 
 	draw = (): void => {
+		if (!this.state.filtersMatch) return;
 		if (this.state.graphLoaded) {
 			console.log('Redrawing component ...');
-			Plotly.redraw(document.getElementById('parCoord'), [this.state.data], 0);
+			Plotly.redraw(document.getElementById(this.state.plotContainerName), [this.state.data], 0);
 		} else {
 			console.log('Drawing component ...');
-			Plotly.newPlot('parCoord', [this.state.data], this.state.layout, this.state.config);
+			Plotly.newPlot(this.state.plotContainerName, [this.state.data], this.state.layout, this.state.config);
 			this.setState({ graphLoaded: true });
 		}
 	};
-
-	// /*** BUTTON HANDLERS ***/
-	// sortDimensions = (event) => {
-	// 	let dimensions = this.state.data.dimensions;
-	// 	// sort dimension positions by their name (desc)
-	// 	dimensions = dimensions.sort((a, b) => (a.label < b.label ? 1 : -1));
-	// 	this.updateGraph(dimensions);
-	// };
-	// updateGraph = (dimensions) => {
-	// 	const data = this.state.data;
-	// 	data.dimensions = dimensions;
-
-	// 	this.setState({ data: data }, () => {
-	// 		const graphDiv = document.getElementById('parCoord');
-	// 		Plotly.redraw(graphDiv, [this.state.data], 0);
-	// 	});
-	// };
-	// setPortLimit = () => {
-	// 	let dimensions = this.state.data.dimensions;
-	// 	// set source port upper bound to specified integer
-	// 	dimensions = dimensions.map((d) => ({
-	// 		...d,
-	// 		constraintrange:
-	// 			d.label === 'source.port' ? [this.state.minSourcePort, this.state.maxSourcePort] : d.constraintrange,
-	// 	}));
-	// 	this.updateGraph(dimensions);
-	// };
-	// sortAxis = () => {
-	// 	let dimensions = this.state.data.dimensions;
-	// 	// sort every axis ascending internally
-	// 	dimensions = dimensions.map((d) => {
-	// 		const { ticktext, tickvals } = d;
-	// 		if (!ticktext || !tickvals) return d;
-	// 		let objects = ticktext.map((text, idx) => ({
-	// 			text: text,
-	// 			val: tickvals[idx],
-	// 		}));
-	// 		objects = objects.sort((a, b) => (a.text > b.text ? -1 : 1));
-	// 		const values = d.values.map((v) => objects.findIndex((o) => o.val === v));
-	// 		return {
-	// 			...d,
-	// 			ticktext: objects.map((o) => o.text),
-	// 			values: values,
-	// 		};
-	// 	});
-	// 	this.updateGraph(dimensions);
-	// };
-	// showIPs = () => {
-	// 	let dimensions = this.state.data.dimensions;
-	// 	dimensions = dimensions.map((d) => ({
-	// 		...d,
-	// 		visible: this.state.ipsVisible && d.label.includes('ip') ? false : true,
-	// 	}));
-	// 	this.setState({ ipsVisible: !this.state.ipsVisible });
-	// 	this.updateGraph(dimensions);
-	// };
 
 	sortDimension = (dimension: { label: string }): void => {
 		const data = this.state.data;
@@ -292,9 +252,10 @@ class ParallelCoords extends React.Component<ParCoordProps, ParCoordState> {
 
 	render(): JSX.Element {
 		return (
-			<div>
-				<div id="parCoord"></div>
-				<div className="sort-buttons">{this.createButtons()}</div>
+			<div className="coords">
+				<div id={this.state.plotContainerName} className={this.state.filtersMatch ? '' : 'hide-plot'}></div>
+				<div className={this.state.filtersMatch ? 'sort-buttons' : 'hide-plot'}>{this.createButtons()}</div>
+				{this.state.filtersMatch ? null : <h1 className="no-match">{this.state.errorMessage}</h1>}
 			</div>
 		);
 	}
