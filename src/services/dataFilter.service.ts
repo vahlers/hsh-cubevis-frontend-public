@@ -59,7 +59,8 @@ export class DataFilterService {
 		filterValue: number | string | RangeFilter<number | string | Ip> | Ip,
 		cellValue: number | string | Ip,
 	): boolean {
-		if (filterValue !== undefined || filterValue !== null) {
+		// only filter if the value isn't empty
+		if (filterValue !== undefined && filterValue !== null && filterValue !== '') {
 			if (filterValue instanceof Ip) {
 				return cellValue.toString() === filterValue.toString();
 			} else if (typeof filterValue === 'number' || typeof filterValue === 'string') {
@@ -81,7 +82,8 @@ export class DataFilterService {
 				return cellValue >= tempValue.from && cellValue <= tempValue.to;
 			}
 		}
-		return false;
+		// If there are no values, nothing will get filtered
+		return true;
 	}
 
 	private static sortFunction(sorting: SortType, a: CubeCellModel, b: CubeCellModel, type: CellTypes) {
