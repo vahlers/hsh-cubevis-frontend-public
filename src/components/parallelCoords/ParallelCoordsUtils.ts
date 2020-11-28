@@ -4,6 +4,7 @@ import { DataRecord } from '../../models/datarecord.model';
 import { DataType } from '../../enums/dataType.enum';
 import { Filter } from '../../models/filter.model';
 import { FilterOutOfRangeError } from '../../errors/FilterOutOfRangeError';
+import { USE_OLD_DATA_SCHEMA } from '../../helpers/constants';
 
 export class ParallelCoordsUtils {
 	static unpack = (rows: Array<DataRecord>, key: string): Array<string | number | Ip> => {
@@ -21,6 +22,8 @@ export class ParallelCoordsUtils {
 			case DataType.IP:
 				return ParallelCoordsUtils._convertToIp(rows, dimension.key, dimension.label, filter);
 			case DataType.ORDINAL:
+				if (USE_OLD_DATA_SCHEMA)
+					return ParallelCoordsUtils._convertToNumeric(rows, dimension.key, dimension.label, filter);
 				return ParallelCoordsUtils._convertToOrdinal(rows, dimension.key, dimension.label, filter);
 			case DataType.NUMERIC:
 				return ParallelCoordsUtils._convertToNumeric(rows, dimension.key, dimension.label, filter);
