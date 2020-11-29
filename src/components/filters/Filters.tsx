@@ -63,7 +63,6 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 		};
 
 		this.addFilter = this.addFilter.bind(this);
-		this.applyFilter = this.applyFilter.bind(this);
 		this.deleteFilter = this.deleteFilter.bind(this);
 		this.handleChange = this.handleChange.bind(this);
 		this.getAvailableDimensions = this.getAvailableDimensions.bind(this);
@@ -84,10 +83,12 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 		const tmp_filterSteps: FilterStep[] = this.state.filterSteps;
 		tmp_filterSteps.push(new FilterStep(props));
 
-		this.setState({
+		await this.setState({
 			filterSteps: tmp_filterSteps,
 			currentIndex: this.state.currentIndex + 1,
 		});
+
+		this.props.onChange(this.state.filters);
 	}
 
 	componentDidUpdate(prevProps: FilterProps): void {
@@ -97,15 +98,24 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 		}
 	}
 
-	deleteFilter(id: number): void {
-		const newFilters = this.state.filterSteps.filter(function (step) {
+	async deleteFilter(id: number): Promise<void> {
+		const tmp_filterSteps = this.state.filterSteps.filter(function (step) {
 			return step.props.id !== id;
 		});
 
-		this.setState({
-			filterSteps: newFilters,
+		const tmp_dimensionAttributes = this.state.filterStep_dimensionAttributes;
+		delete tmp_dimensionAttributes[id];
+
+		const tmp_filters = this.state.filters;
+		tmp_filters.splice(id, 1);
+
+		await this.setState({
+			filters: tmp_filters,
+			filterSteps: tmp_filterSteps,
+			filterStep_dimensionAttributes: tmp_dimensionAttributes,
 			// availableDimensions: this.getAvailableDimensions(),
 		});
+		this.props.onChange(this.state.filters);
 	}
 
 	async handleChange(id: number, updatedFilter: Filter): Promise<void> {
@@ -122,6 +132,8 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 			filterStep_dimensionAttributes: tmp_values,
 			availableDimensions: this.props.metadata === null ? [] : this.getAvailableDimensions(),
 		});
+
+		this.props.onChange(this.state.filters);
 	}
 
 	getAvailableDimensions(): Dimension[] {
@@ -133,10 +145,6 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 			availableDimensions.push({ label: this.props.metadata[curCellType].label, value: curCellType });
 		}
 		return availableDimensions;
-	}
-
-	applyFilter(): void {
-		this.props.onChange(this.state.filters);
 	}
 
 	// getAvailableDimensions(): Dimension[] {
@@ -186,10 +194,6 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 					disabled={this.state.availableDimensions.length <= 0}
 				>
 					Add Step
-				</button>
-
-				<button onClick={this.applyFilter} type="submit" className="btn btn-primary add-step-btn m-2">
-					Apply Filters
 				</button>
 			</div>
 		);
