@@ -63,6 +63,7 @@ class ChartsView extends React.Component<ChartProps, ChartState> {
 
 		const arrays = this.props.data;
 		const data = this.state.data;
+		const layout = this.state.layout;
 		const metaData = this.props.metadata;
 
 		data.x = [];
@@ -73,8 +74,9 @@ class ChartsView extends React.Component<ChartProps, ChartState> {
 		console.log('dataToShow', this.props.data);
 		if (this.props.filters.length > 0 && this.props.data.length > 0) {
 			showGraph = true;
+			const lastFilterType = metaData[this.props.filters[this.props.filters.length - 1].type];
+			layout.xaxis.title = lastFilterType.label;
 			for (let i = 0; i < arrays.length; i++) {
-				const lastFilterType = metaData[this.props.filters[this.props.filters.length - 1].type];
 				data.x.push(arrays[i][lastFilterType.key].toString());
 				data.y.push(arrays[i]['anomalyScore']);
 				data.marker.color.push(this.props.data[i]['anomalyScore']);
@@ -115,7 +117,7 @@ class ChartsView extends React.Component<ChartProps, ChartState> {
 				height: '380',
 				autosize: true,
 				xaxis: {
-					title: 'cells',
+					title: 'dimension',
 				},
 			},
 			config: {
@@ -158,14 +160,14 @@ class ChartsView extends React.Component<ChartProps, ChartState> {
 				const icon = document.createElement('div');
 				const head = document.createElement('h5');
 				const body = document.createElement('div');
-				icon.className = 'glyphicon glyphicon-cloud';
 				head.innerHTML = 'No Data';
 				body.innerHTML =
 					'There is no date for your current Selection. Please Chose another dimension or filtervalue';
 				message.appendChild(icon);
 				message.appendChild(head);
 				message.appendChild(body);
-				document.getElementById('barChart').appendChild(message);
+				const barChart = document.getElementById('barChart');
+				barChart.appendChild(message);
 				this.setState({ graphLoaded: false });
 			}
 		}
