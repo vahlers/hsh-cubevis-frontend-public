@@ -28,6 +28,7 @@ type FilterState = {
 	// This way the damn React-Select element might update if we change the dimensions
 	filterSteps: FilterStep[];
 	filterStep_dimensionAttributes: { [step_id: number]: OptionType[] };
+	filterDisabled: boolean[];
 	currentIndex: number;
 	filters: Filter[];
 	availableDimensions: Dimension[];
@@ -57,37 +58,46 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 		this.state = {
 			filterSteps: [],
 			filterStep_dimensionAttributes: [],
+			filterDisabled: [],
 			currentIndex: 0,
 			filters: [],
 			availableDimensions: [],
 		};
 
 		this.addFilter = this.addFilter.bind(this);
-		this.applyFilter = this.applyFilter.bind(this);
 		this.deleteFilter = this.deleteFilter.bind(this);
 		this.handleChange = this.handleChange.bind(this);
+		this.handleEyeClick = this.handleEyeClick.bind(this);
 		this.getAvailableDimensions = this.getAvailableDimensions.bind(this);
 	}
 
 	// Unused Parameter 'event', Jetbrains IDE doesn't recognize standard underscore notation
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	async addFilter(_event: React.MouseEvent<HTMLButtonElement, MouseEvent>): Promise<void> {
+		const tmp_disabled = this.state.filterDisabled;
+		tmp_disabled[this.state.currentIndex] = false;
+		this.setState({ filterDisabled: tmp_disabled });
+
 		const props: FilterStepProps = {
 			id: this.state.currentIndex,
 			dimensions: this.state.availableDimensions,
 			values: this.state.filterStep_dimensionAttributes[this.state.currentIndex],
 			onDelete: this.deleteFilter,
+			onEyeClick: this.handleEyeClick,
 			onChange: this.handleChange,
 			metadata: this.props.metadata,
+			disabled: false,
 		};
 
 		const tmp_filterSteps: FilterStep[] = this.state.filterSteps;
 		tmp_filterSteps.push(new FilterStep(props));
 
-		this.setState({
+		await this.setState({
 			filterSteps: tmp_filterSteps,
 			currentIndex: this.state.currentIndex + 1,
 		});
+
+		this.props.onChange(this.state.filters);
 	}
 
 	componentDidUpdate(prevProps: FilterProps): void {
@@ -97,15 +107,43 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 		}
 	}
 
-	deleteFilter(id: number): void {
-		const newFilters = this.state.filterSteps.filter(function (step) {
+	async deleteFilter(id: number): Promise<void> {
+		const tmp_filterSteps = this.state.filterSteps.filter(function (step) {
 			return step.props.id !== id;
 		});
 
-		this.setState({
-			filterSteps: newFilters,
+		const tmp_dimensionAttributes = this.state.filterStep_dimensionAttributes;
+		delete tmp_dimensionAttributes[id];
+
+		const tmp_filters = this.state.filters;
+		tmp_filters.splice(id, 1);
+
+		await this.setState({
+			filters: tmp_filters,
+			filterSteps: tmp_filterSteps,
+			filterStep_dimensionAttributes: tmp_dimensionAttributes,
 			// availableDimensions: this.getAvailableDimensions(),
 		});
+		this.props.onChange(this.state.filters);
+	}
+
+	async handleEyeClick(id: number): Promise<void> {
+		console.log('Filter Steps: ', this.state.filterSteps);
+		const tmp_disabled: boolean[] = [];
+		const tmp_filters: Filter[] = [];
+
+		for (let i = 0; i < this.state.filterSteps.length; i++) {
+			const key = this.state.filterSteps[i].props.id;
+			tmp_disabled[key] = key > id;
+			if (key <= id) {
+				tmp_filters.push(this.state.filters[key]);
+			}
+		}
+
+		await this.setState({
+			filterDisabled: tmp_disabled,
+		});
+		this.props.onChange(tmp_filters);
 	}
 
 	async handleChange(id: number, updatedFilter: Filter): Promise<void> {
@@ -122,6 +160,8 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 			filterStep_dimensionAttributes: tmp_values,
 			availableDimensions: this.props.metadata === null ? [] : this.getAvailableDimensions(),
 		});
+
+		this.props.onChange(this.state.filters);
 	}
 
 	getAvailableDimensions(): Dimension[] {
@@ -133,10 +173,6 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 			availableDimensions.push({ label: this.props.metadata[curCellType].label, value: curCellType });
 		}
 		return availableDimensions;
-	}
-
-	applyFilter(): void {
-		this.props.onChange(this.state.filters);
 	}
 
 	// getAvailableDimensions(): Dimension[] {
@@ -173,9 +209,11 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 							key={filter.props.id}
 							onChange={filter.props.onChange}
 							onDelete={filter.props.onDelete}
+							onEyeClick={filter.props.onEyeClick}
 							dimensions={filter.props.dimensions}
 							values={this.state.filterStep_dimensionAttributes[filter.props.id]}
 							metadata={filter.props.metadata}
+							disabled={this.state.filterDisabled[filter.props.id]}
 						/>
 					))}
 				</Accordion>
@@ -186,10 +224,6 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 					disabled={this.state.availableDimensions.length <= 0}
 				>
 					Add Step
-				</button>
-
-				<button onClick={this.applyFilter} type="submit" className="btn btn-primary add-step-btn m-2">
-					Apply Filters
 				</button>
 			</div>
 		);

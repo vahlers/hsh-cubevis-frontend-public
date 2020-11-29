@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { CubeCellModel } from '../../models/cell.model';
 import { Filter } from '../../models/filter.model';
+import { SCORE_KEY, SCORE_MIN, SCORE_MAX } from '../../helpers/constants';
 import './ChartsView.css';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -9,6 +10,7 @@ const Plotly = require('plotly.js-dist');
 type ChartProps = {
 	data: CubeCellModel[];
 	filters: Filter[];
+	metadata: { [id: string]: { key: string; label: string; type: string } };
 };
 
 type ChartState = {
@@ -18,10 +20,11 @@ type ChartState = {
 		x: any[];
 		y: any[];
 		marker: {
-			color: any[];
+			color: any;
 			colorscale: Array<Array<string>>;
-			cauto: true;
-			showscale: true;
+			cmin: number;
+			cmax: number;
+			showscale: boolean;
 		};
 	};
 
@@ -39,8 +42,12 @@ type ChartState = {
 			title: string;
 		};
 	};
+	config: {
+		responsive: boolean;
+	};
 	graphIsLoading: boolean;
 	graphLoaded: boolean;
+	showGraph: boolean;
 };
 
 class ChartsView extends React.Component<ChartProps, ChartState> {
@@ -48,30 +55,35 @@ class ChartsView extends React.Component<ChartProps, ChartState> {
 		// If something changed
 		if (prevProps.filters !== this.props.filters || prevProps.data !== this.props.data) {
 			this.preProcess();
-		} else {
-			if (this.state.graphLoaded) {
-				console.log('Redrawing component ...');
-				Plotly.redraw(document.getElementById('barChart'), [this.state.data], 0);
-			}
 		}
 	}
 
 	preProcess = (): void => {
 		if (this.props.data === null) return;
-		console.log(this.props.data);
+
 		const arrays = this.props.data;
 		const data = this.state.data;
+		const layout = this.state.layout;
+		const metaData = this.props.metadata;
+
 		data.x = [];
 		data.y = [];
 		data.marker.color = [];
-
-		for (let i = 0; i < arrays.length; i++) {
-			data.x.push(i);
-			data.y.push(arrays[i]['anomalyScore']);
-			data.marker.color.push(this.props.data[i]['anomalyScore']);
+		let showGraph = false;
+		console.log('filters', this.props.filters);
+		console.log('dataToShow', this.props.data);
+		if (this.props.filters.length > 0 && this.props.data.length > 0) {
+			showGraph = true;
+			const lastFilterType = metaData[this.props.filters[this.props.filters.length - 1].type];
+			layout.xaxis.title = lastFilterType.label;
+			for (let i = 0; i < arrays.length; i++) {
+				data.x.push(arrays[i][lastFilterType.key].toString());
+				data.y.push(arrays[i]['anomalyScore']);
+				data.marker.color.push(this.props.data[i]['anomalyScore']);
+			}
 		}
 
-		this.setState({ data: data }, () => this.draw());
+		this.setState({ data: data, showGraph: showGraph }, () => this.draw());
 	};
 
 	constructor(props: ChartProps) {
@@ -84,13 +96,14 @@ class ChartsView extends React.Component<ChartProps, ChartState> {
 				y: [0, 10],
 				marker: {
 					color: [],
-					cauto: true,
+					showscale: true,
 					colorscale: [
 						['0.0', '#00ff00'],
 						['0.33', '#FBFF31'],
 						['1.0', '#ff0000'],
 					],
-					showscale: true,
+					cmin: SCORE_MIN,
+					cmax: SCORE_MAX,
 				},
 			},
 			layout: {
@@ -104,9 +117,13 @@ class ChartsView extends React.Component<ChartProps, ChartState> {
 				height: '380',
 				autosize: true,
 				xaxis: {
-					title: 'cells',
+					title: 'dimension',
 				},
 			},
+			config: {
+				responsive: true,
+			},
+			showGraph: false,
 			graphIsLoading: false,
 			graphLoaded: false,
 		};
@@ -130,15 +147,29 @@ class ChartsView extends React.Component<ChartProps, ChartState> {
 	};
 
 	draw = (): void => {
-		if (this.state.graphLoaded) {
-			console.log('Redrawing component ...');
-			console.log(this.state.data);
-			Plotly.redraw(document.getElementById('barChart'), [this.state.data], 0);
-		} else {
+		console.log(this.state.showGraph);
+		if (this.state.showGraph) {
 			console.log('Drawing component ...');
-			console.log(this.state.data);
-			Plotly.newPlot('barChart', [this.state.data], this.state.layout);
+			Plotly.react('barChart', [this.state.data], this.state.layout, this.state.config);
 			this.setState({ graphLoaded: true });
+		} else {
+			if (this.state.graphLoaded) {
+				Plotly.purge('barChart');
+				const message = document.createElement('div');
+				message.setAttribute('style', 'text-align: center; margin-top: 2em;');
+				const icon = document.createElement('div');
+				const head = document.createElement('h5');
+				const body = document.createElement('div');
+				head.innerHTML = 'No Data';
+				body.innerHTML =
+					'There is no date for your current Selection. Please Chose another dimension or filtervalue';
+				message.appendChild(icon);
+				message.appendChild(head);
+				message.appendChild(body);
+				const barChart = document.getElementById('barChart');
+				barChart.appendChild(message);
+				this.setState({ graphLoaded: false });
+			}
 		}
 	};
 
