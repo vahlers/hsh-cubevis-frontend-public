@@ -44,7 +44,7 @@ class App extends React.Component<unknown, AppState> {
 	};
 
 	handleFilterChange = async (filters) => {
-		this.setFilteredData(filters);
+		await this.setFilteredData(filters);
 	};
 
 	getMetadata = async () => {
@@ -61,7 +61,7 @@ class App extends React.Component<unknown, AppState> {
 		const data = await dataService.getCuboid(dimensions);
 		// caution: if you call setState once for each of the props, all children will rerender multiple times
 		// this is probably not a desired behavior and costs performance
-		await this.setStateAsync({ filteredData, data, filters });
+		await this.setStateAsync({ filteredData, data, filters: [...filters] });
 	};
 
 	getData = async () => {

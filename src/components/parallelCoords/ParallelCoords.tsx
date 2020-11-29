@@ -77,6 +77,7 @@ class ParallelCoords extends React.Component<ParCoordProps, ParCoordState> {
 		Object.keys(metaData).forEach((dim) => {
 			const filter = this.getFilterValues(dim);
 			const dimension = data.dimensions.find((d) => d.label == metaData[dim].label);
+			if (!dimension) return;
 			if (filter) {
 				let filterVal;
 				switch (metaData[dim].type) {
