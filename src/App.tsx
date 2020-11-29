@@ -80,7 +80,11 @@ class App extends React.Component<unknown, AppState> {
 					<Filters onChange={this.handleFilterChange} metadata={this.state.metadata} />
 				</div>
 				<div className="chart-container item-container">
-					<ChartsView data={this.state.filteredData} filters={this.state.filters} />
+					<ChartsView
+						data={this.state.filteredData}
+						filters={this.state.filters}
+						metadata={this.state.metadata}
+					/>
 				</div>
 				<div className="parallel-container item-container">
 					<ParallelCoords
