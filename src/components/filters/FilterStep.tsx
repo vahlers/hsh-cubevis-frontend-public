@@ -13,8 +13,10 @@ export interface FilterStepProps {
 	dimensions: Dimension[];
 	values: OptionType[];
 	onChange: (id: number, event: Filter) => void;
+	onEyeClick: (id: number) => void;
 	onDelete: (event: number) => void;
 	metadata: { [p: string]: { key: string; label: string; type: string } };
+	disabled: boolean;
 }
 
 export class FilterStep extends Component<FilterStepProps, Filter> {
@@ -31,8 +33,13 @@ export class FilterStep extends Component<FilterStepProps, Filter> {
 
 		this.changeDimension = this.changeDimension.bind(this);
 		this.changeValue = this.changeValue.bind(this);
+		this.notifyEyeClick = this.notifyEyeClick.bind(this);
 		this.notifyDelete = this.notifyDelete.bind(this);
 		this.getDims = this.getDims.bind(this);
+	}
+
+	notifyEyeClick(_event: React.MouseEvent<HTMLElement, MouseEvent>): void {
+		this.props.onEyeClick(this.props.id);
 	}
 
 	// Unused Parameter 'event', Jetbrains IDE doesn't recognize standard underscore notation
@@ -47,7 +54,7 @@ export class FilterStep extends Component<FilterStepProps, Filter> {
 		const newType: CellTypes = parseInt(event.currentTarget.value);
 
 		this.setState({ type: newType, value: null });
-
+		console.log('filter ' + this.props.id, newType);
 		// then publish the state to the onChange
 		this.props.onChange(this.props.id, { type: newType, value: null });
 	}
@@ -90,14 +97,18 @@ export class FilterStep extends Component<FilterStepProps, Filter> {
 					<Row>
 						<Col xs={2}>
 							<Accordion.Toggle as={Button} variant="link" eventKey={'' + this.props.id}>
-								<FaAngleRight size="20" />
+								<FaAngleRight size="20" opacity={this.props.disabled ? 0.4 : 1} />
 							</Accordion.Toggle>
 						</Col>
 						<Col xs={4}>
 							<Form>
 								<Form.Control as="select" onChange={this.changeDimension}>
 									{this.getDims().map((dim) => (
-										<option key={this.props.id + '.' + dim.value} value={dim.value}>
+										<option
+											key={this.props.id + '.' + dim.value}
+											value={dim.value}
+											disabled={this.props.disabled}
+										>
 											{dim.label}
 										</option>
 									))}
@@ -110,11 +121,11 @@ export class FilterStep extends Component<FilterStepProps, Filter> {
 							</h5>
 						</Col>
 						<Col xs={3}>
-							<Button variant="link">
-								<FaRegEye size="24" />
+							<Button variant="link" onClick={this.notifyEyeClick}>
+								<FaRegEye size="24" opacity={this.props.disabled ? 0.4 : 1} />
 							</Button>
 							<Button variant="link" onClick={this.notifyDelete}>
-								<ImCross size="18" color="red" />
+								<ImCross size="18" color="red" opacity={this.props.disabled ? 0.4 : 1} />
 							</Button>
 						</Col>
 					</Row>
