@@ -62,12 +62,12 @@ class App extends React.Component<unknown, AppState> {
 		const filteredData = await dataService.getCuboid(dimensions, filters);
 
 		if (USE_OLD_DATA_SCHEMA) {
-			await this.setStateAsync({ filteredData, filters });
+			await this.setStateAsync({ filteredData, filters: [...filters] });
 		} else {
 			const data = await dataService.getCuboid(dimensions);
 			// caution: if you call setState once for each of the props, all children will rerender multiple times
 			// this is probably not a desired behavior and costs performance
-			await this.setStateAsync({ filteredData, data, filters });
+			await this.setStateAsync({ filteredData, data, filters: [...filters] });
 		}
 	};
 
