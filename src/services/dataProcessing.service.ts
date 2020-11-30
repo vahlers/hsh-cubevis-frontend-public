@@ -92,12 +92,18 @@ export class DataProcessingService {
 	/**
 	 * Returns all available attribute values for a dimension
 	 * @param dimensions An array of CellTypes defining the cubed dimensions.
+	 * @param filter An array which contains objects that define filter criteria for certain cubed Attributes. Is optional.
+	 * @param filter[].type Dimension of the specific filter.
+	 * @param filter[].value Value the data is searched for.
 	 * @example //Logs available Ip's for Cubeoid of SourceIp and SourcePort.
 	 * 			getAvailableValues([CellTypes.SOURCE_IP, CellTypes.SOURCE_PORT])
 	 * 				.then((v) => console.log(v[CellType.SourceIP]))
 	 * @returns An Promise with an Object Containing Pairs of Dimension and Attributevalues
 	 */
-	public getAvailableValues(dimension: CellTypes[]): Promise<{ [id: string]: (string | number | Ip)[] }> {
+	public getAvailableValues(
+		dimension: CellTypes[],
+		filter?: { type: CellTypes; value: number | string | Ip }[],
+	): Promise<{ [id: string]: (string | number | Ip)[] }> {
 		return this.csvService.getAnomalyData(dimension).then((anomaly) => {
 			const result: { [id: string]: (string | number | Ip)[] } = {};
 			dimension.forEach((dim) => (result[dim] = []));
@@ -105,15 +111,37 @@ export class DataProcessingService {
 			anomaly.forEach((value) => {
 				dimension.forEach((element) => {
 					const val = value[CsvRetrievalService.modelKeyName(element)];
-					if (val instanceof Ip) {
-						if (
-							result[element].find((v) => v instanceof Ip && v.toString() === val.toString()) ===
-							undefined
-						) {
+					let filterCondition = true;
+					if (filter && filter.length > 0) {
+						filterCondition = filter
+							.map((filterObj) => {
+								const modelValue = value[CsvRetrievalService.modelKeyName(filterObj.type)];
+								const filterValue = filterObj.value;
+								if (typeof modelValue !== typeof filterValue) {
+									console.error(
+										'Filterparameter Typemissmatch for: ',
+										modelValue,
+										filterValue,
+										'Cannot apply value Filter!',
+									);
+									return true;
+								}
+								if (filterValue instanceof Ip) return filterValue.toString() === modelValue.toString();
+								else return modelValue === filterValue;
+							})
+							.reduce((prev, current) => prev && current);
+					}
+					if (filterCondition) {
+						if (val instanceof Ip) {
+							if (
+								result[element].find((v) => v instanceof Ip && v.toString() === val.toString()) ===
+								undefined
+							) {
+								result[element].push(val);
+							}
+						} else if (!result[element].includes(val)) {
 							result[element].push(val);
 						}
-					} else if (!result[element].includes(val)) {
-						result[element].push(val);
 					}
 				});
 			});
