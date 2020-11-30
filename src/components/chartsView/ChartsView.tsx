@@ -162,7 +162,7 @@ class ChartsView extends React.Component<ChartProps, ChartState> {
 				const body = document.createElement('div');
 				head.innerHTML = 'No Data';
 				body.innerHTML =
-					'There is no date for your current Selection. Please Chose another dimension or filtervalue';
+					'There is no data for your current Selection. Please Chose another dimension or filtervalue';
 				message.appendChild(icon);
 				message.appendChild(head);
 				message.appendChild(body);
