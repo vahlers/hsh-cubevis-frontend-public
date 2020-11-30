@@ -56,7 +56,11 @@ class App extends React.Component<unknown, AppState> {
 
 	setFilteredData = async (filters) => {
 		const dataService = DataProcessingService.instance();
-		const dimensions = filters.map(({ type }) => ({ type }));
+		// if filter array is empty, select all dimensions
+		const dimensions =
+			filters && filters.length
+				? filters.map(({ type }) => ({ type }))
+				: Object.keys(this.state.metadata).map((type) => ({ type: parseInt(type) as CellTypes }));
 		const filteredData = await dataService.getCuboid(dimensions, filters);
 		const data = await dataService.getCuboid(dimensions);
 		// caution: if you call setState once for each of the props, all children will rerender multiple times
