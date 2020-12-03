@@ -1,0 +1,171 @@
+import React from 'react';
+import { CubeCellModel } from '../../../models/cell.model';
+import { Filter } from '../../../models/filter.model';
+import { SCORE_MIN, SCORE_MAX } from '../../../helpers/constants';
+import '../ChartsView.css';
+
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const Plotly = require('plotly.js-dist');
+
+type ChartProps = {
+	data: CubeCellModel[];
+	filters: Filter[];
+	metadata: { [id: string]: { key: string; label: string; type: string } };
+};
+
+type ChartState = {
+	data: {
+		name: string;
+		type: string;
+		x: any[];
+		y: any[];
+		marker: {
+			color: any;
+			colorscale: Array<Array<string>>;
+			cmin: number;
+			cmax: number;
+			showscale: boolean;
+		};
+	};
+
+	layout: {
+		margin: {
+			l: number;
+			r: number;
+			b: number;
+			t: number;
+			pad: number;
+		};
+		height: string;
+		autosize: boolean;
+		xaxis: {
+			title: string;
+		};
+	};
+	config: {
+		responsive: boolean;
+	};
+	graphIsLoading: boolean;
+	graphLoaded: boolean;
+	showGraph: boolean;
+};
+
+class BarChart extends React.Component<ChartProps, ChartState> {
+	componentDidUpdate(prevProps: ChartProps): void {
+		// If something changed
+		if (prevProps.filters !== this.props.filters || prevProps.data !== this.props.data) {
+			this.preProcess();
+		}
+	}
+
+	preProcess = (): void => {
+		if (this.props.data === null) return;
+		if (this.props.metadata == null) return;
+
+		const arrays = this.props.data;
+		const data = this.state.data;
+		const layout = this.state.layout;
+		const metaData = this.props.metadata;
+
+		data.x = [];
+		data.y = [];
+		data.marker.color = [];
+		let showGraph = false;
+		console.log('filters', this.props.filters);
+		console.log('dataToShow', this.props.data);
+		if (this.props.filters.length > 0 && this.props.data.length > 0) {
+			showGraph = true;
+			const lastFilterType = metaData[this.props.filters[this.props.filters.length - 1].type];
+			layout.xaxis.title = lastFilterType.label;
+			for (let i = 0; i < arrays.length; i++) {
+				data.x.push(arrays[i][lastFilterType.key].toString());
+				data.y.push(arrays[i]['anomalyScore']);
+				data.marker.color.push(this.props.data[i]['anomalyScore']);
+			}
+		}
+
+		this.draw(showGraph, data);
+	};
+
+	draw = (showGraph: boolean, data: any): void => {
+		if (showGraph) {
+			console.log('Drawing component ...');
+			Plotly.react('barChart', [data], this.state.layout, this.state.config);
+			this.setState({ graphLoaded: true });
+		} else {
+			if (this.state.graphLoaded) {
+				Plotly.purge('barChart');
+				const message = document.createElement('div');
+				message.setAttribute('style', 'text-align: center; margin-top: 2em;');
+				const icon = document.createElement('div');
+				const head = document.createElement('h5');
+				const body = document.createElement('div');
+				head.innerHTML = 'No Data';
+				body.innerHTML =
+					'There is no data for your current selection. Please choose another dimension or filter value.';
+				message.appendChild(icon);
+				message.appendChild(head);
+				message.appendChild(body);
+				const barChart = document.getElementById('barChart');
+				barChart.appendChild(message);
+				this.setState({ graphLoaded: false });
+			}
+		}
+
+		this.setState({ data });
+	};
+
+	constructor(props: ChartProps) {
+		super(props);
+		this.state = {
+			data: {
+				name: 'Anomaly-Score Barchart',
+				type: 'bar',
+				x: [],
+				y: [0, 10],
+				marker: {
+					color: [],
+					showscale: true,
+					colorscale: [
+						['0.0', '#00ff00'],
+						['0.33', '#FBFF31'],
+						['1.0', '#ff0000'],
+					],
+					cmin: SCORE_MIN,
+					cmax: SCORE_MAX,
+				},
+			},
+			layout: {
+				margin: {
+					l: 50,
+					r: 110,
+					b: 150,
+					t: 20,
+					pad: 0,
+				},
+				height: '380',
+				autosize: true,
+				xaxis: {
+					title: 'dimension',
+				},
+			},
+			config: {
+				responsive: true,
+			},
+			showGraph: false,
+			graphIsLoading: false,
+			graphLoaded: false,
+		};
+	}
+
+	render(): JSX.Element {
+		//<h1>ChartView</h1>
+		return (
+			<div className="chart">
+				<div id="barChart" />
+			</div>
+		);
+	}
+}
+
+export default BarChart;

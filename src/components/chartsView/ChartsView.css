@@ -1,0 +1,26 @@
+.hide-chart {
+	display: none;
+}
+
+.switch-chart-buttons {
+	margin: 0 auto;
+	text-align: center;
+}
+
+.charts-view {
+	height: 100%;
+	width: 100%;
+}
+
+/* TODO: find out to how to make it blue */
+.carousel-control-next,
+.carousel-control-prev,
+.carousel-indicators {
+	filter: invert(100%);
+}
+
+#barChart {
+	margin: 0 auto 0 auto;
+	width: 80%;
+	height: 50%;
+}
