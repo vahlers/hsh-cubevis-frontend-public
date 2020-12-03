@@ -12,6 +12,11 @@
 	width: 100%;
 }
 
+.chart-no-data {
+	text-align: center;
+	padding-top: 4em;
+}
+
 /* TODO: find out to how to make it blue */
 .carousel-control-next,
 .carousel-control-prev,
@@ -19,8 +24,12 @@
 	filter: invert(100%);
 }
 
+.carousel-control-prev, .carousel-control-next {
+	width: 2% !important;
+}
+
 #barChart {
 	margin: 0 auto 0 auto;
-	width: 80%;
+	width: 95%;
 	height: 50%;
 }

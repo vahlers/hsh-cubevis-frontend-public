@@ -4,6 +4,8 @@ import { Filter } from '../../../models/filter.model';
 import { SCORE_MIN, SCORE_MAX } from '../../../helpers/constants';
 import '../ChartsView.css';
 
+import { GiMagnifyingGlass } from 'react-icons/gi';
+
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Plotly = require('plotly.js-dist');
 
@@ -41,6 +43,11 @@ type ChartState = {
 		xaxis: {
 			title: string;
 		};
+		yaxis: {
+			range: number[];
+			fixedrange: boolean;
+			autorange: boolean;
+		};
 	};
 	config: {
 		responsive: boolean;
@@ -48,6 +55,7 @@ type ChartState = {
 	graphIsLoading: boolean;
 	graphLoaded: boolean;
 	showGraph: boolean;
+	message: string;
 };
 
 class BarChart extends React.Component<ChartProps, ChartState> {
@@ -67,6 +75,7 @@ class BarChart extends React.Component<ChartProps, ChartState> {
 		const layout = this.state.layout;
 		const metaData = this.props.metadata;
 
+		let message = '';
 		data.x = [];
 		data.y = [];
 		data.marker.color = [];
@@ -82,37 +91,21 @@ class BarChart extends React.Component<ChartProps, ChartState> {
 				data.y.push(arrays[i]['anomalyScore']);
 				data.marker.color.push(this.props.data[i]['anomalyScore']);
 			}
+		} else if (this.props.filters.length < 1) {
+			message = 'Please select at least one Filter';
+		} else {
+			message = 'There is no data matching the given filters. please choose other filters';
 		}
 
-		this.draw(showGraph, data);
+		this.setState({ data: data, showGraph: showGraph, message: message }, () => this.draw());
 	};
 
-	draw = (showGraph: boolean, data: any): void => {
-		if (showGraph) {
+	draw = (): void => {
+		if (this.state.showGraph) {
 			console.log('Drawing component ...');
-			Plotly.react('barChart', [data], this.state.layout, this.state.config);
+			Plotly.react('barChart', [this.state.data], this.state.layout, this.state.config);
 			this.setState({ graphLoaded: true });
-		} else {
-			if (this.state.graphLoaded) {
-				Plotly.purge('barChart');
-				const message = document.createElement('div');
-				message.setAttribute('style', 'text-align: center; margin-top: 2em;');
-				const icon = document.createElement('div');
-				const head = document.createElement('h5');
-				const body = document.createElement('div');
-				head.innerHTML = 'No Data';
-				body.innerHTML =
-					'There is no data for your current selection. Please choose another dimension or filter value.';
-				message.appendChild(icon);
-				message.appendChild(head);
-				message.appendChild(body);
-				const barChart = document.getElementById('barChart');
-				barChart.appendChild(message);
-				this.setState({ graphLoaded: false });
-			}
 		}
-
-		this.setState({ data });
 	};
 
 	constructor(props: ChartProps) {
@@ -148,6 +141,11 @@ class BarChart extends React.Component<ChartProps, ChartState> {
 				xaxis: {
 					title: 'dimension',
 				},
+				yaxis: {
+					range: [0, 10],
+					fixedrange: true,
+					autorange: false,
+				},
 			},
 			config: {
 				responsive: true,
@@ -155,16 +153,26 @@ class BarChart extends React.Component<ChartProps, ChartState> {
 			showGraph: false,
 			graphIsLoading: false,
 			graphLoaded: false,
+			message: '',
 		};
 	}
 
 	render(): JSX.Element {
-		//<h1>ChartView</h1>
-		return (
-			<div className="chart">
-				<div id="barChart" />
-			</div>
-		);
+		if (this.state.showGraph) {
+			return (
+				<div className="chart">
+					<div id="barChart" />
+				</div>
+			);
+		} else {
+			return (
+				<div className="chart chart-no-data">
+					<GiMagnifyingGlass size={80} />
+					<h2>No Data</h2>
+					<h5> {this.state.message}</h5>
+				</div>
+			);
+		}
 	}
 }
 

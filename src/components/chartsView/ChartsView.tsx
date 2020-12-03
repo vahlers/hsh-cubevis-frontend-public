@@ -51,12 +51,12 @@ class ChartsView extends React.Component<ChartsViewProps, ChartsViewState> {
 
 	render(): JSX.Element {
 		return (
-			<Carousel className="charts-view">
+			<Carousel className="charts-view" interval={null}>
 				<Carousel.Item className="carousel-child">
 					<BarChart data={this.state.data} metadata={this.state.metadata} filters={this.state.filters} />
 				</Carousel.Item>
 				<Carousel.Item className="carousel-child">
-					<h1>Scatter Plot 2D</h1>
+					<h1>Scatter Plot</h1>
 				</Carousel.Item>
 				<Carousel.Item className="carousel-child">
 					<h1>Box Plot</h1>
