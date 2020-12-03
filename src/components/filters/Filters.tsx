@@ -36,6 +36,7 @@ type FilterState = {
 
 type FilterProps = {
 	onChange: any;
+	chartSelection: Filter[];
 	metadata: { [p: string]: { key: string; label: string; type: string } };
 };
 const dataService = DataProcessingService.instance();

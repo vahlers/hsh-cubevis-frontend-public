@@ -9,6 +9,7 @@ type ChartsViewProps = {
 	data: CubeCellModel[];
 	filters: Filter[];
 	metadata: { [id: string]: { key: string; label: string; type: string } };
+	onSelection;
 };
 
 type ChartsViewState = {

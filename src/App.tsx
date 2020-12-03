@@ -15,6 +15,7 @@ type AppState = {
 	data: any;
 	filters: Filter[];
 	filteredData: CubeCellModel[];
+	chartSelection: Filter[];
 };
 
 class App extends React.Component<unknown, AppState> {
@@ -28,66 +29,81 @@ class App extends React.Component<unknown, AppState> {
 		data: [],
 		filters: [],
 		filteredData: [],
+		chartSelection: [],
 	};
 
 	// kinda hacky, but does its job. is there a better alternative?
-	setStateAsync(state) {
-		return new Promise((resolve) => {
-			this.setState(state, resolve);
-		});
+	setStateAsync(state): Promise<unknown> {
+		return new Promise((resolve) => this.setState(state, resolve));
 	}
 
-	setup = async () => {
+	setup = async (): Promise<unknown> => {
 		await this.getMetadata();
 		await this.getData();
-		this.setState({ filteredData: this.state.data });
+
+		return this.setState({ filteredData: this.state.data });
 	};
 
-	handleFilterChange = async (filters) => {
-		await this.setFilteredData(filters);
+	handleFilterChange = async (filters: Filter[]): Promise<unknown> => {
+		return this.setFilteredData(filters);
 	};
 
-	getMetadata = async () => {
+	handleChartSelection = async (chartSelection: Filter[]): Promise<unknown> => {
+		// propagating the filter from the ChartsView up to App and then back down to Filters is not great, but works
+		// a possible extension would be using some kind of state management for the filters, for more of that, see /docs/possible-extensions.md
+
+		await this.setStateAsync({ chartSelection });
+
+		// to be able to listen for the same click twice, the selection is removed immediately after setting it
+		return this.setState({ chartSelection: [] });
+	};
+
+	getMetadata = async (): Promise<unknown> => {
 		const dataService = DataProcessingService.instance();
 		const metadata = await dataService.getMetadata();
 
-		await this.setStateAsync({ metadata });
+		return this.setStateAsync({ metadata });
 	};
 
-	setFilteredData = async (filters) => {
+	setFilteredData = async (filters: Filter[]): Promise<unknown> => {
 		const dataService = DataProcessingService.instance();
 		// if filter array is empty, select all dimensions
 		const dimensions =
 			filters && filters.length
 				? filters.map(({ type }) => ({ type }))
 				: Object.keys(this.state.metadata).map((type) => ({ type: parseInt(type) as CellTypes }));
+
 		const filteredData = await dataService.getCuboid(dimensions, filters);
 		const data = await dataService.getCuboid(dimensions);
+
 		// caution: if you call setState once for each of the props, all children will rerender multiple times
 		// this is probably not a desired behavior and costs performance
-		await this.setStateAsync({ filteredData, data, filters: [...filters] });
+		return this.setStateAsync({ filteredData, data, filters: [...filters] });
 	};
 
-	getData = async () => {
+	getData = async (): Promise<unknown> => {
 		const dataService = DataProcessingService.instance();
-
 		const dimensions = Object.keys(this.state.metadata).map((type) => ({ type: parseInt(type) as CellTypes }));
-
 		const data = await dataService.getCuboid(dimensions);
 
-		await this.setStateAsync({ data });
+		return this.setStateAsync({ data });
 	};
 	render(): React.ReactNode {
 		return (
 			<div className="App grid-container">
 				<div className="filter-container item-container">
-					<Filters onChange={this.handleFilterChange} metadata={this.state.metadata} />
+					<Filters
+						onChange={this.handleFilterChange}
+						metadata={this.state.metadata}
+						chartSelection={this.state.chartSelection}
+					/>
 				</div>
 				<div className="chart-container item-container">
 					<ChartsView
 						data={this.state.filteredData}
 						filters={this.state.filters}
 						metadata={this.state.metadata}
+						onSelection={this.handleChartSelection}
 					/>
 				</div>
 				<div className="parallel-container item-container">

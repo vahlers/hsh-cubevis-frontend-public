@@ -13,3 +13,7 @@ In regards to the issue stated in the [comparison of the data with our without t
 ## Use a 3D Scatter Plot
 
 To allow even more dimensions to be shown a 3D scatter plot could be implemented. This would allow the user to set a range of values or no filtering at all for the last three steps in the step view. Since it is not very easily to read it was not in the scope of the final product.
+
+## Use state management
+
+When propagating filter events from ChartsView up to the App component and then down to the Filters component, using a state management system for filters seems more appropiate. Since this was the only occourence in the project where state management it was not worth it to include it in the final product.
