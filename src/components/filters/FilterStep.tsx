@@ -19,79 +19,65 @@ export interface FilterStepProps {
 	disabled: boolean;
 }
 
-export class FilterStep extends Component<FilterStepProps, Filter> {
+interface FilterStepState {
+	filter: Filter;
+	setValue: OptionType;
+}
+
+export class FilterStep extends Component<FilterStepProps, FilterStepState> {
 	constructor(props: FilterStepProps) {
 		super(props);
 
 		this.state = {
-			type: this.props.dimensions[0].value,
-			value: null,
+			filter: {
+				type: this.props.dimensions[0].value,
+				value: null,
+			},
+			setValue: null,
 		};
-
-		// trigger the onChange to register the default selection as a filter
-		this.props.onChange(this.props.id, this.state);
-
-		this.changeDimension = this.changeDimension.bind(this);
-		this.changeValue = this.changeValue.bind(this);
-		this.notifyEyeClick = this.notifyEyeClick.bind(this);
-		this.notifyDelete = this.notifyDelete.bind(this);
-		this.getDims = this.getDims.bind(this);
 	}
 
-	notifyEyeClick(_event: React.MouseEvent<HTMLElement, MouseEvent>): void {
+	notifyEyeClick = (): void => {
 		this.props.onEyeClick(this.props.id);
-	}
+	};
 
-	// Unused Parameter 'event', Jetbrains IDE doesn't recognize standard underscore notation
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	notifyDelete(_event: React.MouseEvent<HTMLElement, MouseEvent>): void {
+	notifyDelete = (): void => {
 		this.props.onDelete(this.props.id);
-	}
+	};
 
-	changeDimension(event: React.ChangeEvent<HTMLSelectElement>): void {
+	changeDimension = (event: React.ChangeEvent<HTMLSelectElement>): void => {
 		// first set the state by casting the event value to an enum
 
 		const newType: CellTypes = parseInt(event.currentTarget.value);
 
-		this.setState({ type: newType, value: null });
+		this.setState({ filter: { type: newType, value: null }, setValue: null });
+
 		console.log('filter ' + this.props.id, newType);
 		// then publish the state to the onChange
 		this.props.onChange(this.props.id, { type: newType, value: null });
-	}
+	};
 
-	changeValue(selected?: ValueType<DimensionValue> | DimensionValue[] | null): void {
+	changeValue = async (selected?: ValueType<DimensionValue> | DimensionValue[] | null): Promise<void> => {
 		if (selected === null || selected === undefined) {
-			this.setState({ value: null });
-			return;
-		}
-		const value = (selected as DimensionValue).value;
-		if (Array.isArray(value)) {
-			// we don't allow multi selection, so this should never happen
-			throw new Error('Unexpected type passed to ReactSelect onChange handler');
+			await this.setState({ filter: { type: this.state.filter.type, value: null }, setValue: null });
+			this.props.onChange(this.props.id, { type: this.state.filter.type, value: null });
 		} else {
-			this.setState({ value: value });
-		}
-		this.props.onChange(this.props.id, { type: this.state.type, value: value });
-	}
-
-	getDims(): OptionType[] {
-		const options = this.props.dimensions;
-		const selfOption = this.props.metadata[this.state.type];
-
-		// If option for current CellType is already present just return
-		for (let i = 0; i < options.length; i++) {
-			if (options[i].value === this.state.type) {
-				return options;
+			const value = (selected as DimensionValue).value;
+			if (Array.isArray(value)) {
+				// we don't allow multi selection, so this should never happen
+				throw new Error('Unexpected type passed to ReactSelect onChange handler');
+			} else {
+				this.setState({
+					filter: { type: this.state.filter.type, value: value },
+					setValue: { value: value.toString(), label: value.toString() },
+				});
 			}
+			this.props.onChange(this.props.id, { type: this.state.filter.type, value: value });
 		}
-		// Otherwise insert our option at index: this.state.type
-		options.splice(this.state.type, 0, { label: selfOption.label, value: this.state.type });
-		return options;
-	}
+	};
 
 	render(): React.ReactNode {
 		return (
-			//TODO workaround if only letting the user select valid dimensions is impossible: bg={this.props.invalidState}
 			<Card id={this.props.id.toString()} className="overflow-visible">
 				<Card.Header className="filter-header">
 					<Row>
@@ -103,7 +89,7 @@ export class FilterStep extends Component<FilterStepProps, Filter> {
 						<Col xs={4}>
 							<Form>
 								<Form.Control as="select" onChange={this.changeDimension}>
-									{this.getDims().map((dim) => (
+									{this.props.dimensions.map((dim) => (
 										<option
 											key={this.props.id + '.' + dim.value}
 											value={dim.value}
@@ -117,7 +103,7 @@ export class FilterStep extends Component<FilterStepProps, Filter> {
 						</Col>
 						<Col xs={3}>
 							<h5 className="text-center filter-text">
-								{this.state.value !== null ? this.state.value : '*'}
+								{this.state.filter.value !== null ? this.state.filter.value : '*'}
 							</h5>
 						</Col>
 						<Col xs={3}>
@@ -134,6 +120,7 @@ export class FilterStep extends Component<FilterStepProps, Filter> {
 					<Card.Body className="filter-body">
 						<Select
 							options={this.props.values}
+							value={this.state.setValue}
 							isSearchable={true}
 							isClearable={true}
 							onChange={this.changeValue}

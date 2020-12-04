@@ -23,15 +23,16 @@ export type OptionType = {
 };
 
 type FilterState = {
-	//TODO:
-	// change steps to: filterSteps: { [id: number]: {step: FilterStep, dimensions: Dimension[], attributes: OptionType[] }
-	// This way the damn React-Select element might update if we change the dimensions
-	filterSteps: FilterStep[];
-	filterStep_dimensionAttributes: { [step_id: number]: OptionType[] };
-	filterDisabled: boolean[];
-	currentIndex: number;
-	filters: Filter[];
-	availableDimensions: Dimension[];
+	elements: StateElem[];
+	disableFilterAdd: boolean;
+};
+
+type StateElem = {
+	id: number;
+	filter: Filter;
+	values: OptionType[];
+	filterStep: FilterStep;
+	disabled: boolean;
 };
 
 type FilterProps = {
@@ -40,189 +41,166 @@ type FilterProps = {
 	metadata: { [p: string]: { key: string; label: string; type: string } };
 };
 const dataService = DataProcessingService.instance();
-
-function convertToOptions(values: (string | number | Ip)[]): OptionType[] {
-	const opts: OptionType[] = [];
-	for (let i = 0; i < values.length; i++) {
-		const value = values[i].toString();
-		opts.push({ value: value, label: value });
-	}
-	return opts;
-}
+let dimensions: Dimension[] = [];
 
 export class Filters extends React.Component<FilterProps, FilterState> {
 	constructor(props: FilterProps) {
 		super(props);
 
-		// Iterate over all CellTypes (-1 because CellTypes.CellType_Count is not a real CellType) :(
-
-		this.state = {
-			filterSteps: [],
-			filterStep_dimensionAttributes: [],
-			filterDisabled: [],
-			currentIndex: 0,
-			filters: [],
-			availableDimensions: [],
-		};
-
-		this.addFilter = this.addFilter.bind(this);
-		this.deleteFilter = this.deleteFilter.bind(this);
-		this.handleChange = this.handleChange.bind(this);
-		this.handleEyeClick = this.handleEyeClick.bind(this);
-		this.getAvailableDimensions = this.getAvailableDimensions.bind(this);
+		// Initial empty state
+		this.state = { elements: [], disableFilterAdd: true };
 	}
+
+	// This is in preparation for a future feature, only showing available dimensions by using the optional filters
+	// 	// Map the resulting Values to OptionType values so the Select elements can use them as options
+	// 	return filteredResult.map((val) => ({ value: val.toString(), label: val.toString() }));
+	// }
+	// 	async getDataValues(dimension: CellTypes, filterId: number): Promise<OptionType[]> {
+	// 	const result = await await dataService.getAvailableValues(
+	// 		this.state
+	// 			// get all filterStepData with id < filterID
+	// 			.filter((filterStepDatum) => filterStepDatum.id < filterId)
+	// 			// extract only the filters CellType from the filterStepData
+	// 			.map((filterStepDatum) => filterStepDatum.filter.type)
+	// 			// append current dimensions CellType
+	// 			.concat(dimension),
+	// 		// only need the values for the given CellType
+	// 	)[dimension];
+	// Map the resulting Values to OptionType values so the Select elements can use them as options
+	// return result.map((val) => ({ value: val, label: val }));
+	// }
+
+	getDataValues = async (cellType: CellTypes, filterId: number): Promise<OptionType[]> => {
+		const result = (await dataService.getAvailableValues([cellType]))[cellType];
+		// Map the resulting Values to OptionType values so the Select elements can use them as options
+		return result.map((val) => ({ value: val.toString(), label: val.toString() }));
+	};
 
 	// Unused Parameter 'event', Jetbrains IDE doesn't recognize standard underscore notation
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	async addFilter(_event: React.MouseEvent<HTMLButtonElement, MouseEvent>): Promise<void> {
-		const tmp_disabled = this.state.filterDisabled;
-		tmp_disabled[this.state.currentIndex] = false;
-		this.setState({ filterDisabled: tmp_disabled });
+	addFilter = async (): Promise<void> => {
+		const defaultDim: Dimension = dimensions[0];
+		const newID = this.state === null ? 0 : this.state.elements.length;
+
+		const result: StateElem = {
+			id: newID,
+			filter: { type: defaultDim.value, value: null },
+			values: await this.getDataValues(defaultDim.value, newID),
+			filterStep: null,
+			disabled: false,
+		};
 
 		const props: FilterStepProps = {
-			id: this.state.currentIndex,
-			dimensions: this.state.availableDimensions,
-			values: this.state.filterStep_dimensionAttributes[this.state.currentIndex],
+			id: result.id,
+			values: result.values,
+			dimensions: dimensions,
 			onDelete: this.deleteFilter,
 			onEyeClick: this.handleEyeClick,
 			onChange: this.handleChange,
 			metadata: this.props.metadata,
 			disabled: false,
 		};
+		result.filterStep = new FilterStep(props);
 
-		const tmp_filterSteps: FilterStep[] = this.state.filterSteps;
-		tmp_filterSteps.push(new FilterStep(props));
+		if (this.state.elements === null) {
+			await this.setState({ elements: [result], disableFilterAdd: true });
+		} else {
+			await this.setState({ elements: this.state.elements.concat(result), disableFilterAdd: true });
+		}
+		this.emitChange();
+	};
 
-		await this.setState({
-			filterSteps: tmp_filterSteps,
-			currentIndex: this.state.currentIndex + 1,
-		});
-
-		this.props.onChange(this.state.filters);
-	}
-
-	componentDidUpdate(prevProps: FilterProps): void {
+	componentDidUpdate = (prevProps: FilterProps): void => {
 		if (this.props.metadata !== prevProps.metadata) {
-			const availableDimensions = this.props.metadata === null ? [] : this.getAvailableDimensions();
-			this.setState({ availableDimensions });
+			dimensions =
+				this.props.metadata === null
+					? []
+					: Object.keys(this.props.metadata).map((type) => ({
+							value: parseInt(type) as CellTypes,
+							label: this.props.metadata[parseInt(type) as CellTypes].label,
+					  }));
+			this.setState({ disableFilterAdd: dimensions === undefined });
 		}
-	}
+	};
 
-	async deleteFilter(id: number): Promise<void> {
-		const tmp_filterSteps = this.state.filterSteps.filter(function (step) {
-			return step.props.id !== id;
-		});
-
-		const tmp_dimensionAttributes = this.state.filterStep_dimensionAttributes;
-		delete tmp_dimensionAttributes[id];
-
-		const tmp_filters = this.state.filters;
-		tmp_filters.splice(id, 1);
-
-		await this.setState({
-			filters: tmp_filters,
-			filterSteps: tmp_filterSteps,
-			filterStep_dimensionAttributes: tmp_dimensionAttributes,
-			// availableDimensions: this.getAvailableDimensions(),
-		});
-		this.props.onChange(this.state.filters);
-	}
-
-	async handleEyeClick(id: number): Promise<void> {
-		console.log('Filter Steps: ', this.state.filterSteps);
-		const tmp_disabled: boolean[] = [];
-		const tmp_filters: Filter[] = [];
-
-		for (let i = 0; i < this.state.filterSteps.length; i++) {
-			const key = this.state.filterSteps[i].props.id;
-			tmp_disabled[key] = key > id;
-			if (key <= id) {
-				tmp_filters.push(this.state.filters[key]);
+	//sends all non disabled filters to the props.onChange
+	emitChange = (): void => {
+		const filters = this.state.elements.map(function (elem) {
+			if (!elem.disabled) {
+				return elem.filter;
 			}
+		});
+		// if all filters are disabled, map returns an array with an undefined element
+		if (filters.length === 1 && filters[0] === undefined) {
+			this.props.onChange([{ type: null, value: null }]);
+		} else {
+			this.props.onChange(filters);
 		}
+	};
 
+	deleteFilter = async (id: number): Promise<void> => {
 		await this.setState({
-			filterDisabled: tmp_disabled,
+			elements: this.state.elements.filter((elem) => elem.id !== id),
+			disableFilterAdd: this.state.disableFilterAdd && id !== 0,
 		});
-		this.props.onChange(tmp_filters);
-	}
+		this.emitChange();
+	};
 
-	async handleChange(id: number, updatedFilter: Filter): Promise<void> {
-		const tmp_filters = this.state.filters;
-		tmp_filters[id] = updatedFilter;
-
-		const tmp_values = this.state.filterStep_dimensionAttributes;
-		tmp_values[id] = convertToOptions(
-			(await dataService.getAvailableValues([updatedFilter.type]))[updatedFilter.type],
-		);
-
-		this.setState({
-			filters: tmp_filters,
-			filterStep_dimensionAttributes: tmp_values,
-			availableDimensions: this.props.metadata === null ? [] : this.getAvailableDimensions(),
+	handleEyeClick = async (id: number): Promise<void> => {
+		await this.setState({
+			// if the element has the id of the eyeClick, its	 disabled value is flipped
+			elements: this.state.elements.map((el) => (el.id === id ? { ...el, disabled: !el.disabled } : el)),
 		});
+		this.emitChange();
+	};
 
-		this.props.onChange(this.state.filters);
-	}
-
-	getAvailableDimensions(): Dimension[] {
-		if (!this.props.metadata === null) return [];
-		const availableDimensions: Dimension[] = [];
-		for (let i = 0; i < Object.keys(CellTypes).length / 2 - 1; i++) {
-			// this weird line works because calling CellTypes[int] gives a string and CellTypes[string] gives an enum
-			const curCellType = CellTypes[CellTypes[i]];
-			availableDimensions.push({ label: this.props.metadata[curCellType].label, value: curCellType });
+	handleChange = async (id: number, updatedFilter: Filter): Promise<void> => {
+		let optValues = this.state.elements[id].values;
+		if (this.state.elements[id].filter.type !== updatedFilter.type) {
+			// the dimension changed, and the filterStep needs new opt values
+			optValues = await this.getDataValues(updatedFilter.type, id);
 		}
-		return availableDimensions;
-	}
 
-	// getAvailableDimensions(): Dimension[] {
-	// 	const availableDimensions: Dimension[] = [];
-	// 	for (let i = 0; i < Object.keys(CellTypes).length / 2 - 1; i++) {
-	// 		// this weird line works because calling CellTypes[int] gives a string and CellTypes[string] gives an enum
-	// 		const curCellType = CellTypes[CellTypes[i]];
-	// 		let dimensionUnused = true;
-	// 		if (this.state !== undefined) {
-	// 			console.log('Filters are:  ', this.state.filters);
-	// 			for (let k = 0; k < this.state.filters.length; k++) {
-	// 				if (this.state.filters[k].type == curCellType) {
-	// 					dimensionUnused = false;
-	// 					break;
-	// 				}
-	// 			}
-	// 		}
-	// 		console.log('Dimension ' + CellTypes[curCellType] + ': ' + dimensionUnused);
-	// 		availableDimensions.push({ label: metadata[curCellType].label, value: curCellType });
-	// 	}
-	// 	return availableDimensions;
-	// }
+		// here the state is set by using an object spread '{ }', inserting all of the old object '{ ...el'
+		// and then updating the changed properties ', values: optValues, filter: updatedFilter }'
+		await this.setState({
+			elements: this.state.elements.map((el) =>
+				el.id === id ? { ...el, values: optValues, filter: updatedFilter } : el,
+			),
+			disableFilterAdd: updatedFilter.value === null,
+		});
+
+		this.emitChange();
+	};
 
 	render(): React.ReactNode {
 		// Use bootstrap classes
-
 		return (
 			<div className="filters">
 				<h1>Filters</h1>
 				<Accordion>
-					{this.state.filterSteps.map((filter) => (
-						<FilterStep
-							id={filter.props.id}
-							key={filter.props.id}
-							onChange={filter.props.onChange}
-							onDelete={filter.props.onDelete}
-							onEyeClick={filter.props.onEyeClick}
-							dimensions={filter.props.dimensions}
-							values={this.state.filterStep_dimensionAttributes[filter.props.id]}
-							metadata={filter.props.metadata}
-							disabled={this.state.filterDisabled[filter.props.id]}
-						/>
-					))}
+					{this.state.elements.length <= 0
+						? ''
+						: this.state.elements.map((elem) => (
+								<FilterStep
+									id={elem.id}
+									key={elem.id}
+									dimensions={dimensions}
+									values={elem.values}
+									onChange={this.handleChange}
+									onEyeClick={this.handleEyeClick}
+									onDelete={this.deleteFilter}
+									metadata={this.props.metadata}
+									disabled={elem.disabled}
+								/>
+						  ))}
 				</Accordion>
 				<button
 					onClick={this.addFilter}
 					type="submit"
 					className="btn btn-primary add-step-btn m-2"
-					disabled={this.state.availableDimensions.length <= 0}
+					// disable adding another step, if the last step has a value of '*' <==> null
+					disabled={this.state.disableFilterAdd}
 				>
 					Add Step
 				</button>
