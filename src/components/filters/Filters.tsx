@@ -139,9 +139,13 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 	};
 
 	deleteFilter = async (id: number): Promise<void> => {
+		const filterCount = this.state.elements.length;
+		// get the id of the last filter, that is left after deletion
+		const lastFilterId = filterCount > 1 && filterCount - 1 === id ? filterCount - 2 : filterCount - 1;
 		await this.setState({
 			elements: this.state.elements.filter((elem) => elem.id !== id),
-			disableFilterAdd: this.state.disableFilterAdd && id !== 0,
+			// if the last filter after deletion has value null (<==> '*'), disable adding a step
+			disableFilterAdd: this.state.elements[lastFilterId].filter.value === null,
 		});
 		this.emitChange();
 	};
