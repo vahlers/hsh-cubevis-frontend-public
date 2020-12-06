@@ -1,4 +1,7 @@
+import { CellTypes } from '../enums/cellTypes.enum';
+
 interface Dimension {
+	type: CellTypes;
 	range: Array<number>;
 	label: string;
 	values: Array<number>;

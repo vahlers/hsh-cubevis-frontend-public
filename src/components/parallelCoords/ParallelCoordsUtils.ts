@@ -4,40 +4,47 @@ import { DataRecord } from '../../models/datarecord.model';
 import { DataType } from '../../enums/dataType.enum';
 import { Filter } from '../../models/filter.model';
 import { FilterOutOfRangeError } from '../../errors/FilterOutOfRangeError';
+import { CellTypes } from '../../enums/cellTypes.enum';
 
 export class ParallelCoordsUtils {
-	static unpack = (rows: Array<DataRecord>, key: string): Array<string | number | Ip> => {
+	static unpack = (rows: Array<DataRecord>, columName: string): Array<string | number | Ip> => {
 		return rows.map(function (row) {
-			return row[key];
+			return row[columName];
 		});
 	};
 
 	static convertDimension = (
 		rows: Array<DataRecord>,
 		dimension: { key: string; label: string; type: string },
+		type: CellTypes,
 		filter: Filter = null,
 	): Dimension => {
 		switch (dimension.type) {
 			case DataType.IP:
-				return ParallelCoordsUtils._convertToIp(rows, dimension.key, dimension.label, filter);
+				return ParallelCoordsUtils._convertToIp(rows, dimension.key, dimension.label, type, filter);
 			case DataType.ORDINAL:
-				return ParallelCoordsUtils._convertToOrdinal(rows, dimension.key, dimension.label, filter);
+				return ParallelCoordsUtils._convertToOrdinal(rows, dimension.key, dimension.label, type, filter);
 			case DataType.NUMERIC:
-				return ParallelCoordsUtils._convertToNumeric(rows, dimension.key, dimension.label, filter);
+				return ParallelCoordsUtils._convertToNumeric(rows, dimension.key, dimension.label, type, filter);
 			case DataType.NOMINAL:
 			default:
 				const rawData: Array<string> = ParallelCoordsUtils.unpack(rows, dimension.key) as Array<string>;
-				return ParallelCoordsUtils._convertToNominal(rawData, dimension.label, filter);
+				return ParallelCoordsUtils._convertToNominal(rawData, dimension.key, dimension.label, type, filter);
 		}
 	};
 
-	static convertToWildcard = (rows: Array<DataRecord>, label: string): NominalDimension => {
+	static convertToWildcard = (
+		rows: Array<DataRecord>,
+		dimension: { key: string; label: string; type: string },
+		type: CellTypes,
+	): NominalDimension => {
 		const recordCnt = rows.length;
 		const idxData = Array(recordCnt).fill(0);
 		return {
+			type: type,
 			constraintrange: [],
 			range: [0, 0],
-			label: label,
+			label: dimension.label,
 			ticktext: ['*'],
 			tickvals: [0],
 			values: idxData,
@@ -48,7 +55,9 @@ export class ParallelCoordsUtils {
 
 	static _convertToNominal = (
 		rawData: Array<string | number>,
+		key: string,
 		label: string,
+		type: CellTypes,
 		filter: Filter = null,
 		replacements: Record<number, string> = {},
 	): NominalDimension => {
@@ -77,8 +86,8 @@ export class ParallelCoordsUtils {
 			constraintrange = [value, value];
 			if (converted.find((v) => v === value) === undefined) console.error('Value was not found');
 		}
-
 		return {
+			type: type,
 			range: [Math.min(...indices), Math.max(...indices)],
 			label: label,
 			values: converted,
@@ -92,19 +101,21 @@ export class ParallelCoordsUtils {
 
 	static _convertToIp = (
 		rows: Array<DataRecord>,
-		keyName: string,
+		key: string,
 		label: string,
+		type: CellTypes,
 		filter: Filter = null,
 	): NominalDimension => {
-		const rawData: Array<Ip> = ParallelCoordsUtils.unpack(rows, keyName) as Array<Ip>;
+		const rawData: Array<Ip> = ParallelCoordsUtils.unpack(rows, key) as Array<Ip>;
 		const convertedIPs: Array<string> = rawData.map((ip) => ip.toString());
-		return ParallelCoordsUtils._convertToNominal(convertedIPs, label, filter);
+		return ParallelCoordsUtils._convertToNominal(convertedIPs, key, label, type, filter);
 	};
 
 	static _convertToOrdinal = (
 		rows: Array<DataRecord>,
 		key: string,
 		label: string,
+		type: CellTypes,
 		filter: Filter = null,
 	): OrdinalDimension => {
 		const rawData: Array<number> = ParallelCoordsUtils.unpack(rows, key) as Array<number>;
@@ -114,13 +125,14 @@ export class ParallelCoordsUtils {
 			d === Number.POSITIVE_INFINITY ? (rawData[rawData.indexOf(d)] = minimum) : d,
 		);
 
-		return ParallelCoordsUtils._convertToNominal(converted, label, filter, { 0: '?' });
+		return ParallelCoordsUtils._convertToNominal(converted, key, label, type, filter, { 0: '?' });
 	};
 
 	static _convertToNumeric = (
 		rows: Array<DataRecord>,
 		key: string,
 		label: string,
+		type: CellTypes,
 		filter: Filter = null,
 	): NumericDimension => {
 		const rawData: Array<number> = ParallelCoordsUtils.unpack(rows, key) as Array<number>;
@@ -129,6 +141,7 @@ export class ParallelCoordsUtils {
 			d === Number.POSITIVE_INFINITY ? (rawData[rawData.indexOf(d)] = minimum) : d,
 		);
 		return {
+			type: type,
 			range: [Math.min(...converted), Math.max(...converted)],
 			label: label,
 			values: converted,

@@ -1,62 +1,30 @@
 import React from 'react';
 import './ParallelCoords.css';
-import { Dots } from 'react-activity';
-import 'react-activity/dist/react-activity.css';
 
 import { ParallelCoordsUtils } from './ParallelCoordsUtils';
 import { FilterOutOfRangeError } from '../../errors/FilterOutOfRangeError';
-import { FaArrowDown, FaArrowUp } from 'react-icons/fa';
+import { FaArrowDown, FaArrowUp, FaUndo } from 'react-icons/fa';
 
-import { SCORE_KEY, SCORE_MIN, SCORE_MAX } from '../../helpers/constants';
+import { SCORE_KEY } from '../../helpers/constants';
 import { CellTypes } from '../../enums/cellTypes.enum';
 import { Filter } from '../../models/filter.model';
-import { Dimension, NominalDimension } from '../../models/dimension.model';
+import { NominalDimension } from '../../models/dimension.model';
 import { DataType } from '../../enums/dataType.enum';
+import { initialState, ParallelCoordsState } from './ParallelCoordsState';
+import { ParallelCoordsProps } from './ParallelCoordsProps';
+import { Button, OverlayTrigger, Tooltip, Alert, Row, Col } from 'react-bootstrap';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Plotly = require('plotly.js-dist');
 
-type ParCoordProps = {
-	data: Array<Record<string, number | string>>;
-	metadata: { [id: string]: { key: string; label: string; type: string } };
-	filters: Filter[];
-};
-
-type ParCoordState = {
-	data: {
-		type: string;
-		line: {
-			color: any;
-			showscale: boolean;
-			colorscale: Array<Array<string>>;
-			cmin: number;
-			cmax: number;
-		};
-		dimensions: Dimension[];
-	};
-
-	layout: {
-		margin: {
-			l: number;
-			r: number;
-			b: number;
-			t: number;
-			pad: number;
-		};
-		height: number;
-	};
-	config: {
-		responsive: boolean;
-	};
-	graphIsLoading: boolean;
-	graphLoaded: boolean;
-	filtersMatch: boolean;
-	plotContainerName: string;
-	errorMessage: string;
-};
-
-class ParallelCoords extends React.Component<ParCoordProps, ParCoordState> {
-	componentDidUpdate(prevProps: ParCoordProps): void {
+class ParallelCoords extends React.Component<ParallelCoordsProps, ParallelCoordsState> {
+	/**
+	 * This method is called each time the Root component has updated the properties.
+	 * If the data has changed, the component will pre-process the data for parallel coordinates plot usage.
+	 * If only filters have changed, it will only apply filters on the data, to save run-time.
+	 * @param prevProps Previous component properties. Important for change detection.
+	 */
+	componentDidUpdate(prevProps: ParallelCoordsProps): void {
 		// filters AND data have changed
 		if (prevProps.filters !== this.props.filters && prevProps.data !== this.props.data) {
 			this.preProcess();
@@ -71,16 +39,20 @@ class ParallelCoords extends React.Component<ParCoordProps, ParCoordState> {
 		}
 	}
 
+	/**
+	 * Filters the data. Only call this once filters (but not data) have changed.
+	 */
 	filterData = (): void => {
 		const data = this.state.data;
-		const metaData = this.props.metadata;
-		Object.keys(metaData).forEach((dim) => {
-			const filter = this.getFilterValues(dim);
-			const dimension = data.dimensions.find((d) => d.label == metaData[dim].label);
+		this.getDimensionLabels().forEach((label) => {
+			const cellType = this.cellTypeForLabel(label);
+			const filter = this.getActiveFilter(cellType);
+			const dimension = data.dimensions.find((d) => d.label == label);
 			if (!dimension) return;
 			if (filter) {
 				let filterVal;
-				switch (metaData[dim].type) {
+				const dataType = this.props.metadata[cellType.toString()].type;
+				switch (dataType) {
 					case DataType.NUMERIC:
 						filterVal = filter.value as number;
 						break;
@@ -97,9 +69,22 @@ class ParallelCoords extends React.Component<ParCoordProps, ParCoordState> {
 			}
 		});
 
-		this.setState({ data: data }, () => this.draw());
+		this.setModifiedData(data);
 	};
 
+	/**
+	 * Retrieve cell type from meta data object by passing the related label.
+	 * @param label The label of the dimension.
+	 */
+	cellTypeForLabel = (label: string): CellTypes => {
+		const cellTypeStr = Object.keys(this.props.metadata).find((m) => this.props.metadata[m].label === label);
+		return cellTypeStr != undefined ? (parseInt(cellTypeStr) as CellTypes) : undefined;
+	};
+
+	/**
+	 * Pre-process the new data according to the Plotly-specific format for parallel coordinate plots.
+	 * If filters are set, they will also be applied within this method.
+	 */
 	preProcess = (): void => {
 		if (this.props.data == null) return;
 
@@ -108,20 +93,22 @@ class ParallelCoords extends React.Component<ParCoordProps, ParCoordState> {
 		data.dimensions = [];
 		data.line.color = ParallelCoordsUtils.unpack(rows, SCORE_KEY);
 
-		const metaData = this.props.metadata;
+		const metadata = this.props.metadata;
 
 		const activeFilters = this.activeFilters();
 
 		try {
-			Object.keys(metaData).forEach((dim) => {
-				const filter = this.getFilterValues(dim);
-				const dimension = this.isWildcard(activeFilters, dim)
-					? ParallelCoordsUtils.convertToWildcard(rows, metaData[dim].label)
-					: ParallelCoordsUtils.convertDimension(rows, metaData[dim], filter);
+			this.getDimensionLabels().forEach((label) => {
+				const cellType = this.cellTypeForLabel(label);
+				const filter = this.getActiveFilter(cellType);
+				const dimensionInfo = metadata[cellType.toString()];
+				const dimension = this.isWildcard(activeFilters, cellType)
+					? ParallelCoordsUtils.convertToWildcard(rows, dimensionInfo, cellType)
+					: ParallelCoordsUtils.convertDimension(rows, dimensionInfo, cellType, filter);
 				data.dimensions.push(dimension);
 			});
 
-			this.setState({ data: data, filtersMatch: true }, () => this.draw());
+			this.setState({ filtersMatch: true }, () => this.setModifiedData(data));
 		} catch (e) {
 			if (e instanceof FilterOutOfRangeError)
 				this.setState({ filtersMatch: false, graphLoaded: false, errorMessage: e.message });
@@ -129,55 +116,18 @@ class ParallelCoords extends React.Component<ParCoordProps, ParCoordState> {
 		}
 	};
 
-	constructor(props: ParCoordProps) {
+	/**
+	 * Initialize component. Default state is defined in external file.
+	 * @param props The component props.
+	 */
+	constructor(props: ParallelCoordsProps) {
 		super(props);
-		this.state = {
-			plotContainerName: 'par-coord',
-			data: {
-				type: 'parcoords',
-				line: {
-					color: null,
-					showscale: true,
-					colorscale: [
-						['0.0', '#00ff00'],
-						['0.33', '#FBFF31'],
-						['0.66', '#EB9A65'],
-						['1.0', '#ff0000'],
-					],
-					cmin: SCORE_MIN,
-					cmax: SCORE_MAX,
-				},
-				dimensions: [],
-			},
-
-			layout: {
-				margin: {
-					l: 80,
-					r: 10,
-					b: 20,
-					t: 50,
-					pad: 0,
-				},
-				height: 350,
-			},
-			config: {
-				responsive: true,
-			},
-			graphIsLoading: false,
-			graphLoaded: false,
-			filtersMatch: true,
-			errorMessage: '',
-		};
+		this.state = initialState();
 	}
 
-	enableActivityIndicator = (): void => {
-		this.setState({ graphIsLoading: true });
-	};
-
-	disableActivityIndicator = (): void => {
-		this.setState({ graphIsLoading: false });
-	};
-
+	/**
+	 * Get array of active filter cell types.
+	 */
 	activeFilters = (): Array<CellTypes> => {
 		const activeFilters = [];
 		this.props.filters.map((f) => {
@@ -186,17 +136,31 @@ class ParallelCoords extends React.Component<ParCoordProps, ParCoordState> {
 		return activeFilters;
 	};
 
-	getFilterValues = (dim: string): Filter => {
+	/**
+	 * Will extract filter from filters array, if a filter for given cell type exists.
+	 * Returns null if there does not exist an active filter.
+	 * @param cellType Type of dimension
+	 */
+	getActiveFilter = (cellType: CellTypes): Filter => {
 		const filters = this.props.filters.filter((f) => {
-			return f.type === parseInt(dim);
+			return f.type === cellType;
 		});
 		return filters !== null ? filters[0] : null;
 	};
 
-	isWildcard = (activeFilters: Array<CellTypes>, dimension: string): boolean => {
-		return activeFilters.length > 0 && activeFilters.indexOf(parseInt(dimension)) === -1;
+	/**
+	 * Returns true if a dimension is requested. If not, it will be handled as "*" dimension.
+	 * @param activeFilters Array of filters from props.
+	 * @param dimension Cell type of given dimension.
+	 */
+	isWildcard = (activeFilters: Array<CellTypes>, dimension: CellTypes): boolean => {
+		return activeFilters.length > 0 && activeFilters.indexOf(dimension) === -1;
 	};
 
+	/**
+	 * Draw the actual plot. For performance reasons, it will newly draw the plot on the first time.
+	 * After each update, only the redraw function from Plotly is called.
+	 */
 	draw = (): void => {
 		if (!this.state.filtersMatch) return;
 		if (this.state.graphLoaded) {
@@ -204,16 +168,36 @@ class ParallelCoords extends React.Component<ParCoordProps, ParCoordState> {
 			Plotly.redraw(document.getElementById(this.state.plotContainerName), [this.state.data], 0);
 		} else {
 			console.log('Drawing component ...');
+			const plotDiv = document.getElementById(this.state.plotContainerName) as any;
 			Plotly.newPlot(this.state.plotContainerName, [this.state.data], this.state.layout, this.state.config);
+			plotDiv.on('plotly_restyle', (event) => {
+				this.onPlotlyRestyle(event);
+			});
 			this.setState({ graphLoaded: true });
 		}
 	};
 
-	sortDimension = (dimension: { label: string }): void => {
+	/**
+	 * This event handler is called once a user has dragged one of the axis in the parallel coords plot.
+	 * Important for e.g. controlling the sort button order!
+	 * @param event The restyle event with payload.
+	 */
+	onPlotlyRestyle = (event): void => {
+		if (event && event instanceof Array && event.length && event[0].dimensions) {
+			const orderedDimensionLabels = event[0].dimensions[0].map((d) => d.label);
+			this.setState({ orderedDimensionLabels, customDimensionOrder: true });
+		}
+	};
+
+	/**
+	 * Once the user has clicked a sort button, this click handler will reverse the internal order of the axis.
+	 * @param label The label of the dimension to be sorted.
+	 */
+	sortDimension = (label: string): void => {
 		const data = this.state.data;
 
 		data.dimensions = data.dimensions.map((d) => {
-			if (d.label !== dimension.label) return d;
+			if (d.label !== label) return d;
 			return {
 				...d,
 				range: [d.range[1], d.range[0]],
@@ -223,40 +207,121 @@ class ParallelCoords extends React.Component<ParCoordProps, ParCoordState> {
 		this.setState({ data: data }, () => this.draw());
 	};
 
+	/**
+	 * Get the labels of all dimensions. Initially, it will return the labels in the order they occur in the
+	 * metadata props object. Once a filter is applied or an axis is dragged by the user, it will return the
+	 * custom order of dimensions.
+	 */
+	getDimensionLabels = (): Array<string> => {
+		if (this.state.orderedDimensionLabels && this.state.orderedDimensionLabels.length > 0) {
+			return this.state.orderedDimensionLabels;
+		} else {
+			return Object.keys(this.props.metadata).map((m) => this.props.metadata[m].label);
+		}
+	};
+
+	/**
+	 * This function will apply new newly created data and will trigger the actually draw method of plotly.
+	 * If the user does not have requested custom ordering, the function sorts the dimension in the same order
+	 * the filters are configured.
+	 * @param data Already pre-processed data structure for Plotly parallel coords.
+	 */
+	setModifiedData = (data: any): void => {
+		if (!this.state.customDimensionOrder) {
+			this.activeFilters()
+				.reverse()
+				.forEach((f) => {
+					data.dimensions.sort((a, b) =>
+						(a.type as number) === (f as number) ? -1 : (b.type as number) === (f as number) ? 1 : 0,
+					);
+				});
+			const labels = data.dimensions.map((d) => d.label);
+			this.setState({ data, orderedDimensionLabels: labels }, this.draw);
+		} else {
+			this.setState({ data: data }, this.draw);
+		}
+	};
+
+	/**
+	 * Create sort buttons dynamically for each dimension.
+	 */
 	createButtons = (): JSX.Element[] => {
 		const buttons = [];
 
 		if (!this.state.graphLoaded) return buttons;
 
-		Object.keys(this.props.metadata).forEach((m) => {
-			const dimLabel = this.props.metadata[m].label;
-			const dimension = this.state.data.dimensions.find((d) => d.label == dimLabel);
-			let ascendingOrder = true;
-			if (dimension && dimension.range[0] > dimension.range[1]) {
-				ascendingOrder = false;
-			}
+		const dimLabels = this.getDimensionLabels();
+
+		dimLabels.forEach((label) => {
+			const dimension = this.state.data.dimensions.find((d) => d.label == label);
+			const ascendingOrder = dimension && dimension.range[0] <= dimension.range[1];
 			buttons.push(
-				<button
-					disabled={this.isWildcard(this.activeFilters(), m)}
-					key={m}
-					className="btn btn-primary add-step-btn m-2"
-					onClick={() => this.sortDimension(this.props.metadata[m])}
-				>
-					{ascendingOrder ? <FaArrowUp className="m-2" /> : <FaArrowDown className="m-2" />}
-					{dimLabel}
-				</button>,
+				<Col className="btn-column">
+					<OverlayTrigger
+						placement="top"
+						delay={{ show: 250, hide: 400 }}
+						overlay={this.renderTooltip(`Reverse order`)}
+					>
+						<span>
+							<Button
+								variant="link"
+								disabled={this.isWildcard(this.activeFilters(), dimension.type)}
+								key={label}
+								onClick={() => this.sortDimension(label)}
+							>
+								{ascendingOrder ? <FaArrowUp /> : <FaArrowDown />}
+							</Button>
+						</span>
+					</OverlayTrigger>
+				</Col>,
 			);
 		});
 
 		return buttons;
 	};
 
+	/**
+	 * Once a user has clicked the reset button, the dimensions are ordered in the way they are in the filters.
+	 * The function sets the relevant boolean flag to "false".
+	 */
+	resetCustomDimensionOrder = () => {
+		this.setState({
+			customDimensionOrder: false,
+		});
+	};
+
+	/**
+	 * Renders tooltip with custom message.
+	 * @param message The tooltip message.
+	 */
+	renderTooltip = (message: string): JSX.Element => <Tooltip id="button-tooltip">{message}</Tooltip>;
+
 	render(): JSX.Element {
 		return (
 			<div className="coords">
-				<div id={this.state.plotContainerName} className={this.state.filtersMatch ? '' : 'hide-plot'}></div>
-				<div className={this.state.filtersMatch ? 'sort-buttons' : 'hide-plot'}>{this.createButtons()}</div>
-				{this.state.filtersMatch ? null : <h1 className="no-match">{this.state.errorMessage}</h1>}
+				<div className={this.state.filtersMatch ? '' : 'hide-plot'}>
+					<OverlayTrigger
+						placement="right"
+						delay={{ show: 250, hide: 400 }}
+						overlay={this.renderTooltip(`Reset custom ordering`)}
+					>
+						<span>
+							<Button
+								variant="link"
+								onClick={this.resetCustomDimensionOrder}
+								disabled={!this.state.customDimensionOrder}
+							>
+								<FaUndo></FaUndo>
+							</Button>
+						</span>
+					</OverlayTrigger>
+					<Row className="btn-container">{this.createButtons()}</Row>
+					<div id={this.state.plotContainerName}></div>
+				</div>
+				<Alert show={!this.state.filtersMatch} variant="warning">
+					<Alert.Heading>Warning</Alert.Heading>
+					<p>{this.state.errorMessage}</p>
+				</Alert>
 			</div>
 		);
 	}
