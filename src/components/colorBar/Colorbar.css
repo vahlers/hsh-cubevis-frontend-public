@@ -1,0 +1,7 @@
+.filled {
+	fill: url(#mainGradient);
+}
+
+.color-bar-container {
+	text-align: center;
+}
