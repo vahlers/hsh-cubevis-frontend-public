@@ -7,6 +7,7 @@ import { CubeCellModel } from '../models/cell.model';
 import { DataFilterService } from './dataFilter.service';
 import { Ip } from '../models/ip.modell';
 import { RangeFilter } from '../models/rangeFilter.model';
+import { FilterParameter } from '../models/filter.model';
 
 export class DataProcessingService {
 	private csvService: CsvRetrievalService;
@@ -30,6 +31,7 @@ export class DataProcessingService {
 
 	/**
 	 * Returns a Promise which contains a Cuboid of data.
+	 * @deprecated Use getCuboid(dimensions: { type: CellTypes; sorting?: SortType }[],filter?: FilterParameter): Promise<CubeCellModel[]> instead
 	 * @param dimensions An array of Objects defining the cubed dimensions of the result.
 	 * @param dimension[].type Dimension that is cubed.
 	 * @param dimension[].sorting Sorting order of this dimension. Is optional.
@@ -48,18 +50,51 @@ export class DataProcessingService {
 	public getCuboid(
 		dimensions: { type: CellTypes; sorting?: SortType }[],
 		filter?: { type: CellTypes; value: number | string | Ip | RangeFilter<number | string | Ip> }[],
+	): Promise<CubeCellModel[]>;
+	/**
+	 * Returns a Promise which contains a Cuboid of data.
+	 * @param dimensions An array of Objects defining the cubed dimensions of the result.
+	 * @param dimension[].type Dimension that is cubed.
+	 * @param dimension[].sorting Sorting order of this dimension. Is optional.
+	 * @param filter An object of class "FilterParameter" providing all filter information. Is optional.
+	 * @example //logs Cuboid of SourceIp and SourcePort sorted by SourceIp ascending and filtered for port 2048.
+	 * 			getCuboid(
+	 * 			[{ type: CellTypes.SOURCE_IP, sorting: SortType.ASC }, { type: CellTypes.SOURCE_PORT }],
+	 * 			new FilterParameter(),
+	 * 			)
+	 * 			.then((v) => console.log(v));
+	 * @returns Returns a promise with an object of type CubeCellModel.
+	 * @remarks Numeric attributevalues are 'Infinity' for question marks and 'NaN' for undefined values.
+	 */
+	public getCuboid(
+		dimensions: { type: CellTypes; sorting?: SortType }[],
+		filter?: FilterParameter,
+	): Promise<CubeCellModel[]>;
+	public getCuboid(
+		dimensions: { type: CellTypes; sorting?: SortType }[],
+		filter?:
+			| FilterParameter
+			| { type: CellTypes; value: number | string | Ip | RangeFilter<number | string | Ip> }[],
 	): Promise<CubeCellModel[]> {
 		const cellTypes: CellTypes[] = dimensions.map((v) => v.type);
 		return this.csvService.getAnomalyData(cellTypes).then((v) => {
 			let sortedCuboid: CubeCellModel[] = DataFilterService.getSortedCells(v, dimensions);
 			if (filter) {
-				sortedCuboid = DataFilterService.getFilteredCells(sortedCuboid, filter);
+				let params: FilterParameter;
+				if (filter instanceof FilterParameter) {
+					params = filter;
+				} else {
+					params = new FilterParameter();
+					params.setOldFilter(filter);
+				}
+				sortedCuboid = DataFilterService.getFilteredCells(sortedCuboid, params);
 			}
 			return sortedCuboid;
 		});
 	}
 	/**
 	 * Returns a Promise which contains a Cuboid of data. Only the countMean and countStandardDeviation fields are filled with this function.
+	 * @deprecated Use getCuboidWithCount(dimensions: { type: CellTypes; sorting?: SortType }[],filter?: FilterParameter): Promise<CubeCellModel[]> instead
 	 * @param dimensions An array of Objects defining the cubed dimensions of the result.
 	 * @param dimension[].type Dimension that is cubed.
 	 * @param dimension[].sorting Sorting order of this dimension. Is optional.
@@ -78,12 +113,44 @@ export class DataProcessingService {
 	public getCuboidWithCount(
 		dimensions: { type: CellTypes; sorting?: SortType }[],
 		filter?: { type: CellTypes; value: number | string | Ip | RangeFilter<number | string | Ip> }[],
+	): Promise<CubeCellModel[]>;
+	/**
+	 * Returns a Promise which contains a Cuboid of data. Only the countMean and countStandardDeviation fields are filled with this function.
+	 * @param dimensions An array of Objects defining the cubed dimensions of the result.
+	 * @param dimension[].type Dimension that is cubed.
+	 * @param dimension[].sorting Sorting order of this dimension. Is optional.
+	 * @param filter An object of class "FilterParameter" providing all filter information. Is optional.
+	 * @example //logs Cuboid of SourceIp and SourcePort sorted by SourceIp ascending and filtered for port 2048.
+	 * 			getCuboid(
+	 * 			[{ type: CellTypes.SOURCE_IP, sorting: SortType.ASC }, { type: CellTypes.SOURCE_PORT }],
+	 * 			new FilterParameter(),
+	 * 			)
+	 * 			.then((v) => console.log(v));
+	 * @returns Returns an Promise with an Object of Type CubeCellModel.
+	 * @remarks Numeric attributevalues are 'Infinity' for question marks and 'NaN' for undefined values.
+	 */
+	public getCuboidWithCount(
+		dimensions: { type: CellTypes; sorting?: SortType }[],
+		filter?: FilterParameter,
+	): Promise<CubeCellModel[]>;
+	public getCuboidWithCount(
+		dimensions: { type: CellTypes; sorting?: SortType }[],
+		filter?:
+			| FilterParameter
+			| { type: CellTypes; value: number | string | Ip | RangeFilter<number | string | Ip> }[],
 	): Promise<CubeCellModel[]> {
 		const cellTypes: CellTypes[] = dimensions.map((v) => v.type);
 		return this.csvService.getCounterData(cellTypes).then((v) => {
 			let sortedCuboid: CubeCellModel[] = DataFilterService.getSortedCells(v, dimensions);
 			if (filter) {
-				sortedCuboid = DataFilterService.getFilteredCells(sortedCuboid, filter);
+				let params: FilterParameter;
+				if (filter instanceof FilterParameter) {
+					params = filter;
+				} else {
+					params = new FilterParameter();
+					params.setOldFilter(filter);
+				}
+				sortedCuboid = DataFilterService.getFilteredCells(sortedCuboid, params);
 			}
 			return sortedCuboid;
 		});
@@ -91,6 +158,7 @@ export class DataProcessingService {
 
 	/**
 	 * Returns all available attribute values for a dimension
+	 * @deprecated Use getAvailableValues(dimension: CellTypes[],filter?: FilterParameter): Promise<{ [id: string]: (string | number | Ip)[] }> instead
 	 * @param dimensions An array of CellTypes defining the cubed dimensions.
 	 * @param filter An array which contains objects that define filter criteria for certain cubed Attributes. Is optional.
 	 * @param filter[].type Dimension of the specific filter.
@@ -103,7 +171,27 @@ export class DataProcessingService {
 	public getAvailableValues(
 		dimension: CellTypes[],
 		filter?: { type: CellTypes; value: number | string | Ip }[],
+	): Promise<{ [id: string]: (string | number | Ip)[] }>;
+	/**
+	 * Returns all available attribute values for a dimension
+	 * @param dimensions An array of CellTypes defining the cubed dimensions.
+	 * @param filter An object of class "FilterParameter" providing all filter information. Is optional.
+	 * @example //Logs available Ip's for Cubeoid of SourceIp and SourcePort.
+	 * 			getAvailableValues([CellTypes.SOURCE_IP, CellTypes.SOURCE_PORT])
+	 * 				.then((v) => console.log(v[CellType.SourceIP]))
+	 * @returns An Promise with an Object Containing Pairs of Dimension and Attributevalues
+	 */
+	public getAvailableValues(
+		dimension: CellTypes[],
+		filter?: FilterParameter,
+	): Promise<{ [id: string]: (string | number | Ip)[] }>;
+	public getAvailableValues(
+		dimension: CellTypes[],
+		filter?: FilterParameter | { type: CellTypes; value: number | string | Ip }[],
 	): Promise<{ [id: string]: (string | number | Ip)[] }> {
+		let param: { type: CellTypes; value: string | number | Ip | RangeFilter<string | number | Ip> }[];
+		if (filter instanceof FilterParameter) param = filter.toOldFilter();
+		else param = filter;
 		return this.csvService.getAnomalyData(dimension).then((anomaly) => {
 			const result: { [id: string]: (string | number | Ip)[] } = {};
 			dimension.forEach((dim) => (result[dim] = []));
@@ -112,8 +200,8 @@ export class DataProcessingService {
 				dimension.forEach((element) => {
 					const val = value[CsvRetrievalService.modelKeyName(element)];
 					let filterCondition = true;
-					if (filter && filter.length > 0) {
-						filterCondition = filter
+					if (param && param.length > 0) {
+						filterCondition = param
 							.map((filterObj) => {
 								const modelValue = value[CsvRetrievalService.modelKeyName(filterObj.type)];
 								const filterValue = filterObj.value;

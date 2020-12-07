@@ -1,6 +1,7 @@
 import { CellTypes } from '../enums/cellTypes.enum';
 import { SortType } from '../enums/sortType.enum';
 import { CubeCellModel } from '../models/cell.model';
+import { FilterParameter, Value } from '../models/filter.model';
 import { Ip } from '../models/ip.modell';
 import { RangeFilter } from '../models/rangeFilter.model';
 
@@ -20,67 +21,104 @@ export class DataFilterService {
 		return sortedCellModel;
 	}
 
-	public static getFilteredCells(
-		cellModel: CubeCellModel[],
-		cellTypes: { type: CellTypes; value: number | string | Ip | RangeFilter<number | string | Ip> }[],
-	): CubeCellModel[] {
+	public static getFilteredCells(cellModel: CubeCellModel[], filterParameter: FilterParameter): CubeCellModel[] {
 		return cellModel.filter((cell) => {
 			let filtered = 0;
+			const cellTypes = filterParameter.getAllCelltypes();
 			cellTypes.forEach((filter) => {
-				switch (filter.type) {
+				// We'll add 1 to the filtered variable if atleast one of the filters for each celltype is true.
+				// There can be multiple filters for one celltype.
+				switch (filter) {
 					case CellTypes.DESTINATION_IP:
-						filtered += this.evaluateFilter(filter.value, cell.destinationIp) ? 1 : 0;
+						filtered += this.evaluateFilter(
+							filterParameter.getFiltersByCelltype(filter),
+							cell.destinationIp,
+						)
+							? 1
+							: 0;
 						break;
 					case CellTypes.DESTINATION_PORT:
-						filtered += this.evaluateFilter(filter.value, cell.destinationPort) ? 1 : 0;
+						filtered += this.evaluateFilter(
+							filterParameter.getFiltersByCelltype(filter),
+							cell.destinationPort,
+						)
+							? 1
+							: 0;
 						break;
 					case CellTypes.SOURCE_IP:
-						filtered += this.evaluateFilter(filter.value, cell.sourceIp) ? 1 : 0;
+						filtered += this.evaluateFilter(filterParameter.getFiltersByCelltype(filter), cell.sourceIp)
+							? 1
+							: 0;
 						break;
 					case CellTypes.SOURCE_PORT:
-						filtered += this.evaluateFilter(filter.value, cell.sourcePort) ? 1 : 0;
+						filtered += this.evaluateFilter(filterParameter.getFiltersByCelltype(filter), cell.sourcePort)
+							? 1
+							: 0;
 						break;
 					case CellTypes.ARGUS_TRANSACTION_STATE:
-						filtered += this.evaluateFilter(filter.value, cell.argusTransaction) ? 1 : 0;
+						filtered += this.evaluateFilter(
+							filterParameter.getFiltersByCelltype(filter),
+							cell.argusTransaction,
+						)
+							? 1
+							: 0;
 						break;
 					case CellTypes.NETWORK_PROTOCOL:
-						filtered += this.evaluateFilter(filter.value, cell.networkProtocol) ? 1 : 0;
+						filtered += this.evaluateFilter(
+							filterParameter.getFiltersByCelltype(filter),
+							cell.networkProtocol,
+						)
+							? 1
+							: 0;
 						break;
 					case CellTypes.NETWORK_TRANSPORT:
-						filtered += this.evaluateFilter(filter.value, cell.networkTransport) ? 1 : 0;
+						filtered += this.evaluateFilter(
+							filterParameter.getFiltersByCelltype(filter),
+							cell.networkTransport,
+						)
+							? 1
+							: 0;
 						break;
 				}
 			});
+			// If all available celltypes have atleast one filter which returns true,
+			// the whole filter is valid and the cell won't get removed.
 			return filtered === cellTypes.length;
 		});
 	}
 
 	private static evaluateFilter(
-		filterValue: number | string | RangeFilter<number | string | Ip> | Ip,
+		filterValues: (Value | RangeFilter<Value>)[],
 		cellValue: number | string | Ip,
 	): boolean {
 		// only filter if the value isn't empty
-		if (filterValue !== undefined && filterValue !== null && filterValue !== '') {
-			if (filterValue instanceof Ip) {
-				return cellValue.toString() === filterValue.toString();
-			} else if (typeof filterValue === 'number' || typeof filterValue === 'string') {
-				return cellValue === filterValue || cellValue?.toString() === filterValue;
-			} else if (<RangeFilter<number | string | Ip>>filterValue !== undefined) {
-				const tempValue = <RangeFilter<number | string | Ip>>filterValue;
-				if (tempValue.from instanceof Ip && tempValue.to instanceof Ip) {
-					return (
-						(cellValue as Ip).getFirstBit() >= (tempValue.from as Ip).getFirstBit() &&
-						(cellValue as Ip).getFirstBit() <= (tempValue.to as Ip).getFirstBit() &&
-						(cellValue as Ip).getSecondBit() >= (tempValue.from as Ip).getSecondBit() &&
-						(cellValue as Ip).getSecondBit() <= (tempValue.to as Ip).getSecondBit() &&
-						(cellValue as Ip).getThirdBit() >= (tempValue.from as Ip).getThirdBit() &&
-						(cellValue as Ip).getThirdBit() <= (tempValue.to as Ip).getThirdBit() &&
-						(cellValue as Ip).getFourthBit() >= (tempValue.from as Ip).getFourthBit() &&
-						(cellValue as Ip).getFourthBit() <= (tempValue.to as Ip).getFourthBit()
-					);
+		if (filterValues !== undefined && filterValues !== null && filterValues.length > 0) {
+			let filterResult = false;
+			filterValues.forEach((filterValue) => {
+				if (filterValue instanceof Ip) {
+					if (cellValue.toString() === filterValue.toString()) filterResult = true;
+				} else if (typeof filterValue === 'number' || typeof filterValue === 'string') {
+					if (cellValue === filterValue || cellValue?.toString() === filterValue) filterResult = true;
+				} else if (<RangeFilter<number | string | Ip>>filterValue !== undefined) {
+					const tempValue = <RangeFilter<number | string | Ip>>filterValue;
+					if (tempValue.from instanceof Ip && tempValue.to instanceof Ip) {
+						// We check bit for bit for evaluating ranges
+						if (
+							(cellValue as Ip).getFirstBit() >= (tempValue.from as Ip).getFirstBit() &&
+							(cellValue as Ip).getFirstBit() <= (tempValue.to as Ip).getFirstBit() &&
+							(cellValue as Ip).getSecondBit() >= (tempValue.from as Ip).getSecondBit() &&
+							(cellValue as Ip).getSecondBit() <= (tempValue.to as Ip).getSecondBit() &&
+							(cellValue as Ip).getThirdBit() >= (tempValue.from as Ip).getThirdBit() &&
+							(cellValue as Ip).getThirdBit() <= (tempValue.to as Ip).getThirdBit() &&
+							(cellValue as Ip).getFourthBit() >= (tempValue.from as Ip).getFourthBit() &&
+							(cellValue as Ip).getFourthBit() <= (tempValue.to as Ip).getFourthBit()
+						)
+							filterResult = true;
+					}
+					if (cellValue >= tempValue.from && cellValue <= tempValue.to) filterResult = true;
 				}
-				return cellValue >= tempValue.from && cellValue <= tempValue.to;
-			}
+			});
+			return filterResult;
 		}
 		// If there are no values, nothing will get filtered
 		return true;
