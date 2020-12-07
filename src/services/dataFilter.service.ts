@@ -95,27 +95,31 @@ export class DataFilterService {
 		if (filterValues !== undefined && filterValues !== null && filterValues.length > 0) {
 			let filterResult = false;
 			filterValues.forEach((filterValue) => {
-				if (filterValue instanceof Ip) {
-					if (cellValue.toString() === filterValue.toString()) filterResult = true;
-				} else if (typeof filterValue === 'number' || typeof filterValue === 'string') {
-					if (cellValue === filterValue || cellValue?.toString() === filterValue) filterResult = true;
-				} else if (<RangeFilter<number | string | Ip>>filterValue !== undefined) {
-					const tempValue = <RangeFilter<number | string | Ip>>filterValue;
-					if (tempValue.from instanceof Ip && tempValue.to instanceof Ip) {
-						// We check bit for bit for evaluating ranges
-						if (
-							(cellValue as Ip).getFirstBit() >= (tempValue.from as Ip).getFirstBit() &&
-							(cellValue as Ip).getFirstBit() <= (tempValue.to as Ip).getFirstBit() &&
-							(cellValue as Ip).getSecondBit() >= (tempValue.from as Ip).getSecondBit() &&
-							(cellValue as Ip).getSecondBit() <= (tempValue.to as Ip).getSecondBit() &&
-							(cellValue as Ip).getThirdBit() >= (tempValue.from as Ip).getThirdBit() &&
-							(cellValue as Ip).getThirdBit() <= (tempValue.to as Ip).getThirdBit() &&
-							(cellValue as Ip).getFourthBit() >= (tempValue.from as Ip).getFourthBit() &&
-							(cellValue as Ip).getFourthBit() <= (tempValue.to as Ip).getFourthBit()
-						)
-							filterResult = true;
+				if (filterValue !== null && filterValue !== undefined && filterValue !== '') {
+					if (filterValue instanceof Ip) {
+						if (cellValue.toString() === filterValue.toString()) filterResult = true;
+					} else if (typeof filterValue === 'number' || typeof filterValue === 'string') {
+						if (cellValue === filterValue || cellValue?.toString() === filterValue) filterResult = true;
+					} else if (<RangeFilter<number | string | Ip>>filterValue !== undefined) {
+						const tempValue = <RangeFilter<number | string | Ip>>filterValue;
+						if (tempValue.from instanceof Ip && tempValue.to instanceof Ip) {
+							// We check bit for bit for evaluating ranges
+							if (
+								(cellValue as Ip).getFirstBit() >= (tempValue.from as Ip).getFirstBit() &&
+								(cellValue as Ip).getFirstBit() <= (tempValue.to as Ip).getFirstBit() &&
+								(cellValue as Ip).getSecondBit() >= (tempValue.from as Ip).getSecondBit() &&
+								(cellValue as Ip).getSecondBit() <= (tempValue.to as Ip).getSecondBit() &&
+								(cellValue as Ip).getThirdBit() >= (tempValue.from as Ip).getThirdBit() &&
+								(cellValue as Ip).getThirdBit() <= (tempValue.to as Ip).getThirdBit() &&
+								(cellValue as Ip).getFourthBit() >= (tempValue.from as Ip).getFourthBit() &&
+								(cellValue as Ip).getFourthBit() <= (tempValue.to as Ip).getFourthBit()
+							)
+								filterResult = true;
+						}
+						if (cellValue >= tempValue.from && cellValue <= tempValue.to) filterResult = true;
 					}
-					if (cellValue >= tempValue.from && cellValue <= tempValue.to) filterResult = true;
+				} else {
+					filterResult = true;
 				}
 			});
 			return filterResult;

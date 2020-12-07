@@ -177,13 +177,17 @@ export class FilterParameter {
 	}
 
 	private addSingleFilter(type: CellTypes, value: Value | RangeFilter<Value>): void {
-		if (typeof value === 'string' || typeof value === 'number' || value instanceof Ip) {
-			this.checkType(type, value);
-			this.valueDict[type].push(value);
+		if (value !== null && value !== undefined && value !== '') {
+			if (typeof value === 'string' || typeof value === 'number' || value instanceof Ip) {
+				this.checkType(type, value);
+				this.valueDict[type].push(value);
+			} else {
+				this.checkType(type, value.from);
+				this.checkType(type, value.to);
+				this.rangeDict[type].push(value);
+			}
 		} else {
-			this.checkType(type, value.from);
-			this.checkType(type, value.to);
-			this.rangeDict[type].push(value);
+			this.valueDict[type].push(null);
 		}
 	}
 }
