@@ -1,6 +1,6 @@
 import React from 'react';
 import { CubeCellModel } from '../../../models/cell.model';
-import { Filter } from '../../../models/filter.model';
+import { FilterParameter } from '../../../models/filter.model';
 import { SCORE_MIN, SCORE_MAX } from '../../../helpers/constants';
 import '../ChartsView.css';
 
@@ -11,7 +11,7 @@ const Plotly = require('plotly.js-dist');
 
 type ChartProps = {
 	data: CubeCellModel[];
-	filters: Filter[];
+	filters: FilterParameter;
 	metadata: { [id: string]: { key: string; label: string; type: string } };
 };
 
@@ -56,13 +56,14 @@ type ChartState = {
 	graphLoaded: boolean;
 	showGraph: boolean;
 	message: string;
+	currentFilters: FilterParameter;
 };
 
 class BarChart extends React.Component<ChartProps, ChartState> {
 	componentDidUpdate(prevProps: ChartProps): void {
 		// If something changed
 		if (prevProps.filters !== this.props.filters || prevProps.data !== this.props.data) {
-			this.preProcess();
+			this.setState({ currentFilters: this.props.filters.clone() }, () => this.preProcess());
 		}
 	}
 
@@ -80,18 +81,17 @@ class BarChart extends React.Component<ChartProps, ChartState> {
 		data.y = [];
 		data.marker.color = [];
 		let showGraph = false;
-		console.log('filters', this.props.filters);
-		console.log('dataToShow', this.props.data);
-		if (this.props.filters.length > 0 && this.props.data.length > 0) {
+		const orderedFilters = this.state.currentFilters.getOrderedFilters();
+		if (orderedFilters.length && this.props.data.length) {
 			showGraph = true;
-			const lastFilterType = metaData[this.props.filters[this.props.filters.length - 1].type];
+			const lastFilterType = metaData[orderedFilters.pop().type.toString()];
 			layout.xaxis.title = lastFilterType.label;
 			for (let i = 0; i < arrays.length; i++) {
 				data.x.push(arrays[i][lastFilterType.key].toString());
 				data.y.push(arrays[i]['anomalyScore']);
 				data.marker.color.push(this.props.data[i]['anomalyScore']);
 			}
-		} else if (this.props.filters.length < 1) {
+		} else if (orderedFilters.length < 1) {
 			message = 'Please select at least one Filter';
 		} else {
 			message = 'There is no data matching the given filters. please choose other filters';
@@ -154,6 +154,7 @@ class BarChart extends React.Component<ChartProps, ChartState> {
 			graphIsLoading: false,
 			graphLoaded: false,
 			message: '',
+			currentFilters: new FilterParameter(),
 		};
 	}
 

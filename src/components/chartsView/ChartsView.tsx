@@ -1,20 +1,20 @@
 import React from 'react';
 import { CubeCellModel } from '../../models/cell.model';
-import { Filter } from '../../models/filter.model';
+import { FilterParameter } from '../../models/filter.model';
 import './ChartsView.css';
 import BarChart from './barChart/BarChart';
 import { Carousel } from 'react-bootstrap';
 
 type ChartsViewProps = {
 	data: CubeCellModel[];
-	filters: Filter[];
+	filters: FilterParameter;
 	metadata: { [id: string]: { key: string; label: string; type: string } };
 	onSelection;
 };
 
 type ChartsViewState = {
 	data: CubeCellModel[];
-	filters: Filter[];
+	filters: FilterParameter;
 	metadata: { [id: string]: { key: string; label: string; type: string } };
 };
 
@@ -45,7 +45,7 @@ class ChartsView extends React.Component<ChartsViewProps, ChartsViewState> {
 		super(props);
 		this.state = {
 			data: [],
-			filters: [],
+			filters: new FilterParameter(),
 			metadata: {},
 		};
 	}

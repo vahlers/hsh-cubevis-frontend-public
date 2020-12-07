@@ -7,9 +7,6 @@ import { FaArrowDown, FaArrowUp, FaUndo } from 'react-icons/fa';
 
 import { SCORE_KEY } from '../../helpers/constants';
 import { CellTypes } from '../../enums/cellTypes.enum';
-import { Filter } from '../../models/filter.model';
-import { NominalDimension } from '../../models/dimension.model';
-import { DataType } from '../../enums/dataType.enum';
 import { initialState, ParallelCoordsState } from './ParallelCoordsState';
 import { ParallelCoordsProps } from './ParallelCoordsProps';
 import { Button, OverlayTrigger, Tooltip, Alert, Row, Col } from 'react-bootstrap';
@@ -28,7 +25,7 @@ class ParallelCoords extends React.Component<ParallelCoordsProps, ParallelCoords
 	componentDidUpdate(prevProps: ParallelCoordsProps): void {
 		// filters AND data have changed
 		if (prevProps.filters !== this.props.filters && prevProps.data !== this.props.data) {
-			this.preProcess();
+			this.setState({ currentFilters: this.props.filters.clone() }, () => this.preProcess());
 		}
 		// only data has changed
 		else if (prevProps.data !== this.props.data) {
@@ -36,10 +33,9 @@ class ParallelCoords extends React.Component<ParallelCoordsProps, ParallelCoords
 		}
 		// only filters have changed
 		else if (prevProps.filters !== this.props.filters) {
-			this.filterData();
+			this.setState({ currentFilters: this.props.filters.clone() }, () => this.filterData());
 		}
 	}
-
 	/**
 	 * Filters the data. Only call this once filters (but not data) have changed.
 	 */
@@ -47,27 +43,11 @@ class ParallelCoords extends React.Component<ParallelCoordsProps, ParallelCoords
 		const data = this.state.data;
 		this.getDimensionLabels().forEach((label) => {
 			const cellType = this.cellTypeForLabel(label);
-			const filter = this.getActiveFilter(cellType);
+			const filters = this.state.currentFilters.getFiltersByCelltype(cellType);
 			const dimension = data.dimensions.find((d) => d.label == label);
 			if (!dimension) return;
-			if (filter) {
-				let filterVal;
-				const dataType = this.props.metadata[cellType.toString()].type;
-				switch (dataType) {
-					case DataType.NUMERIC:
-						filterVal = filter.value as number;
-						break;
-					case DataType.IP:
-					case DataType.NOMINAL:
-					case DataType.ORDINAL:
-					default:
-						filterVal = (dimension as NominalDimension).map[filter.value as string];
-						break;
-				}
-				dimension.constraintrange = [filterVal, filterVal];
-			} else {
-				dimension.constraintrange = [];
-			}
+			const dataType = this.props.metadata[cellType.toString()].type;
+			dimension.constraintrange = ParallelCoordsUtils.getConstraintRange(dataType, dimension, filters);
 		});
 
 		this.setModifiedData(data);
@@ -96,16 +76,14 @@ class ParallelCoords extends React.Component<ParallelCoordsProps, ParallelCoords
 
 		const metadata = this.props.metadata;
 
-		const activeFilters = this.activeFilters();
-
 		try {
 			this.getDimensionLabels().forEach((label) => {
 				const cellType = this.cellTypeForLabel(label);
-				const filter = this.getActiveFilter(cellType);
+				const filters = this.state.currentFilters.getFiltersByCelltype(cellType);
 				const dimensionInfo = metadata[cellType.toString()];
-				const dimension = this.isWildcard(activeFilters, cellType)
+				const dimension = this.isWildcard(cellType)
 					? ParallelCoordsUtils.convertToWildcard(rows, dimensionInfo, cellType)
-					: ParallelCoordsUtils.convertDimension(rows, dimensionInfo, cellType, filter);
+					: ParallelCoordsUtils.convertDimension(rows, dimensionInfo, cellType, filters);
 				data.dimensions.push(dimension);
 			});
 
@@ -127,35 +105,13 @@ class ParallelCoords extends React.Component<ParallelCoordsProps, ParallelCoords
 	}
 
 	/**
-	 * Get array of active filter cell types.
-	 */
-	activeFilters = (): Array<CellTypes> => {
-		const activeFilters = [];
-		this.props.filters.map((f) => {
-			if (f) activeFilters.push(f.type);
-		});
-		return activeFilters;
-	};
-
-	/**
-	 * Will extract filter from filters array, if a filter for given cell type exists.
-	 * Returns null if there does not exist an active filter.
-	 * @param cellType Type of dimension
-	 */
-	getActiveFilter = (cellType: CellTypes): Filter => {
-		const filters = this.props.filters.filter((f) => {
-			return f.type === cellType;
-		});
-		return filters !== null ? filters[0] : null;
-	};
-
-	/**
 	 * Returns true if a dimension is requested. If not, it will be handled as "*" dimension.
 	 * @param activeFilters Array of filters from props.
 	 * @param dimension Cell type of given dimension.
 	 */
-	isWildcard = (activeFilters: Array<CellTypes>, dimension: CellTypes): boolean => {
-		return activeFilters.length > 0 && activeFilters.indexOf(dimension) === -1;
+	isWildcard = (dimension: CellTypes): boolean => {
+		const activeFilterCellTypes = this.state.currentFilters.getAllCelltypes();
+		return activeFilterCellTypes.length > 0 && activeFilterCellTypes.indexOf(dimension) === -1;
 	};
 
 	/**
@@ -165,10 +121,8 @@ class ParallelCoords extends React.Component<ParallelCoordsProps, ParallelCoords
 	draw = (): void => {
 		if (!this.state.filtersMatch) return;
 		if (this.state.graphLoaded) {
-			console.log('Redrawing component ...');
 			Plotly.redraw(document.getElementById(this.state.plotContainerName), [this.state.data], 0);
 		} else {
-			console.log('Drawing component ...');
 			const plotDiv = document.getElementById(this.state.plotContainerName) as any;
 			Plotly.newPlot(this.state.plotContainerName, [this.state.data], this.state.layout, this.state.config);
 			plotDiv.on('plotly_restyle', (event) => {
@@ -228,14 +182,16 @@ class ParallelCoords extends React.Component<ParallelCoordsProps, ParallelCoords
 	 * @param data Already pre-processed data structure for Plotly parallel coords.
 	 */
 	setModifiedData = (data: any): void => {
+		const activeFilters = [];
+		this.state.currentFilters.getOrderedFilters().forEach((f) => {
+			if (activeFilters.indexOf(f.type) === -1) activeFilters.push(f.type);
+		});
 		if (!this.state.customDimensionOrder) {
-			this.activeFilters()
-				.reverse()
-				.forEach((f) => {
-					data.dimensions.sort((a, b) =>
-						(a.type as number) === (f as number) ? -1 : (b.type as number) === (f as number) ? 1 : 0,
-					);
-				});
+			activeFilters.reverse().forEach((f) => {
+				data.dimensions.sort((a, b) =>
+					(a.type as number) === (f as number) ? -1 : (b.type as number) === (f as number) ? 1 : 0,
+				);
+			});
 			const labels = data.dimensions.map((d) => d.label);
 			this.setState({ data, orderedDimensionLabels: labels }, this.draw);
 		} else {
@@ -266,7 +222,7 @@ class ParallelCoords extends React.Component<ParallelCoordsProps, ParallelCoords
 						<span>
 							<Button
 								variant="link"
-								disabled={this.isWildcard(this.activeFilters(), dimension.type)}
+								disabled={this.isWildcard(dimension.type)}
 								key={label}
 								onClick={() => this.sortDimension(label)}
 							>

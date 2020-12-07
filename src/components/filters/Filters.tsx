@@ -2,7 +2,7 @@ import React from 'react';
 import './Filters.css';
 import { Accordion } from 'react-bootstrap';
 import { CellTypes } from '../../enums/cellTypes.enum';
-import { Filter } from '../../models/filter.model';
+import { Filter, FilterParameter } from '../../models/filter.model';
 import { DataProcessingService } from '../../services/dataProcessing.service';
 import { FilterStep, FilterStepProps } from './FilterStep';
 import { Ip } from '../../models/ip.modell';
@@ -37,7 +37,7 @@ type StateElem = {
 
 type FilterProps = {
 	onChange: any;
-	chartSelection: Filter[];
+	chartSelection: FilterParameter;
 	metadata: { [p: string]: { key: string; label: string; type: string } };
 };
 const dataService = DataProcessingService.instance();
@@ -125,17 +125,13 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 
 	//sends all non disabled filters to the props.onChange
 	emitChange = (): void => {
-		const filters = this.state.elements.map(function (elem) {
-			if (!elem.disabled) {
-				return elem.filter;
+		const filters: FilterParameter = new FilterParameter();
+		this.state.elements.forEach((stateElem) => {
+			if (!stateElem.disabled) {
+				filters.addFilter(stateElem.filter.type, stateElem.filter.value);
 			}
 		});
-		// if all filters are disabled, map returns an array with an undefined element
-		if (filters.length === 1 && filters[0] === undefined) {
-			this.props.onChange([{ type: null, value: null }]);
-		} else {
-			this.props.onChange(filters);
-		}
+		this.props.onChange(filters);
 	};
 
 	deleteFilter = async (id: number): Promise<void> => {

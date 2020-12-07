@@ -1,5 +1,6 @@
 import { COLOR_SCALE, SCORE_MAX, SCORE_MIN } from '../../helpers/constants';
 import { Dimension } from '../../models/dimension.model';
+import { FilterParameter } from '../../models/filter.model';
 
 type ParallelCoordsState = {
 	data: {
@@ -34,6 +35,7 @@ type ParallelCoordsState = {
 	errorMessage: string;
 	orderedDimensionLabels: Array<string>;
 	customDimensionOrder: boolean;
+	currentFilters: FilterParameter;
 };
 
 const initialState = (): ParallelCoordsState => {
@@ -70,6 +72,7 @@ const initialState = (): ParallelCoordsState => {
 		errorMessage: '',
 		orderedDimensionLabels: [],
 		customDimensionOrder: false,
+		currentFilters: new FilterParameter(),
 	};
 };
 

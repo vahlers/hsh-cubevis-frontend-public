@@ -8,14 +8,14 @@ import ParallelCoords from './components/parallelCoords/ParallelCoords';
 import Filters from './components/filters/Filters';
 import ChartsView from './components/chartsView/ChartsView';
 import { CubeCellModel } from './models/cell.model';
-import { Filter } from './models/filter.model';
+import { FilterParameter } from './models/filter.model';
 
 type AppState = {
 	metadata: any;
 	data: any;
-	filters: Filter[];
+	filters: FilterParameter;
 	filteredData: CubeCellModel[];
-	chartSelection: Filter[];
+	chartSelection: FilterParameter;
 };
 
 class App extends React.Component<unknown, AppState> {
@@ -27,9 +27,9 @@ class App extends React.Component<unknown, AppState> {
 	state = {
 		metadata: {},
 		data: [],
-		filters: [],
+		filters: new FilterParameter(),
 		filteredData: [],
-		chartSelection: [],
+		chartSelection: new FilterParameter(),
 	};
 
 	// kinda hacky, but does its job. is there a better alternative?
@@ -44,18 +44,18 @@ class App extends React.Component<unknown, AppState> {
 		return this.setState({ filteredData: this.state.data });
 	};
 
-	handleFilterChange = async (filters: Filter[]): Promise<unknown> => {
+	handleFilterChange = async (filters: FilterParameter): Promise<unknown> => {
 		return this.setFilteredData(filters);
 	};
 
-	handleChartSelection = async (chartSelection: Filter[]): Promise<unknown> => {
+	handleChartSelection = async (chartSelection: FilterParameter): Promise<unknown> => {
 		// propagating the filter from the ChartsView up to App and then back down to Filters is not great, but works
 		// a possible extension would be using some kind of state management for the filters, for more of that, see /docs/possible-extensions.md
 
 		await this.setStateAsync({ chartSelection });
 
 		// to be able to listen for the same click twice, the selection is removed immediately after setting it
-		return this.setState({ chartSelection: [] });
+		return this.setState({ chartSelection: new FilterParameter() });
 	};
 
 	getMetadata = async (): Promise<unknown> => {
@@ -65,12 +65,12 @@ class App extends React.Component<unknown, AppState> {
 		return this.setStateAsync({ metadata });
 	};
 
-	setFilteredData = async (filters: Filter[]): Promise<unknown> => {
+	setFilteredData = async (filters: FilterParameter): Promise<unknown> => {
 		const dataService = DataProcessingService.instance();
 		// if filter array is empty, select all dimensions
 		const dimensions =
-			filters && filters.length
-				? filters.map(({ type }) => ({ type }))
+			filters && filters.getAllCelltypes().length
+				? filters.getAllCelltypes().map((t) => ({ type: t }))
 				: Object.keys(this.state.metadata).map((type) => ({ type: parseInt(type) as CellTypes }));
 
 		const filteredData = await dataService.getCuboid(dimensions, filters);
@@ -78,7 +78,7 @@ class App extends React.Component<unknown, AppState> {
 
 		// caution: if you call setState once for each of the props, all children will rerender multiple times
 		// this is probably not a desired behavior and costs performance
-		return this.setStateAsync({ filteredData, data, filters: [...filters] });
+		return this.setStateAsync({ filteredData, data, filters });
 	};
 
 	getData = async (): Promise<unknown> => {
