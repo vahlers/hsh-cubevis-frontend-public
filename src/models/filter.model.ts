@@ -115,6 +115,7 @@ export class FilterParameter {
 	}
 
 	/**
+	 * @deprecated Old Filtersyntax should not be used anymore
 	 * Set all filterparameters of an old filterobject to this new Class
 	 * @param oldFilter Object of old Filtersyntax
 	 */
@@ -127,6 +128,7 @@ export class FilterParameter {
 	}
 
 	/**
+	 * @deprecated Old Filtersyntax should not be used anymore
 	 * Return an old filter object
 	 * Only implemented for compatibillity reasons
 	 * @warn Usage may lead to loss of filter information

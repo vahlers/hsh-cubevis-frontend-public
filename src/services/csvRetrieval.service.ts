@@ -15,8 +15,9 @@ export class CsvRetrievalServiceFactory {
 		switch (lib) {
 			case CsvLibrary.D3:
 				return new D3CsvRetrievalService();
+			default:
+				throw new Error('Undefined CsvLibrary.');
 		}
-		throw new Error('Undefined CsvLibrary.');
 	}
 }
 
@@ -178,9 +179,10 @@ class D3CsvRetrievalService extends CsvRetrievalService {
 				});
 				return models;
 			})
-			.catch(() => {
+			.catch((error) => {
 				console.error(
 					'Cannot read csv-file "' + this.fileName(dimensions) + '" from "' + this.anomalyFilePath() + '".',
+					error,
 				);
 				return [];
 			});
@@ -213,8 +215,8 @@ class D3CsvRetrievalService extends CsvRetrievalService {
 				});
 				return models;
 			})
-			.catch(() => {
-				console.error('Cannot read csv-file "' + filename + '" from "' + this.countFilePath() + '".');
+			.catch((error) => {
+				console.error('Cannot read csv-file "' + filename + '" from "' + this.countFilePath() + '".', error);
 				return [];
 			});
 
