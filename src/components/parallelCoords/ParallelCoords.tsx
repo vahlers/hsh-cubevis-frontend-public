@@ -242,9 +242,14 @@ class ParallelCoords extends React.Component<ParallelCoordsProps, ParallelCoords
 	 * The function sets the relevant boolean flag to "false".
 	 */
 	resetCustomDimensionOrder = () => {
-		this.setState({
-			customDimensionOrder: false,
-		});
+		this.setState(
+			{
+				customDimensionOrder: false,
+			},
+			() => {
+				this.setModifiedData(this.state.data);
+			},
+		);
 	};
 
 	/**
