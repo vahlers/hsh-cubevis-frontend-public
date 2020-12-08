@@ -151,12 +151,28 @@ export class FilterParameter {
 		return filter;
 	}
 
-	private checkType(ct: CellTypes, value: Value): void {
+	private parseType(ct: CellTypes, value: Value): Value {
 		const expected = CsvRetrievalService.expectedType(ct);
-		if ((expected !== 'ip' || (expected === 'ip' && !(value instanceof Ip))) && expected !== typeof value) {
-			console.warn('Typemissmatch in FilterParameterModel!');
-			console.warn('Expected: ' + expected + ' Got: ' + value + ' as ' + typeof value);
+
+		switch (expected) {
+			case 'ip':
+				if (value instanceof Ip) return value;
+				else if (typeof value === 'string') return new Ip(value);
+				break;
+			case 'number':
+				if (typeof value === 'number') return value;
+				else if (typeof value === 'string') return parseFloat(value);
+				break;
+			case 'string':
+				if (typeof value === 'string') return value;
+				else if (typeof value === 'number') return value.toString();
+				else if (value instanceof Ip) return value.toString();
+				break;
 		}
+
+		console.warn('Typemissmatch in FilterParameterModel');
+		console.warn('Expected: ' + expected + ' Got: ' + value + ' as ' + typeof value);
+		console.warn('Autoparsing not possible');
 	}
 
 	/**
@@ -181,11 +197,10 @@ export class FilterParameter {
 	private addSingleFilter(type: CellTypes, value: Value | RangeFilter<Value>): void {
 		if (value !== null && value !== undefined && value !== '') {
 			if (typeof value === 'string' || typeof value === 'number' || value instanceof Ip) {
-				this.checkType(type, value);
-				this.valueDict[type].push(value);
+				this.valueDict[type].push(this.parseType(type, value));
 			} else {
-				this.checkType(type, value.from);
-				this.checkType(type, value.to);
+				value.from = this.parseType(type, value.from);
+				value.to = this.parseType(type, value.to);
 				this.rangeDict[type].push(value);
 			}
 		} else {
