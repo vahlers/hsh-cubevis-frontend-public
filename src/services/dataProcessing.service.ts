@@ -6,7 +6,6 @@ import { DataType } from '../enums/dataType.enum';
 import { CubeCellModel } from '../models/cell.model';
 import { DataFilterService } from './dataFilter.service';
 import { Ip } from '../models/ip.modell';
-import { RangeFilter } from '../models/rangeFilter.model';
 import { FilterParameter } from '../models/filter.model';
 
 export class DataProcessingService {
@@ -52,14 +51,7 @@ export class DataProcessingService {
 		return this.csvService.getAnomalyData(cellTypes).then((v) => {
 			let sortedCuboid: CubeCellModel[] = DataFilterService.getSortedCells(v, dimensions);
 			if (filter) {
-				let params: FilterParameter;
-				if (filter instanceof FilterParameter) {
-					params = filter;
-				} else {
-					params = new FilterParameter();
-					params.setOldFilter(filter);
-				}
-				sortedCuboid = DataFilterService.getFilteredCells(sortedCuboid, params);
+				sortedCuboid = DataFilterService.getFilteredCells(sortedCuboid, filter);
 			}
 			return sortedCuboid;
 		});
@@ -87,14 +79,7 @@ export class DataProcessingService {
 		return this.csvService.getCounterData(cellTypes).then((v) => {
 			let sortedCuboid: CubeCellModel[] = DataFilterService.getSortedCells(v, dimensions);
 			if (filter) {
-				let params: FilterParameter;
-				if (filter instanceof FilterParameter) {
-					params = filter;
-				} else {
-					params = new FilterParameter();
-					params.setOldFilter(filter);
-				}
-				sortedCuboid = DataFilterService.getFilteredCells(sortedCuboid, params);
+				sortedCuboid = DataFilterService.getFilteredCells(sortedCuboid, filter);
 			}
 			return sortedCuboid;
 		});
@@ -113,50 +98,20 @@ export class DataProcessingService {
 		dimension: CellTypes[],
 		filter?: FilterParameter,
 	): Promise<{ [id: string]: (string | number | Ip)[] }> {
-		let param: { type: CellTypes; value: string | number | Ip | RangeFilter<string | number | Ip> }[];
-		if (filter instanceof FilterParameter) param = filter.toOldFilter();
-		else param = filter;
 		return this.csvService.getAnomalyData(dimension).then((anomaly) => {
-			const result: { [id: string]: (string | number | Ip)[] } = {};
-			dimension.forEach((dim) => (result[dim] = []));
+			let filtered: CubeCellModel[];
+			if (filter) filtered = DataFilterService.getFilteredCells(anomaly, filter);
+			else filtered = anomaly;
 
-			anomaly.forEach((value) => {
-				dimension.forEach((element) => {
-					const val = value[CsvRetrievalService.modelKeyName(element)];
-					let filterCondition = true;
-					if (param && param.length > 0) {
-						filterCondition = param
-							.map((filterObj) => {
-								const modelValue = value[CsvRetrievalService.modelKeyName(filterObj.type)];
-								const filterValue = filterObj.value;
-								if (typeof modelValue !== typeof filterValue) {
-									console.error(
-										'Filterparameter Typemissmatch for: ',
-										modelValue,
-										filterValue,
-										'Cannot apply value Filter!',
-									);
-									return true;
-								}
-								if (filterValue instanceof Ip) return filterValue.toString() === modelValue.toString();
-								else return modelValue === filterValue;
-							})
-							.reduce((prev, current) => prev && current);
-					}
-					if (filterCondition) {
-						if (val instanceof Ip) {
-							if (
-								result[element].find((v) => v instanceof Ip && v.toString() === val.toString()) ===
-								undefined
-							) {
-								result[element].push(val);
-							}
-						} else if (!result[element].includes(val)) {
-							result[element].push(val);
-						}
-					}
-				});
+			const result: { [id: string]: (string | number | Ip)[] } = {};
+
+			dimension.forEach((dim) => {
+				let array = filtered.map((item) => item[CsvRetrievalService.modelKeyName(dim)]);
+				//Remove Duplicates
+				array = array.filter((item, index) => array.indexOf(item) === index);
+				result[dim] = array;
 			});
+
 			return result;
 		});
 	}

@@ -114,43 +114,6 @@ export class FilterParameter {
 		return this.countReferences;
 	}
 
-	/**
-	 * @deprecated Old Filtersyntax should not be used anymore
-	 * Set all filterparameters of an old filterobject to this new Class
-	 * @param oldFilter Object of old Filtersyntax
-	 */
-	public setOldFilter(oldFilter: { type: CellTypes; value: Value | RangeFilter<Value> }[]): void {
-		oldFilter.forEach((it) => {
-			if (it.value !== null && it.value !== undefined) {
-				this.addSingleFilter(it.type, it.value);
-			}
-		});
-	}
-
-	/**
-	 * @deprecated Old Filtersyntax should not be used anymore
-	 * Return an old filter object
-	 * Only implemented for compatibillity reasons
-	 * @warn Usage may lead to loss of filter information
-	 */
-	public toOldFilter(): { type: CellTypes; value: Value | RangeFilter<Value> }[] {
-		const filter: { type: CellTypes; value: Value | RangeFilter<Value> }[] = [];
-		for (const key in this.valueDict) {
-			// for some reason key is typed as a string (even if its an integer) so we have to parse it
-			if (this.valueDict[key].length > 0)
-				this.valueDict[key].forEach((filterValue) => {
-					filter.push({ type: Number.parseInt(key), value: filterValue });
-				});
-		}
-		for (const key in this.rangeDict) {
-			if (this.rangeDict[key].length > 0)
-				this.rangeDict[key].forEach((filterValue) => {
-					filter.push({ type: Number.parseInt(key), value: filterValue });
-				});
-		}
-		return filter;
-	}
-
 	private parseType(ct: CellTypes, value: Value): Value {
 		const expected = CsvRetrievalService.expectedType(ct);
 
