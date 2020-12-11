@@ -160,7 +160,7 @@ export class ParallelCoordsUtils {
 			switch (dataType) {
 				case DataType.NUMERIC:
 					filters.forEach((filter) => {
-						if (!filter) return;
+						if (filter === null) return;
 						if (typeof filter === 'string' || filter instanceof Ip) {
 							console.error(
 								'Filter has type string or Ip, even though the specified data type is numeric.',
@@ -180,7 +180,7 @@ export class ParallelCoordsUtils {
 				case DataType.ORDINAL:
 				default:
 					filters.forEach((filter) => {
-						if (!filter) return;
+						if (filter === null) return;
 						if (typeof filter === 'string' || typeof filter === 'number' || filter instanceof Ip) {
 							const filterValue = (dimension as NominalDimension).map[filter.toString()];
 							constraintrange.push([filterValue, filterValue]);
