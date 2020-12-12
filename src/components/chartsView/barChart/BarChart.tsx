@@ -3,8 +3,8 @@ import { CubeCellModel } from '../../../models/cell.model';
 import { FilterParameter } from '../../../models/filter.model';
 import { SCORE_MIN, SCORE_MAX } from '../../../helpers/constants';
 import '../ChartsView.css';
-
 import { GiMagnifyingGlass } from 'react-icons/gi';
+import ChartsView from '../ChartsView';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Plotly = require('plotly.js-dist');
@@ -44,10 +44,12 @@ type ChartState = {
 			title: string;
 		};
 		yaxis: {
+			title: string;
 			range: number[];
 			fixedrange: boolean;
 			autorange: boolean;
 		};
+		width: number;
 	};
 	config: {
 		responsive: boolean;
@@ -60,6 +62,7 @@ type ChartState = {
 };
 
 class BarChart extends React.Component<ChartProps, ChartState> {
+	barChart: React.RefObject<HTMLDivElement>;
 	componentDidUpdate(prevProps: ChartProps): void {
 		// If something changed
 		if (prevProps.filters !== this.props.filters || prevProps.data !== this.props.data) {
@@ -101,9 +104,13 @@ class BarChart extends React.Component<ChartProps, ChartState> {
 	};
 
 	draw = (): void => {
-		if (this.state.showGraph) {
-			console.log('Drawing component ...');
-			Plotly.react('barChart', [this.state.data], this.state.layout, this.state.config);
+		if (!this.state.showGraph) return;
+		const layout = this.state.layout;
+		layout.width = this.currentParentWidth();
+		if (this.state.graphLoaded) {
+			Plotly.redraw(this.barChart.current, [this.state.data], layout, this.state.config);
+		} else {
+			Plotly.newPlot('barChart', [this.state.data], layout, this.state.config);
 			this.setState({ graphLoaded: true });
 		}
 	};
@@ -142,10 +149,12 @@ class BarChart extends React.Component<ChartProps, ChartState> {
 					title: 'dimension',
 				},
 				yaxis: {
+					title: 'anomaly-score',
 					range: [0, 10],
 					fixedrange: true,
 					autorange: false,
 				},
+				width: 0,
 			},
 			config: {
 				responsive: true,
@@ -156,24 +165,32 @@ class BarChart extends React.Component<ChartProps, ChartState> {
 			message: '',
 			currentFilters: new FilterParameter(),
 		};
+		this.barChart = React.createRef();
+		window.addEventListener('resize', this.resizeChart);
 	}
 
+	currentParentWidth = (): number => {
+		return document.getElementById(ChartsView.containerName).clientWidth * 0.95;
+	};
+
+	resizeChart = (): void => {
+		const layoutUpdate = { width: this.currentParentWidth() };
+		if (this.barChart.current) Plotly.relayout(this.barChart.current, layoutUpdate);
+	};
+
 	render(): JSX.Element {
-		if (this.state.showGraph) {
-			return (
-				<div className="chart">
-					<div id="barChart" />
+		return (
+			<div>
+				<div className={this.state.graphLoaded ? 'chart' : 'chart hide-chart'}>
+					<div ref={this.barChart} id="barChart" />
 				</div>
-			);
-		} else {
-			return (
-				<div className="chart chart-no-data">
+				<div className={!this.state.graphLoaded ? 'chart chart-no-data' : 'chart chart-no-data hide-chart'}>
 					<GiMagnifyingGlass size={80} />
 					<h2>No Data</h2>
 					<h5> {this.state.message}</h5>
 				</div>
-			);
-		}
+			</div>
+		);
 	}
 }
 

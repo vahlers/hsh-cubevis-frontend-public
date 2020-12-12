@@ -28,8 +28,11 @@
 	width: 2% !important;
 }
 
-#barChart {
+#barChart, #heatMap {
 	margin: 0 auto 0 auto;
 	width: 95%;
-	height: 50%;
+}
+
+.svg-container, .main-svg, .subplot .xy {
+	width: 100%!important;
 }

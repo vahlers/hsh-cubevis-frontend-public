@@ -15,6 +15,7 @@ import { Button, OverlayTrigger, Tooltip, Alert, Row, Col } from 'react-bootstra
 const Plotly = require('plotly.js-dist');
 
 class ParallelCoords extends React.Component<ParallelCoordsProps, ParallelCoordsState> {
+	parCoords: React.RefObject<HTMLDivElement>;
 	/**
 	 * This method is called each time the Root component has updated the properties.
 	 * If the data has changed, the component will pre-process the data for parallel coordinates plot usage.
@@ -100,7 +101,9 @@ class ParallelCoords extends React.Component<ParallelCoordsProps, ParallelCoords
 	 */
 	constructor(props: ParallelCoordsProps) {
 		super(props);
+		console.log(props);
 		this.state = initialState();
+		this.parCoords = React.createRef();
 	}
 
 	/**
@@ -120,11 +123,10 @@ class ParallelCoords extends React.Component<ParallelCoordsProps, ParallelCoords
 	draw = (): void => {
 		if (!this.state.filtersMatch) return;
 		if (this.state.graphLoaded) {
-			Plotly.redraw(document.getElementById(this.state.plotContainerName), [this.state.data], 0);
+			Plotly.redraw(this.parCoords.current, [this.state.data], 0);
 		} else {
-			const plotDiv = document.getElementById(this.state.plotContainerName) as any;
-			Plotly.newPlot(this.state.plotContainerName, [this.state.data], this.state.layout, this.state.config);
-			plotDiv.on('plotly_restyle', (event) => {
+			Plotly.newPlot(this.parCoords.current, [this.state.data], this.state.layout, this.state.config);
+			(this.parCoords.current as any).on('plotly_restyle', (event) => {
 				this.onPlotlyRestyle(event);
 			});
 			this.setState({ graphLoaded: true });
@@ -212,7 +214,7 @@ class ParallelCoords extends React.Component<ParallelCoordsProps, ParallelCoords
 			const dimension = this.state.data.dimensions.find((d) => d.label == label);
 			const ascendingOrder = dimension && dimension.range[0] <= dimension.range[1];
 			buttons.push(
-				<Col className="btn-column">
+				<Col className="btn-column" key={`col-${label}`}>
 					<OverlayTrigger
 						placement="top"
 						delay={{ show: 250, hide: 400 }}
@@ -277,7 +279,7 @@ class ParallelCoords extends React.Component<ParallelCoordsProps, ParallelCoords
 						</span>
 					</OverlayTrigger>
 					<Row className="btn-container">{this.createButtons()}</Row>
-					<div id={this.state.plotContainerName}></div>
+					<div ref={this.parCoords} id={this.state.plotContainerName}></div>
 				</div>
 				<Alert show={!this.state.filtersMatch} variant="warning">
 					<Alert.Heading>Warning</Alert.Heading>

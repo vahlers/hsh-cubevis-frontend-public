@@ -3,6 +3,7 @@ import { CubeCellModel } from '../../models/cell.model';
 import { FilterParameter } from '../../models/filter.model';
 import './ChartsView.css';
 import BarChart from './barChart/BarChart';
+import HeatMap from './heatMap/HeatMap';
 import { Carousel } from 'react-bootstrap';
 
 type ChartsViewProps = {
@@ -19,6 +20,7 @@ type ChartsViewState = {
 };
 
 class ChartsView extends React.Component<ChartsViewProps, ChartsViewState> {
+	static containerName = 'charts-view';
 	async componentDidUpdate(prevProps: ChartsViewProps): Promise<void> {
 		// meta data is only needed once
 		if (prevProps.metadata !== this.props.metadata) {
@@ -52,12 +54,12 @@ class ChartsView extends React.Component<ChartsViewProps, ChartsViewState> {
 
 	render(): JSX.Element {
 		return (
-			<Carousel className="charts-view" interval={null}>
+			<Carousel className="charts-view" id={ChartsView.containerName} interval={null}>
 				<Carousel.Item className="carousel-child">
 					<BarChart data={this.state.data} metadata={this.state.metadata} filters={this.state.filters} />
 				</Carousel.Item>
 				<Carousel.Item className="carousel-child">
-					<h1>Scatter Plot</h1>
+					<HeatMap data={this.state.data} metadata={this.state.metadata} filters={this.state.filters} />
 				</Carousel.Item>
 				<Carousel.Item className="carousel-child">
 					<h1>Box Plot</h1>
