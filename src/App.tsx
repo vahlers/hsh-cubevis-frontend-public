@@ -7,6 +7,7 @@ import { CellTypes } from './enums/cellTypes.enum';
 import ParallelCoords from './components/parallelCoords/ParallelCoords';
 import Filters from './components/filters/Filters';
 import ChartsView from './components/chartsView/ChartsView';
+import Colorbar from './components/colorBar/Colorbar';
 import { CubeCellModel } from './models/cell.model';
 import { FilterParameter } from './models/filter.model';
 
@@ -112,6 +113,9 @@ class App extends React.Component<unknown, AppState> {
 						data={this.state.data}
 						filters={this.state.filters}
 					/>
+				</div>
+				<div className="colorbar-container item-container">
+					<Colorbar />
 				</div>
 			</div>
 		);

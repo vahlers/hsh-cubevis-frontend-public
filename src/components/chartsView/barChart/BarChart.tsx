@@ -118,7 +118,7 @@ class BarChart extends React.Component<ChartProps, ChartState> {
 				y: [0, 10],
 				marker: {
 					color: [],
-					showscale: true,
+					showscale: false,
 					colorscale: [
 						['0.0', '#00ff00'],
 						['0.33', '#FBFF31'],
@@ -131,9 +131,9 @@ class BarChart extends React.Component<ChartProps, ChartState> {
 			layout: {
 				margin: {
 					l: 50,
-					r: 110,
+					r: 50,
 					b: 150,
-					t: 20,
+					t: 30,
 					pad: 0,
 				},
 				height: '380',

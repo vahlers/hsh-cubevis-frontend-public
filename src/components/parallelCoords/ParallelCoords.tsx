@@ -10,7 +10,6 @@ import { CellTypes } from '../../enums/cellTypes.enum';
 import { initialState, ParallelCoordsState } from './ParallelCoordsState';
 import { ParallelCoordsProps } from './ParallelCoordsProps';
 import { Button, OverlayTrigger, Tooltip, Alert, Row, Col } from 'react-bootstrap';
-import Colorbar from '../colorBar/Colorbar';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Plotly = require('plotly.js-dist');
@@ -277,7 +276,6 @@ class ParallelCoords extends React.Component<ParallelCoordsProps, ParallelCoords
 							</Button>
 						</span>
 					</OverlayTrigger>
-					<Colorbar height={32} width={350} />
 					<Row className="btn-container">{this.createButtons()}</Row>
 					<div id={this.state.plotContainerName}></div>
 				</div>

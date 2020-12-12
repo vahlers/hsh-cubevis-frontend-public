@@ -1,7 +1,10 @@
-.filled {
-	fill: url(#mainGradient);
-}
-
 .color-bar-container {
-	text-align: center;
+	display: flex;
+	flex-direction: row;
+	justify-content: space-between;
+	align-items: center;
+	height: 100%;
+	width: 100%;
+	padding: 0 1em;
+	color: black;
 }
