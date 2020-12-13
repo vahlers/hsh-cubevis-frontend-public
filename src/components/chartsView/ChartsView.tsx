@@ -56,10 +56,20 @@ class ChartsView extends React.Component<ChartsViewProps, ChartsViewState> {
 		return (
 			<Carousel className="charts-view" id={ChartsView.containerName} interval={null}>
 				<Carousel.Item className="carousel-child">
-					<BarChart data={this.state.data} metadata={this.state.metadata} filters={this.state.filters} />
+					<BarChart
+						data={this.state.data}
+						metadata={this.state.metadata}
+						filters={this.state.filters}
+						onSelection={this.props.onSelection}
+					/>
 				</Carousel.Item>
 				<Carousel.Item className="carousel-child">
-					<HeatMap data={this.state.data} metadata={this.state.metadata} filters={this.state.filters} />
+					<HeatMap
+						data={this.state.data}
+						metadata={this.state.metadata}
+						filters={this.state.filters}
+						onSelection={this.props.onSelection}
+					/>
 				</Carousel.Item>
 				<Carousel.Item className="carousel-child">
 					<h1>Box Plot</h1>

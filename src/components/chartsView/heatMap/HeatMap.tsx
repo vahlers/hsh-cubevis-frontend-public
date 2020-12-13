@@ -5,6 +5,8 @@ import { SCORE_MIN, SCORE_MAX } from '../../../helpers/constants';
 import '../ChartsView.css';
 import { GiMagnifyingGlass } from 'react-icons/gi';
 import ChartsView from '../ChartsView';
+import { CellTypes } from '../../../enums/cellTypes.enum';
+import { HeatMapUtils } from './HeatMapUtils';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Plotly = require('plotly.js-dist');
@@ -13,6 +15,7 @@ type PlotProps = {
 	data: CubeCellModel[];
 	filters: FilterParameter;
 	metadata: { [id: string]: { key: string; label: string; type: string } };
+	onSelection;
 };
 
 type PlotState = {
@@ -31,6 +34,7 @@ type PlotState = {
 		showlegend: boolean;
 	};
 	layout: {
+		dragmode: string;
 		hovermode: string;
 		margin: {
 			l: number;
@@ -62,6 +66,8 @@ type PlotState = {
 	showGraph: boolean;
 	message: string;
 	currentFilters: FilterParameter;
+	cellTypeX: CellTypes;
+	cellTypeY: CellTypes;
 };
 
 class HeatMap extends React.Component<PlotProps, PlotState> {
@@ -102,13 +108,18 @@ class HeatMap extends React.Component<PlotProps, PlotState> {
 		let showGraph = false;
 		const orderedFilters = this.state.currentFilters.getOrderedFilters();
 
+		let cellTypeX = null;
+		let cellTypeY = null;
+
 		// At least two filters and one data entry is given.
 		if (orderedFilters.length > 1 && this.props.data.length > 0) {
 			// Necessary information is provided, so set the graph to be displayed.
 			showGraph = true;
+			cellTypeX = orderedFilters[orderedFilters.length - 1].type;
+			cellTypeY = orderedFilters[orderedFilters.length - 2].type;
 			// The filtertypes will be obtained from metadata
-			const lastFilterType = metaData[orderedFilters[orderedFilters.length - 1].type];
-			const secondLastFilterType = metaData[orderedFilters[orderedFilters.length - 2].type];
+			const lastFilterType = metaData[cellTypeX];
+			const secondLastFilterType = metaData[cellTypeY];
 
 			// setting the axis labels and hovertemplate
 			layout.xaxis.title = lastFilterType.label;
@@ -130,7 +141,10 @@ class HeatMap extends React.Component<PlotProps, PlotState> {
 				data.color.push(this.props.data[i]['anomalyScore']);
 			}
 			//updating the state of the component with new plot-data, followed by drawing the plot
-			this.setState({ data: data, showGraph: showGraph, message: message }, () => this.draw());
+			this.setState(
+				{ data: data, showGraph: showGraph, message: message, cellTypeX: cellTypeX, cellTypeY: cellTypeY },
+				() => this.draw(),
+			);
 			// necessary filters not provided
 		} else if (orderedFilters.length < 2) {
 			message = 'Please select at least two filters';
@@ -151,14 +165,55 @@ class HeatMap extends React.Component<PlotProps, PlotState> {
 		if (this.state.graphLoaded) {
 			Plotly.redraw(this.heatMap.current, [this.state.data], layout, this.state.config);
 		} else {
-			Plotly.newPlot('heatMap', [this.state.data], layout, this.state.config);
+			Plotly.newPlot(this.heatMap.current, [this.state.data], layout, this.state.config);
+			// add event handlers: if a user clicks the chart, or selects a range by rect
+			(this.heatMap.current as any).on('plotly_click', (event) => {
+				this.onPlotlyClick(event);
+			});
+			(this.heatMap.current as any).on('plotly_selected', (event) => {
+				this.onPlotlySelected(event);
+			});
 			this.setState({ graphLoaded: true });
 		}
+	};
+
+	/** Once a user has clicked a tile on the heatmap,
+	 * 	a filter of the current dimensions,
+	 * 	specified to the value of the clicked tile, is emitted. */
+	onPlotlyClick = (event): void => {
+		if (!event || !event.points || event.points.length != 1) return;
+		const { x, y } = event.points[0];
+		const filters: FilterParameter = new FilterParameter();
+		filters.addFilter(this.state.cellTypeX, x);
+		filters.addFilter(this.state.cellTypeY, y);
+		this.props.onSelection(filters);
+	};
+
+	/** Once a user has selected multiple tiles by rect in the heatmap,
+	 * 	a multivalue filter for both dimensions is emitted. */
+	onPlotlySelected = (event): void => {
+		const selectionRectangle = HeatMapUtils.getCoordinatesFromSelection(event);
+		if (!selectionRectangle) return;
+		const { x1, x2, y1, y2 } = selectionRectangle;
+
+		// invalid selection from user, do nothing
+		if (y2 < y1 || x2 < x1) return;
+
+		// find values based on selection
+		const valuesDimX = this.state.data.x.filter((element, i) => i >= x1 && i <= x2);
+		const valuesDimY = this.state.data.y.filter((element, i) => i >= y1 && i <= y2);
+
+		const filters: FilterParameter = new FilterParameter();
+		filters.addFilter(this.state.cellTypeX, valuesDimX);
+		filters.addFilter(this.state.cellTypeY, valuesDimY);
+		this.props.onSelection(filters);
 	};
 
 	constructor(props: PlotProps) {
 		super(props);
 		this.state = {
+			cellTypeX: null,
+			cellTypeY: null,
 			data: {
 				color: [],
 				type: 'heatmap',
@@ -178,6 +233,7 @@ class HeatMap extends React.Component<PlotProps, PlotState> {
 				zmax: SCORE_MAX,
 			},
 			layout: {
+				dragmode: 'select',
 				hovermode: 'closest',
 				margin: {
 					l: 120,
