@@ -7,6 +7,7 @@ import { CubeCellModel } from '../models/cell.model';
 import { DataFilterService } from './dataFilter.service';
 import { Ip } from '../models/ip.modell';
 import { FilterParameter } from '../models/filter.model';
+import { DataServiceHelper } from '../helpers/dataService.helper';
 
 export class DataProcessingService {
 	private csvService: CsvRetrievalService;
@@ -106,7 +107,7 @@ export class DataProcessingService {
 			const result: { [id: string]: (string | number | Ip)[] } = {};
 
 			dimension.forEach((dim) => {
-				let array = filtered.map((item) => item[CsvRetrievalService.modelKeyName(dim)]);
+				let array = filtered.map((item) => item[DataServiceHelper.getModelKeyName(dim)]);
 				//Remove Duplicates
 				array = array.filter((item, index) => array.indexOf(item) === index);
 				result[dim] = array;
@@ -128,9 +129,9 @@ export class DataProcessingService {
 		const result = {};
 		Array.from(Array(CellTypes.CELLTYPE_CNT).keys()).forEach((key) => {
 			result[key] = {
-				key: CsvRetrievalService.modelKeyName(key),
-				label: CsvRetrievalService.dimLabel(key),
-				type: CsvRetrievalService.typeForDimension(key),
+				key: DataServiceHelper.getModelKeyName(key),
+				label: DataServiceHelper.getDimLabel(key),
+				type: DataServiceHelper.getModelKeyName(key),
 			};
 		});
 		return result;

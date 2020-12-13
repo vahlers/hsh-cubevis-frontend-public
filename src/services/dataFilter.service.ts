@@ -1,5 +1,6 @@
 import { CellTypes } from '../enums/cellTypes.enum';
 import { SortType } from '../enums/sortType.enum';
+import { DataServiceHelper } from '../helpers/dataService.helper';
 import { CubeCellModel } from '../models/cell.model';
 import { FilterParameter, Value } from '../models/filter.model';
 import { Ip } from '../models/ip.modell';
@@ -28,58 +29,8 @@ export class DataFilterService {
 			cellTypes.forEach((filter) => {
 				// We'll add 1 to the filtered variable if atleast one of the filters for each celltype is true.
 				// There can be multiple filters for one celltype.
-				switch (filter) {
-					case CellTypes.DESTINATION_IP:
-						filtered += this.evaluateFilter(
-							filterParameter.getFiltersByCelltype(filter),
-							cell.destinationIp,
-						)
-							? 1
-							: 0;
-						break;
-					case CellTypes.DESTINATION_PORT:
-						filtered += this.evaluateFilter(
-							filterParameter.getFiltersByCelltype(filter),
-							cell.destinationPort,
-						)
-							? 1
-							: 0;
-						break;
-					case CellTypes.SOURCE_IP:
-						filtered += this.evaluateFilter(filterParameter.getFiltersByCelltype(filter), cell.sourceIp)
-							? 1
-							: 0;
-						break;
-					case CellTypes.SOURCE_PORT:
-						filtered += this.evaluateFilter(filterParameter.getFiltersByCelltype(filter), cell.sourcePort)
-							? 1
-							: 0;
-						break;
-					case CellTypes.ARGUS_TRANSACTION_STATE:
-						filtered += this.evaluateFilter(
-							filterParameter.getFiltersByCelltype(filter),
-							cell.argusTransaction,
-						)
-							? 1
-							: 0;
-						break;
-					case CellTypes.NETWORK_PROTOCOL:
-						filtered += this.evaluateFilter(
-							filterParameter.getFiltersByCelltype(filter),
-							cell.networkProtocol,
-						)
-							? 1
-							: 0;
-						break;
-					case CellTypes.NETWORK_TRANSPORT:
-						filtered += this.evaluateFilter(
-							filterParameter.getFiltersByCelltype(filter),
-							cell.networkTransport,
-						)
-							? 1
-							: 0;
-						break;
-				}
+				const propertyValue = DataServiceHelper.getParameterForCelltype(cell, filter);
+				filtered += this.evaluateFilter(filterParameter.getFiltersByCelltype(filter), propertyValue) ? 1 : 0;
 			});
 			// If all available celltypes have atleast one filter which returns true,
 			// the whole filter is valid and the cell won't get removed.
@@ -130,7 +81,7 @@ export class DataFilterService {
 
 	private static sortFunction(sorting: SortType, a: CubeCellModel, b: CubeCellModel, type: CellTypes) {
 		const sortBy: SortType = sorting !== undefined ? sorting : SortType.ASC;
-		const result = this.mapTypeToValue(a, b, type);
+		const result = DataServiceHelper.mapTypeToValue(a, b, type);
 		if (sorting === SortType.SCORE_ASC) {
 			return a.anomalyScore - b.anomalyScore;
 		} else if (sorting === SortType.SCORE_DESC) {
@@ -148,40 +99,5 @@ export class DataFilterService {
 				return result.valueB - result.valueA;
 			}
 		}
-	}
-
-	private static mapTypeToValue(a: CubeCellModel, b: CubeCellModel, type: CellTypes) {
-		let valueA, valueB;
-		switch (type) {
-			case CellTypes.DESTINATION_IP:
-				valueA = a.destinationIp.toString();
-				valueB = b.destinationIp.toString();
-				break;
-			case CellTypes.DESTINATION_PORT:
-				valueA = a.destinationPort;
-				valueB = b.destinationPort;
-				break;
-			case CellTypes.SOURCE_IP:
-				valueA = a.sourceIp.toString();
-				valueB = b.sourceIp.toString();
-				break;
-			case CellTypes.SOURCE_PORT:
-				valueA = a.sourcePort;
-				valueB = b.sourcePort;
-				break;
-			case CellTypes.ARGUS_TRANSACTION_STATE:
-				valueA = a.argusTransaction;
-				valueB = b.argusTransaction;
-				break;
-			case CellTypes.NETWORK_PROTOCOL:
-				valueA = a.networkProtocol;
-				valueB = b.networkProtocol;
-				break;
-			case CellTypes.NETWORK_TRANSPORT:
-				valueA = a.networkTransport;
-				valueB = b.networkTransport;
-				break;
-		}
-		return { valueA, valueB };
 	}
 }

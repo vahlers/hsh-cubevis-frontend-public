@@ -9,6 +9,8 @@ import Filters from './components/filters/Filters';
 import ChartsView from './components/chartsView/ChartsView';
 import Colorbar from './components/colorBar/Colorbar';
 import { CubeCellModel } from './models/cell.model';
+import { Filter } from './models/filter.model';
+import { DataServiceHelper } from './helpers/dataService.helper';
 import { FilterParameter } from './models/filter.model';
 
 type AppState = {

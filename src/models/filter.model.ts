@@ -1,8 +1,8 @@
 import { CellTypes } from '../enums/cellTypes.enum';
 import { Ip } from './ip.modell';
 import { RangeFilter } from './rangeFilter.model';
-import { CsvRetrievalService } from '../services/csvRetrieval.service';
 import * as cloneDeep from 'lodash/cloneDeep';
+import { DataServiceHelper } from '../helpers/dataService.helper';
 
 type Value = number | string | Ip;
 type Filter = { type: CellTypes; value: Value };
@@ -115,7 +115,7 @@ export class FilterParameter {
 	}
 
 	private parseType(ct: CellTypes, value: Value): Value {
-		const expected = CsvRetrievalService.expectedType(ct);
+		const expected = DataServiceHelper.getExpectedType(ct);
 
 		switch (expected) {
 			case 'ip':
