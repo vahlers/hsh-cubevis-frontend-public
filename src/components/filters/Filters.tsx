@@ -1,6 +1,6 @@
 import React from 'react';
 import './Filters.css';
-import { Accordion } from 'react-bootstrap';
+import { Accordion, Alert } from 'react-bootstrap';
 import { CellTypes } from '../../enums/cellTypes.enum';
 import { Filter, FilterParameter } from '../../models/filter.model';
 import { DataProcessingService } from '../../services/dataProcessing.service';
@@ -180,21 +180,25 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 			<div className="filters">
 				<h1>Filters</h1>
 				<Accordion>
-					{this.state.elements.length <= 0
-						? ''
-						: this.state.elements.map((elem) => (
-								<FilterStep
-									id={elem.id}
-									key={elem.id}
-									dimensions={dimensions}
-									values={elem.values}
-									onChange={this.handleChange}
-									onEyeClick={this.handleEyeClick}
-									onDelete={this.deleteFilter}
-									metadata={this.props.metadata}
-									disabled={elem.disabled}
-								/>
-						  ))}
+					{this.state.elements.length <= 0 ? (
+						<Alert show={true} variant="secondary">
+							There are no steps yet. Click &ldquo;Add step&rdquo; to add your first step!
+						</Alert>
+					) : (
+						this.state.elements.map((elem) => (
+							<FilterStep
+								id={elem.id}
+								key={elem.id}
+								dimensions={dimensions}
+								values={elem.values}
+								onChange={this.handleChange}
+								onEyeClick={this.handleEyeClick}
+								onDelete={this.deleteFilter}
+								metadata={this.props.metadata}
+								disabled={elem.disabled}
+							/>
+						))
+					)}
 				</Accordion>
 				<button
 					onClick={this.addFilter}
@@ -205,6 +209,9 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 				>
 					Add Step
 				</button>
+				<br></br>
+				<br></br>
+				<br></br>
 			</div>
 		);
 	}
