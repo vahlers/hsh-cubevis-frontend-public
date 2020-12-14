@@ -11,7 +11,6 @@ export class DataServiceHelper {
 		dataType: DataType;
 		cellProperty: string;
 		dimLabel: string;
-		modelKeyName: string;
 		dimName: string;
 		orderInFile: number;
 	}[] = configDataMapping;
@@ -26,7 +25,7 @@ export class DataServiceHelper {
 	}
 
 	public static getModelKeyName(dim: CellTypes): string {
-		return this.dataMapping.find((value) => value.cellType === dim).modelKeyName;
+		return this.dataMapping.find((value) => value.cellType === dim).cellProperty;
 	}
 
 	public static getTypeForDimension(dim: CellTypes): string {
