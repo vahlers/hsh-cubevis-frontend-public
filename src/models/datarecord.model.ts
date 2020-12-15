@@ -1,5 +1,5 @@
-import { Ip } from './ip.modell';
+import { Value } from './filter.model';
 
-type DataRecord = Record<string, string | number | Ip>;
+type DataRecord = Record<string, Value>;
 
 export type { DataRecord };

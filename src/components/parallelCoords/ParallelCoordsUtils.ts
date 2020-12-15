@@ -5,9 +5,10 @@ import { DataType } from '../../enums/dataType.enum';
 import { Value } from '../../models/filter.model';
 import { CellTypes } from '../../enums/cellTypes.enum';
 import { RangeFilter } from '../../models/rangeFilter.model';
+import { DataServiceHelper } from '../../helpers/dataService.helper';
 
 export class ParallelCoordsUtils {
-	static unpack = (rows: Array<DataRecord>, columName: string): Array<string | number | Ip> => {
+	static unpack = (rows: Array<DataRecord>, columName: string): Array<Value> => {
 		return rows.map(function (row) {
 			return row[columName];
 		});
@@ -54,24 +55,24 @@ export class ParallelCoordsUtils {
 	};
 
 	static _convertToNominal = (
-		rawData: Array<string | number>,
+		rawData: Array<Value>,
 		key: string,
 		label: string,
 		type: CellTypes,
 		filters: (Value | RangeFilter<Value>)[] = null,
 		replacements: Record<number, string> = {},
 	): NominalDimension => {
-		const unique: Array<string | number> = rawData.filter((v, i, a) => a.indexOf(v) === i);
-		const sorted: Array<string | number> = unique.sort((a, b) => (a > b ? 1 : -1));
+		const unique: Array<Value> = rawData.filter((v, i, a) => DataServiceHelper.indexOf(a, v) === i);
+		const sorted: Array<string> = unique.sort((a, b) => (a > b ? 1 : -1)).map((v) => v.toString());
 		const indices = Array.from(Array(unique.length).keys());
 
 		let i = 0;
 		const valueMapping: Record<string, number> = {};
-		unique.forEach((v) => {
+		sorted.forEach((v) => {
 			valueMapping[v] = indices[i++];
 		});
 
-		const converted = rawData.map((a) => valueMapping[a]);
+		const converted = rawData.map((a) => valueMapping[a.toString()]);
 
 		Object.keys(replacements).forEach((idx) => {
 			sorted[idx] = replacements[idx];
@@ -102,8 +103,7 @@ export class ParallelCoordsUtils {
 		filters: (Value | RangeFilter<Value>)[] = null,
 	): NominalDimension => {
 		const rawData: Array<Ip> = ParallelCoordsUtils.unpack(rows, key) as Array<Ip>;
-		const convertedIPs: Array<string> = rawData.map((ip) => ip.toString());
-		return ParallelCoordsUtils._convertToNominal(convertedIPs, key, label, type, filters);
+		return ParallelCoordsUtils._convertToNominal(rawData, key, label, type, filters);
 	};
 
 	static _convertToOrdinal = (
