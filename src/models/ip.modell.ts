@@ -27,6 +27,16 @@ export class Ip {
 		].join('.');
 	}
 
+	public valueOf(): number {
+		if (this.isQuestionMark()) return -1;
+		let sum = 0;
+		sum += this.firstBit * 256 * 256 * 256;
+		sum += this.secondBit * 256 * 256;
+		sum += this.thirdBit * 256;
+		sum += this.fourthBit;
+		return sum;
+	}
+
 	public isQuestionMark(): boolean {
 		return this.questionMark;
 	}

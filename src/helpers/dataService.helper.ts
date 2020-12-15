@@ -1,3 +1,4 @@
+import { valueFocusAriaMessage } from 'react-select/src/accessibility';
 import { configDataMapping, filePathPattern, filePaths } from '../dataservice.config';
 import { CellTypes } from '../enums/cellTypes.enum';
 import { DataType } from '../enums/dataType.enum';
@@ -99,5 +100,42 @@ export class DataServiceHelper {
 
 	public static getSingleCountFilePath(): string {
 		return filePaths.singleCountFilePath;
+	}
+
+	/**
+	 * Performing a===b but using numeric representation for Ip Adresses
+	 * @param a Comparison Parameter of Type number, string, or Ip
+	 * @param b Comparison Parameter of Type number, string, or Ip
+	 * @example equals('192.168.178.1'new Ip('192.168.178.1')) returns false because a and b have different types
+	 */
+	public static typedEquals(a: number | string | Ip, b: number | string | Ip): boolean {
+		if (a instanceof Ip) {
+			//if a is Ip than b also must be Ip
+			if (!(b instanceof Ip)) return false;
+			else return a.valueOf() === b.valueOf();
+		}
+		return a === b;
+	}
+
+	/**
+	 * Performing a==b but using numeric or string representation for Ip Adresses
+	 * @param a Comparison Parameter of Type number, string, or Ip
+	 * @param b Comparison Parameter of Type number, string, or Ip
+	 * @example equals('192.168.178.1', new Ip('192.168.178.1')) returns true because a equals string representation of b
+	 */
+	public static equals(a: number | string | Ip, b: number | string | Ip): boolean {
+		if (a instanceof Ip) {
+			if (typeof b === 'string') a = a.toString();
+			else a = a.valueOf();
+		}
+		if (b instanceof Ip) {
+			if (typeof a === 'string') b = b.toString();
+			else b = b.valueOf();
+		}
+		return a == b;
+	}
+
+	public static indexOf(arr: Array<number | string | Ip>, o: number | string | Ip): number {
+		return arr.findIndex((elem) => DataServiceHelper.equals(elem, o));
 	}
 }
