@@ -131,7 +131,7 @@ export class DataProcessingService {
 			result[key] = {
 				key: DataServiceHelper.getModelKeyName(key),
 				label: DataServiceHelper.getDimLabel(key),
-				type: DataServiceHelper.getModelKeyName(key),
+				type: DataServiceHelper.getTypeForDimension(key),
 			};
 		});
 		return result;
