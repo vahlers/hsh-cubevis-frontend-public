@@ -24,6 +24,7 @@ type ParallelCoordsState = {
 			pad: number;
 		};
 		height: number;
+		width: number;
 	};
 	config: {
 		responsive: boolean;
@@ -61,7 +62,8 @@ const initialState = (): ParallelCoordsState => {
 				t: 50,
 				pad: 0,
 			},
-			height: 350,
+			height: 0,
+			width: 0,
 		},
 		config: {
 			responsive: true,

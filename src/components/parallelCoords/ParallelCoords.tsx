@@ -16,6 +16,9 @@ const Plotly = require('plotly.js-dist');
 
 class ParallelCoords extends React.Component<ParallelCoordsProps, ParallelCoordsState> {
 	parCoords: React.RefObject<HTMLDivElement>;
+	rootContainer: React.RefObject<HTMLDivElement>;
+	buttonContainer: React.RefObject<HTMLDivElement>;
+
 	/**
 	 * This method is called each time the Root component has updated the properties.
 	 * If the data has changed, the component will pre-process the data for parallel coordinates plot usage.
@@ -103,6 +106,9 @@ class ParallelCoords extends React.Component<ParallelCoordsProps, ParallelCoords
 		super(props);
 		this.state = initialState();
 		this.parCoords = React.createRef();
+		this.rootContainer = React.createRef();
+		this.buttonContainer = React.createRef();
+		window.addEventListener('resize', this.resizeChart);
 	}
 
 	/**
@@ -115,16 +121,35 @@ class ParallelCoords extends React.Component<ParallelCoordsProps, ParallelCoords
 		return activeFilterCellTypes.length > 0 && activeFilterCellTypes.indexOf(dimension) === -1;
 	};
 
+	getComputedHeight = (): number => {
+		return this.rootContainer.current
+			? (this.rootContainer.current.clientHeight - this.buttonContainer.current.clientHeight) * 0.8
+			: 0;
+	};
+
+	getComputedWidth = (): number => {
+		return this.rootContainer.current ? this.rootContainer.current.clientWidth : 0;
+	};
+
+	resizeChart = (): void => {
+		const layoutUpdate = { width: this.getComputedWidth(), height: this.getComputedHeight() };
+		if (this.parCoords.current) Plotly.relayout(this.parCoords.current, layoutUpdate);
+	};
+
 	/**
 	 * Draw the actual plot. For performance reasons, it will newly draw the plot on the first time.
 	 * After each update, only the redraw function from Plotly is called.
 	 */
 	draw = (): void => {
+		const layout = this.state.layout;
+		layout.height = this.getComputedHeight();
+		layout.width = this.getComputedWidth();
+
 		if (!this.state.filtersMatch) return;
 		if (this.state.graphLoaded) {
-			Plotly.redraw(this.parCoords.current, [this.state.data], 0);
+			Plotly.redraw(this.parCoords.current, [this.state.data], layout);
 		} else {
-			Plotly.newPlot(this.parCoords.current, [this.state.data], this.state.layout, this.state.config);
+			Plotly.newPlot(this.parCoords.current, [this.state.data], layout, this.state.config);
 			(this.parCoords.current as any).on('plotly_restyle', (event) => {
 				this.onPlotlyRestyle(event);
 			});
@@ -260,24 +285,26 @@ class ParallelCoords extends React.Component<ParallelCoordsProps, ParallelCoords
 
 	render(): JSX.Element {
 		return (
-			<div className="coords">
+			<div ref={this.rootContainer} className="h-100">
 				<div className={this.state.filtersMatch ? '' : 'hide-plot'}>
-					<OverlayTrigger
-						placement="right"
-						delay={{ show: 250, hide: 400 }}
-						overlay={this.renderTooltip(`Reset custom ordering`)}
-					>
-						<span>
-							<Button
-								variant="link"
-								onClick={this.resetCustomDimensionOrder}
-								disabled={!this.state.customDimensionOrder}
-							>
-								<FaUndo></FaUndo>
-							</Button>
-						</span>
-					</OverlayTrigger>
-					<Row className="btn-container">{this.createButtons()}</Row>
+					<div ref={this.buttonContainer}>
+						<OverlayTrigger
+							placement="right"
+							delay={{ show: 250, hide: 400 }}
+							overlay={this.renderTooltip(`Reset custom ordering`)}
+						>
+							<span>
+								<Button
+									variant="link"
+									onClick={this.resetCustomDimensionOrder}
+									disabled={!this.state.customDimensionOrder}
+								>
+									<FaUndo></FaUndo>
+								</Button>
+							</span>
+						</OverlayTrigger>
+						<Row className="btn-container">{this.createButtons()}</Row>
+					</div>
 					<div ref={this.parCoords} id={this.state.plotContainerName}></div>
 				</div>
 				<Alert show={!this.state.filtersMatch} variant="warning">
