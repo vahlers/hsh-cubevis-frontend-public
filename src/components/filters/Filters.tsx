@@ -2,23 +2,24 @@ import React from 'react';
 import './Filters.css';
 import { Accordion, Alert } from 'react-bootstrap';
 import { CellTypes } from '../../enums/cellTypes.enum';
-import { Filter, FilterParameter } from '../../models/filter.model';
+import { FilterParameter, Value } from '../../models/filter.model';
 import { DataProcessingService } from '../../services/dataProcessing.service';
 import { FilterStep, FilterStepProps } from './FilterStep';
-import { Ip } from '../../models/ip.modell';
+import { CubeCellModel } from '../../models/cell.model';
+import { RangeFilter } from '../../models/rangeFilter.model';
+
+export type Filter_ = {
+	type: CellTypes;
+	value: RangeFilter<Value>;
+};
 
 export type Dimension = {
 	value: CellTypes;
 	label: string;
 };
 
-export type DimensionValue = {
-	value: string | number | Ip;
-	label: string;
-};
-
 export type OptionType = {
-	value: string | number;
+	value: string;
 	label: string;
 };
 
@@ -29,8 +30,8 @@ type FilterState = {
 
 type StateElem = {
 	id: number;
-	filter: Filter;
 	values: OptionType[];
+	rangefilter: Filter_;
 	filterStep: FilterStep;
 	disabled: boolean;
 };
@@ -50,41 +51,49 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 		// Initial empty state
 		this.state = { elements: [], disableFilterAdd: true };
 	}
-
-	// This is in preparation for a future feature, only showing available dimensions by using the optional filters
-	// 	// Map the resulting Values to OptionType values so the Select elements can use them as options
-	// 	return filteredResult.map((val) => ({ value: val.toString(), label: val.toString() }));
-	// }
-	// 	async getDataValues(dimension: CellTypes, filterId: number): Promise<OptionType[]> {
-	// 	const result = await await dataService.getAvailableValues(
-	// 		this.state
-	// 			// get all filterStepData with id < filterID
-	// 			.filter((filterStepDatum) => filterStepDatum.id < filterId)
-	// 			// extract only the filters CellType from the filterStepData
-	// 			.map((filterStepDatum) => filterStepDatum.filter.type)
-	// 			// append current dimensions CellType
-	// 			.concat(dimension),
-	// 		// only need the values for the given CellType
-	// 	)[dimension];
-	// Map the resulting Values to OptionType values so the Select elements can use them as options
-	// return result.map((val) => ({ value: val, label: val }));
-	// }
-
-	getDataValues = async (cellType: CellTypes, filterId: number): Promise<OptionType[]> => {
-		const result = (await dataService.getAvailableValues([cellType]))[cellType];
-		// Map the resulting Values to OptionType values so the Select elements can use them as options
-		return result.map((val) => ({ value: val.toString(), label: val.toString() }));
+	componentDidUpdate = (prevProps: FilterProps): void => {
+		if (this.props.metadata !== prevProps.metadata) {
+			dimensions =
+				this.props.metadata === null
+					? []
+					: Object.keys(this.props.metadata).map((type) => ({
+							value: parseInt(type) as CellTypes,
+							label: this.props.metadata[parseInt(type) as CellTypes].label,
+					  }));
+			this.setState({ disableFilterAdd: dimensions === undefined });
+		}
 	};
 
-	// Unused Parameter 'event', Jetbrains IDE doesn't recognize standard underscore notation
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	async getDataValues(dimensionType: CellTypes, filterId: number): Promise<OptionType[]> {
+		// get all elems with an id smaller than the given one
+		const applicableStateElems = this.state.elements.filter((elem) => elem.id < filterId);
+		// map our filters to an object, that fits the getCuboid Signature
+		let cuboidDimensions: CellTypes[] = applicableStateElems.map((elem) => elem.rangefilter.type);
+		// append our new dimensionType
+		cuboidDimensions = cuboidDimensions.concat(dimensionType);
+
+		//TODO
+		console.log('dimensionType', dimensionType);
+		const result = (await dataService.getAvailableValues(cuboidDimensions, this.getFilterParamFromState()))[
+			dimensionType
+		];
+
+		//TODO
+		console.log('result', result);
+		// Map the resulting Values to OptionType values so the Select elements can use them as options
+		return result.map((val) => ({
+			value: val.toString(),
+			label: val.toString(),
+		}));
+	}
+
 	addFilter = async (): Promise<void> => {
 		const defaultDim: Dimension = dimensions[0];
 		const newID = this.state === null ? 0 : this.state.elements.length;
 
 		const result: StateElem = {
 			id: newID,
-			filter: { type: defaultDim.value, value: null },
+			rangefilter: { type: defaultDim.value, value: null },
 			values: await this.getDataValues(defaultDim.value, newID),
 			filterStep: null,
 			disabled: false,
@@ -110,39 +119,21 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 		this.emitChange();
 	};
 
-	componentDidUpdate = (prevProps: FilterProps): void => {
-		if (this.props.metadata !== prevProps.metadata) {
-			dimensions =
-				this.props.metadata === null
-					? []
-					: Object.keys(this.props.metadata).map((type) => ({
-							value: parseInt(type) as CellTypes,
-							label: this.props.metadata[parseInt(type) as CellTypes].label,
-					  }));
-			this.setState({ disableFilterAdd: dimensions === undefined });
-		}
-	};
-
 	//sends all non disabled filters to the props.onChange
+	// TODO change Filters to natively use the FilterParameter class instead of creating one when emitting change
 	emitChange = (): void => {
-		const filters: FilterParameter = new FilterParameter();
-		this.state.elements.forEach((stateElem) => {
-			if (!stateElem.disabled) {
-				filters.addFilter(stateElem.filter.type, stateElem.filter.value);
-			}
-		});
-		this.props.onChange(filters);
+		this.props.onChange(this.getFilterParamFromState());
 	};
 
 	deleteFilter = async (id: number): Promise<void> => {
 		const filterCount = this.state.elements.length;
 		// get the id of the last filter, that is left after deletion
 		const lastFilterId = filterCount - 1 === id ? filterCount - 2 : filterCount - 1;
-		console.log(this.state.elements.length === 1);
 		await this.setState({
 			elements: this.state.elements.filter((elem) => elem.id !== id),
 			// if the last filter after deletion has value null (<==> '*'), disable adding a step
-			disableFilterAdd: this.state.elements.length > 1 && this.state.elements[lastFilterId].filter.value === null,
+			disableFilterAdd:
+				this.state.elements.length > 1 && this.state.elements[lastFilterId].rangefilter.value === null,
 		});
 		this.emitChange();
 	};
@@ -155,24 +146,56 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 		this.emitChange();
 	};
 
-	handleChange = async (id: number, updatedFilter: Filter): Promise<void> => {
+	handleChange = async (id: number, updatedFilter: Filter_): Promise<void> => {
+		const prevDimension = this.state.elements[id].rangefilter.type;
+		// here the state is set by using an object spread '{ }', inserting all of the old object '{ ...el'
+		// and then updating the changed properties ', values: optValues, filter: updatedFilter }'
+		await this.setState({
+			elements: this.state.elements.map((el) => (el.id === id ? { ...el, rangefilter: updatedFilter } : el)),
+			disableFilterAdd:
+				updatedFilter.value === null || (updatedFilter.value.from === null && updatedFilter.value.to === null),
+		});
+
+		// get the updated optValues, can't do this before, because getDataValues depends on getFilterParamFromState,
+		// which depends on the updated state
 		let optValues = this.state.elements[id].values;
-		if (this.state.elements[id].filter.type !== updatedFilter.type) {
+		if (prevDimension !== updatedFilter.type) {
 			// the dimension changed, and the filterStep needs new opt values
 			optValues = await this.getDataValues(updatedFilter.type, id);
 		}
 
-		// here the state is set by using an object spread '{ }', inserting all of the old object '{ ...el'
-		// and then updating the changed properties ', values: optValues, filter: updatedFilter }'
 		await this.setState({
-			elements: this.state.elements.map((el) =>
-				el.id === id ? { ...el, values: optValues, filter: updatedFilter } : el,
-			),
+			elements: this.state.elements.map((el) => (el.id === id ? { ...el, values: optValues } : el)),
 			disableFilterAdd: updatedFilter.value === null,
 		});
 
 		this.emitChange();
 	};
+
+	private getFilterParamFromState() {
+		const filters: FilterParameter = new FilterParameter();
+		this.state.elements.forEach((stateElem) => {
+			if (stateElem.rangefilter.value === null) {
+				filters.addFilter(stateElem.rangefilter.type, null);
+			} else {
+				const from = stateElem.rangefilter.value.from;
+				const to = stateElem.rangefilter.value.to;
+
+				if (!stateElem.disabled) {
+					if (from == to) {
+						filters.addFilter(stateElem.rangefilter.type, from);
+					} else if (from !== null && to === null) {
+						filters.addFilter(stateElem.rangefilter.type, from);
+					} else if (to !== null && from === null) {
+						filters.addFilter(stateElem.rangefilter.type, to);
+					} else {
+						filters.addFilter(stateElem.rangefilter.type, stateElem.rangefilter.value);
+					}
+				}
+			}
+		});
+		return filters;
+	}
 
 	render(): React.ReactNode {
 		// Use bootstrap classes
