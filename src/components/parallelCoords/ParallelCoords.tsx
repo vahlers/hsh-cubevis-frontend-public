@@ -101,7 +101,6 @@ class ParallelCoords extends React.Component<ParallelCoordsProps, ParallelCoords
 	 */
 	constructor(props: ParallelCoordsProps) {
 		super(props);
-		console.log(props);
 		this.state = initialState();
 		this.parCoords = React.createRef();
 	}

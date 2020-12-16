@@ -72,14 +72,10 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 		// append our new dimensionType
 		cuboidDimensions = cuboidDimensions.concat(dimensionType);
 
-		//TODO
-		console.log('dimensionType', dimensionType);
 		const result = (await dataService.getAvailableValues(cuboidDimensions, this.getFilterParamFromState()))[
 			dimensionType
 		];
 
-		//TODO
-		console.log('result', result);
 		// Map the resulting Values to OptionType values so the Select elements can use them as options
 		return result.map((val) => ({
 			value: val.toString(),
