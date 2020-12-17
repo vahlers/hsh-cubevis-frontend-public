@@ -18,6 +18,7 @@ type AppState = {
 	data: any;
 	filters: FilterParameter;
 	filteredData: CubeCellModel[];
+	filteredCountData: CubeCellModel[];
 	chartSelection: FilterParameter;
 };
 
@@ -32,6 +33,7 @@ class App extends React.Component<unknown, AppState> {
 		data: [],
 		filters: new FilterParameter(),
 		filteredData: [],
+		filteredCountData: [],
 		chartSelection: new FilterParameter(),
 	};
 
@@ -44,7 +46,7 @@ class App extends React.Component<unknown, AppState> {
 		await this.getMetadata();
 		await this.getData();
 
-		return this.setState({ filteredData: this.state.data });
+		return this.setState({ filteredData: this.state.data, filteredCountData: this.state.data });
 	};
 
 	handleFilterChange = async (filters: FilterParameter): Promise<unknown> => {
@@ -77,11 +79,17 @@ class App extends React.Component<unknown, AppState> {
 				: Object.keys(this.state.metadata).map((type) => ({ type: parseInt(type) as CellTypes }));
 
 		const filteredData = await dataService.getCuboid(dimensions, filters);
+		const filteredCountData = await dataService.getCuboidWithCount(dimensions, filters);
 		const data = await dataService.getCuboid(dimensions);
 
 		// caution: if you call setState once for each of the props, all children will rerender multiple times
 		// this is probably not a desired behavior and costs performance
-		return this.setStateAsync({ filteredData, data, filters });
+		return this.setStateAsync({
+			filteredData: filteredData,
+			filteredCountData: filteredCountData,
+			data: data,
+			filters: filters,
+		});
 	};
 
 	getData = async (): Promise<unknown> => {
@@ -104,6 +112,7 @@ class App extends React.Component<unknown, AppState> {
 				<div className="chart-container item-container">
 					<ChartsView
 						data={this.state.filteredData}
+						countData={this.state.filteredCountData}
 						filters={this.state.filters}
 						metadata={this.state.metadata}
 						onSelection={this.handleChartSelection}

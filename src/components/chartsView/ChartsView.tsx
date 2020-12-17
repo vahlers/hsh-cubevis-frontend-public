@@ -3,11 +3,13 @@ import { CubeCellModel } from '../../models/cell.model';
 import { FilterParameter } from '../../models/filter.model';
 import './ChartsView.css';
 import BarChart from './barChart/BarChart';
+import BoxPlot from './boxPlot/BoxPlot';
 import HeatMap from './heatMap/HeatMap';
 import { Carousel } from 'react-bootstrap';
 
 type ChartsViewProps = {
 	data: CubeCellModel[];
+	countData: CubeCellModel[];
 	filters: FilterParameter;
 	metadata: { [id: string]: { key: string; label: string; type: string } };
 	onSelection;
@@ -15,6 +17,7 @@ type ChartsViewProps = {
 
 type ChartsViewState = {
 	data: CubeCellModel[];
+	countData: CubeCellModel[];
 	filters: FilterParameter;
 	metadata: { [id: string]: { key: string; label: string; type: string } };
 };
@@ -29,11 +32,15 @@ class ChartsView extends React.Component<ChartsViewProps, ChartsViewState> {
 
 		// for performance reasons, this has to be differentiated
 		if (prevProps.filters !== this.props.filters && prevProps.data !== this.props.data) {
-			await this.setStateAsync({ filters: this.props.filters, data: this.props.data });
+			await this.setStateAsync({
+				filters: this.props.filters,
+				data: this.props.data,
+				countData: this.props.countData,
+			});
 		} else if (prevProps.filters !== this.props.filters) {
 			await this.setStateAsync({ filters: this.props.filters });
 		} else if (prevProps.data !== this.props.data) {
-			await this.setStateAsync({ data: this.props.data });
+			await this.setStateAsync({ data: this.props.data, countData: this.props.countData });
 		}
 	}
 
@@ -47,6 +54,7 @@ class ChartsView extends React.Component<ChartsViewProps, ChartsViewState> {
 		super(props);
 		this.state = {
 			data: [],
+			countData: [],
 			filters: new FilterParameter(),
 			metadata: {},
 		};
@@ -72,7 +80,7 @@ class ChartsView extends React.Component<ChartsViewProps, ChartsViewState> {
 					/>
 				</Carousel.Item>
 				<Carousel.Item className="carousel-child">
-					<h1>Box Plot</h1>
+					<BoxPlot data={this.state.countData} metadata={this.state.metadata} filters={this.state.filters} />
 				</Carousel.Item>
 			</Carousel>
 		);

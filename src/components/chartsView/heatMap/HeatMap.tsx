@@ -43,7 +43,7 @@ type PlotState = {
 			t: number;
 			pad: number;
 		};
-		height: string;
+		height: number;
 		autosize: boolean;
 		xaxis: {
 			title: string;
@@ -243,7 +243,7 @@ class HeatMap extends React.Component<PlotProps, PlotState> {
 					pad: 0,
 				},
 				width: 0,
-				height: '380',
+				height: 380,
 				autosize: true,
 				xaxis: {
 					title: 'dimension',
@@ -274,8 +274,12 @@ class HeatMap extends React.Component<PlotProps, PlotState> {
 		return document.getElementById(ChartsView.containerName).clientWidth * 0.95;
 	};
 
+	currentParentHeight = (): number => {
+		return document.getElementById(ChartsView.containerName).clientHeight * 0.95;
+	};
+
 	resizeChart = (): void => {
-		const layoutUpdate = { width: this.currentParentWidth() };
+		const layoutUpdate = { width: this.currentParentWidth(), height: this.currentParentHeight() };
 		if (this.heatMap.current) Plotly.relayout(this.heatMap.current, layoutUpdate);
 	};
 

@@ -40,7 +40,7 @@ type ChartState = {
 			t: number;
 			pad: number;
 		};
-		height: string;
+		height: number;
 		autosize: boolean;
 		xaxis: {
 			title: string;
@@ -182,7 +182,7 @@ class BarChart extends React.Component<ChartProps, ChartState> {
 					t: 30,
 					pad: 0,
 				},
-				height: '380',
+				height: 380,
 				autosize: true,
 				xaxis: {
 					title: 'dimension',
@@ -212,9 +212,13 @@ class BarChart extends React.Component<ChartProps, ChartState> {
 		return document.getElementById(ChartsView.containerName).clientWidth * 0.95;
 	};
 
+	currentParentHeight = (): number => {
+		return document.getElementById(ChartsView.containerName).clientHeight * 0.95;
+	};
+
 	resizeChart = (): void => {
-		const layoutUpdate = { width: this.currentParentWidth() };
-		if (this.barChart.current) Plotly.relayout(this.barChart.current, layoutUpdate);
+		const layoutUpdate = { width: this.currentParentWidth(), height: this.currentParentHeight() };
+		if (this.barChart.current && this.state.showGraph) Plotly.relayout(this.barChart.current, layoutUpdate);
 	};
 
 	render(): JSX.Element {
