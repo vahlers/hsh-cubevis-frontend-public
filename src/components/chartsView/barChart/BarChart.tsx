@@ -1,7 +1,7 @@
 import React from 'react';
 import { CubeCellModel } from '../../../models/cell.model';
 import { FilterParameter } from '../../../models/filter.model';
-import { SCORE_MIN, SCORE_MAX } from '../../../helpers/constants';
+import { SCORE_MIN, SCORE_MAX, COLOR_SCALE } from '../../../helpers/constants';
 import '../ChartsView.css';
 import { GiMagnifyingGlass } from 'react-icons/gi';
 import ChartsView from '../ChartsView';
@@ -164,11 +164,7 @@ class BarChart extends React.Component<ChartProps, ChartState> {
 				marker: {
 					color: [],
 					showscale: false,
-					colorscale: [
-						['0.0', '#00ff00'],
-						['0.33', '#FBFF31'],
-						['1.0', '#ff0000'],
-					],
+					colorscale: COLOR_SCALE,
 					cmin: SCORE_MIN,
 					cmax: SCORE_MAX,
 				},
