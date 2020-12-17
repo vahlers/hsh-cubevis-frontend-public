@@ -171,13 +171,13 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 	private getFilterParamFromState() {
 		const filters: FilterParameter = new FilterParameter();
 		this.state.elements.forEach((stateElem) => {
-			if (stateElem.rangefilter.value === null) {
-				filters.addFilter(stateElem.rangefilter.type, null);
-			} else {
-				const from = stateElem.rangefilter.value.from;
-				const to = stateElem.rangefilter.value.to;
+			if (!stateElem.disabled) {
+				if (stateElem.rangefilter.value === null) {
+					filters.addFilter(stateElem.rangefilter.type, null);
+				} else {
+					const from = stateElem.rangefilter.value.from;
+					const to = stateElem.rangefilter.value.to;
 
-				if (!stateElem.disabled) {
 					if (from == to) {
 						filters.addFilter(stateElem.rangefilter.type, from);
 					} else if (from !== null && to === null) {
