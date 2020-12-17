@@ -1,69 +1,14 @@
 import React from 'react';
-import { CubeCellModel } from '../../../models/cell.model';
 import { FilterParameter } from '../../../models/filter.model';
-import { SCORE_MIN, SCORE_MAX, COLOR_SCALE } from '../../../helpers/constants';
 import '../ChartsView.css';
-import { GiMagnifyingGlass } from 'react-icons/gi';
 import ChartsView from '../ChartsView';
-import { CellTypes } from '../../../enums/cellTypes.enum';
+import { initialState, ChartState } from './BarChartState';
+import { ChartProps } from './BarChartProps';
+import UserInfoMessage from '../UserInfoMessage';
+import { SCORE_KEY } from '../../../helpers/constants.js';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Plotly = require('plotly.js-dist');
-
-type ChartProps = {
-	data: CubeCellModel[];
-	filters: FilterParameter;
-	metadata: { [id: string]: { key: string; label: string; type: string } };
-	onSelection;
-};
-
-type ChartState = {
-	data: {
-		name: string;
-		type: string;
-		x: any[];
-		y: any[];
-		marker: {
-			color: any;
-			colorscale: Array<Array<string>>;
-			cmin: number;
-			cmax: number;
-			showscale: boolean;
-		};
-	};
-
-	layout: {
-		margin: {
-			l: number;
-			r: number;
-			b: number;
-			t: number;
-			pad: number;
-		};
-		height: number;
-		autosize: boolean;
-		xaxis: {
-			title: string;
-		};
-		yaxis: {
-			title: string;
-			range: number[];
-			fixedrange: boolean;
-			autorange: boolean;
-		};
-		width: number;
-		dragmode: string;
-	};
-	config: {
-		responsive: boolean;
-	};
-	graphIsLoading: boolean;
-	graphLoaded: boolean;
-	showGraph: boolean;
-	message: string;
-	currentFilters: FilterParameter;
-	currentCellType: CellTypes;
-};
 
 class BarChart extends React.Component<ChartProps, ChartState> {
 	barChart: React.RefObject<HTMLDivElement>;
@@ -95,15 +40,16 @@ class BarChart extends React.Component<ChartProps, ChartState> {
 			currentCellType = orderedFilters[orderedFilters.length - 1].type;
 			const lastFilterType = metaData[currentCellType];
 			layout.xaxis.title = lastFilterType.label;
-			for (let i = 0; i < arrays.length; i++) {
-				data.x.push(arrays[i][lastFilterType.key].toString());
-				data.y.push(arrays[i]['anomalyScore']);
-				data.marker.color.push(this.props.data[i]['anomalyScore']);
-			}
+			// For every data entry  push the values and names into the plot data.
+			arrays.forEach((row) => {
+				data.x.push(row[lastFilterType.key].toString());
+				data.y.push(row[SCORE_KEY]);
+				data.marker.color.push(row[SCORE_KEY]);
+			});
 		} else if (orderedFilters.length < 1) {
-			message = 'Please select at least one Filter';
+			message = 'Please select at least one filter.';
 		} else {
-			message = 'There is no data matching the given filters. please choose other filters';
+			message = 'There is no data matching the given filters. Please choose other filters.';
 		}
 
 		this.setState({ data: data, showGraph: showGraph, message: message, currentCellType: currentCellType }, () =>
@@ -154,52 +100,7 @@ class BarChart extends React.Component<ChartProps, ChartState> {
 
 	constructor(props: ChartProps) {
 		super(props);
-		this.state = {
-			currentCellType: null,
-			data: {
-				name: 'Anomaly-Score Barchart',
-				type: 'bar',
-				x: [],
-				y: [0, 10],
-				marker: {
-					color: [],
-					showscale: false,
-					colorscale: COLOR_SCALE,
-					cmin: SCORE_MIN,
-					cmax: SCORE_MAX,
-				},
-			},
-			layout: {
-				dragmode: 'select',
-				margin: {
-					l: 50,
-					r: 50,
-					b: 150,
-					t: 30,
-					pad: 0,
-				},
-				height: 380,
-				autosize: true,
-				xaxis: {
-					title: 'dimension',
-				},
-				yaxis: {
-					title: 'anomaly-score',
-					range: [0, 10],
-					fixedrange: true,
-					autorange: false,
-				},
-				width: 0,
-			},
-			config: {
-				responsive: true,
-			},
-			showGraph: false,
-			graphIsLoading: false,
-			graphLoaded: false,
-			message: '',
-			currentFilters: new FilterParameter(),
-		};
+		this.state = initialState();
 		this.barChart = React.createRef();
 		window.addEventListener('resize', this.resizeChart);
 	}
@@ -223,11 +124,10 @@ class BarChart extends React.Component<ChartProps, ChartState> {
 				<div className={this.state.graphLoaded ? 'chart' : 'chart hide-chart'}>
 					<div ref={this.barChart} id="barChart" />
 				</div>
-				<div className={!this.state.graphLoaded ? 'chart chart-no-data' : 'chart chart-no-data hide-chart'}>
-					<GiMagnifyingGlass size={80} />
-					<h2>No Data</h2>
-					<h5> {this.state.message}</h5>
-				</div>
+				<UserInfoMessage
+					className={!this.state.graphLoaded ? 'chart chart-no-data' : 'chart chart-no-data hide-chart'}
+					message={this.state.message}
+				/>
 			</div>
 		);
 	}
