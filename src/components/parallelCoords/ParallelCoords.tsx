@@ -44,25 +44,15 @@ class ParallelCoords extends React.Component<ParallelCoordsProps, ParallelCoords
 	 */
 	filterData = (): void => {
 		const data = this.state.data;
-		this.getDimensionLabels().forEach((label) => {
-			const cellType = this.cellTypeForLabel(label);
+		this.getOrderedCellTypes().forEach((cellType) => {
 			const filters = this.state.currentFilters.getFiltersByCelltype(cellType);
-			const dimension = data.dimensions.find((d) => d.label == label);
+			const dimension = data.dimensions.find((d) => d.type === cellType);
 			if (!dimension) return;
 			const dataType = this.props.metadata[cellType.toString()].type;
 			dimension.constraintrange = ParallelCoordsUtils.getConstraintRange(dataType, dimension, filters);
 		});
 
 		this.setModifiedData(data);
-	};
-
-	/**
-	 * Retrieve cell type from meta data object by passing the related label.
-	 * @param label The label of the dimension.
-	 */
-	cellTypeForLabel = (label: string): CellTypes => {
-		const cellTypeStr = Object.keys(this.props.metadata).find((m) => this.props.metadata[m].label === label);
-		return cellTypeStr != undefined ? (parseInt(cellTypeStr) as CellTypes) : undefined;
 	};
 
 	/**
@@ -80,8 +70,7 @@ class ParallelCoords extends React.Component<ParallelCoordsProps, ParallelCoords
 		const metadata = this.props.metadata;
 
 		try {
-			this.getDimensionLabels().forEach((label) => {
-				const cellType = this.cellTypeForLabel(label);
+			this.getOrderedCellTypes().forEach((cellType) => {
 				const filters = this.state.currentFilters.getFiltersByCelltype(cellType);
 				const dimensionInfo = metadata[cellType.toString()];
 				const dimension = this.isWildcard(cellType)
@@ -164,40 +153,55 @@ class ParallelCoords extends React.Component<ParallelCoordsProps, ParallelCoords
 	 */
 	onPlotlyRestyle = (event): void => {
 		if (event && event instanceof Array && event.length && event[0].dimensions) {
-			const orderedDimensionLabels = event[0].dimensions[0].map((d) => d.label);
-			this.setState({ orderedDimensionLabels, customDimensionOrder: true });
+			const orderedCellTypes = event[0].dimensions[0].map((d) => d.type);
+			this.setState({ orderedCellTypes, customDimensionOrder: true });
 		}
 	};
 
 	/**
 	 * Once the user has clicked a sort button, this click handler will reverse the internal order of the axis.
-	 * @param label The label of the dimension to be sorted.
+	 * @param type The type of the dimension to be sorted.
 	 */
-	sortDimension = (label: string): void => {
+	sortDimension = (type: CellTypes): void => {
 		const data = this.state.data;
 
 		data.dimensions = data.dimensions.map((d) => {
-			if (d.label !== label) return d;
+			if (d.type !== type) return d;
 			return {
 				...d,
 				range: [d.range[1], d.range[0]],
 			};
 		});
 
-		this.setState({ data: data }, () => this.draw());
+		this.setState({ data: data, customSorting: true }, () => this.draw());
 	};
 
 	/**
-	 * Get the labels of all dimensions. Initially, it will return the labels in the order they occur in the
-	 * metadata props object. Once a filter is applied or an axis is dragged by the user, it will return the
-	 * custom order of dimensions.
+	 * Get the types of all dimensions, in specific order.
+	 * Initially, it will return the type in the order they occur in the metadata props object.
+	 * Once a filter is applied or an axis is dragged by the user, it will return the types in
+	 * custom order.
 	 */
-	getDimensionLabels = (): Array<string> => {
-		if (this.state.orderedDimensionLabels && this.state.orderedDimensionLabels.length > 0) {
-			return this.state.orderedDimensionLabels;
-		} else {
-			return Object.keys(this.props.metadata).map((m) => this.props.metadata[m].label);
+	getOrderedCellTypes = (): Array<CellTypes> => {
+		const orderedFilters = this.state.currentFilters.getOrderedFilters();
+		// user has dragged axis -> return saved cell types from state (modified in onPlotlyRestyle)
+		if (this.state.customDimensionOrder) {
+			return this.state.orderedCellTypes;
 		}
+		// no filters are added -> return default order
+		if (!orderedFilters.length) {
+			return Object.keys(this.props.metadata).map((m) => parseInt(m) as CellTypes);
+		}
+		// otherwise: return cell type order depending on filter order
+		const activeFilters = [];
+		orderedFilters.forEach((filter) => {
+			if (activeFilters.indexOf(filter.type) === -1) activeFilters.push(filter.type);
+		});
+		const orderedCellTypes = Object.keys(this.props.metadata).map((key) => parseInt(key) as CellTypes);
+		activeFilters.reverse().forEach((filter) => {
+			orderedCellTypes.sort((a, b) => (a === filter ? -1 : b === filter ? 1 : 0));
+		});
+		return orderedCellTypes;
 	};
 
 	/**
@@ -207,21 +211,14 @@ class ParallelCoords extends React.Component<ParallelCoordsProps, ParallelCoords
 	 * @param data Already pre-processed data structure for Plotly parallel coords.
 	 */
 	setModifiedData = (data: any): void => {
-		const activeFilters = [];
-		this.state.currentFilters.getOrderedFilters().forEach((f) => {
-			if (activeFilters.indexOf(f.type) === -1) activeFilters.push(f.type);
-		});
 		if (!this.state.customDimensionOrder) {
-			activeFilters.reverse().forEach((f) => {
-				data.dimensions.sort((a, b) =>
-					(a.type as number) === (f as number) ? -1 : (b.type as number) === (f as number) ? 1 : 0,
-				);
-			});
-			const labels = data.dimensions.map((d) => d.label);
-			this.setState({ data, orderedDimensionLabels: labels }, this.draw);
-		} else {
-			this.setState({ data: data }, this.draw);
+			this.getOrderedCellTypes()
+				.reverse()
+				.forEach((type) => {
+					data.dimensions.sort((a, b) => (a.type === type ? -1 : b.type === type ? 1 : 0));
+				});
 		}
+		this.setState({ data }, this.draw);
 	};
 
 	/**
@@ -232,13 +229,11 @@ class ParallelCoords extends React.Component<ParallelCoordsProps, ParallelCoords
 
 		if (!this.state.graphLoaded) return buttons;
 
-		const dimLabels = this.getDimensionLabels();
-
-		dimLabels.forEach((label) => {
-			const dimension = this.state.data.dimensions.find((d) => d.label == label);
+		this.getOrderedCellTypes().forEach((type) => {
+			const dimension = this.state.data.dimensions.find((d) => d.type === type);
 			const ascendingOrder = dimension && dimension.range[0] <= dimension.range[1];
 			buttons.push(
-				<Col className="btn-column" key={`col-${label}`}>
+				<Col className="btn-column" key={`col-${type}`}>
 					<OverlayTrigger
 						placement="top"
 						delay={{ show: 250, hide: 400 }}
@@ -247,9 +242,9 @@ class ParallelCoords extends React.Component<ParallelCoordsProps, ParallelCoords
 						<span>
 							<Button
 								variant="link"
-								disabled={this.isWildcard(dimension.type)}
-								key={label}
-								onClick={() => this.sortDimension(label)}
+								disabled={this.isWildcard(type)}
+								key={type}
+								onClick={() => this.sortDimension(type)}
 							>
 								{ascendingOrder ? <FaArrowUp /> : <FaArrowDown />}
 							</Button>
@@ -264,12 +259,21 @@ class ParallelCoords extends React.Component<ParallelCoordsProps, ParallelCoords
 
 	/**
 	 * Once a user has clicked the reset button, the dimensions are ordered in the way they are in the filters.
-	 * The function sets the relevant boolean flag to "false".
+	 * Plus, the arrow direction of sort buttons will be reset.
 	 */
 	resetCustomDimensionOrder = () => {
+		const data = this.state.data;
+		// reset axis-internal order of dimensions
+		data.dimensions.forEach((d) => {
+			if (d.range[0] > d.range[1]) {
+				d.range = d.range.reverse();
+			}
+		});
 		this.setState(
 			{
+				data: data,
 				customDimensionOrder: false,
+				customSorting: false,
 			},
 			() => {
 				this.setModifiedData(this.state.data);
@@ -297,7 +301,7 @@ class ParallelCoords extends React.Component<ParallelCoordsProps, ParallelCoords
 								<Button
 									variant="link"
 									onClick={this.resetCustomDimensionOrder}
-									disabled={!this.state.customDimensionOrder}
+									disabled={!this.state.customDimensionOrder && !this.state.customSorting}
 								>
 									<FaUndo></FaUndo>
 								</Button>
