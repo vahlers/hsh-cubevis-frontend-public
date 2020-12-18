@@ -1,10 +1,9 @@
 import React, { Component } from 'react';
 import { Accordion, Button, Card, Col, Form, Row } from 'react-bootstrap';
 import './FilterStep.css';
-import { FaAngleRight, FaRegEye } from 'react-icons/fa';
+import { FaAngleRight, FaAngleDown, FaRegEye } from 'react-icons/fa';
 import { ImCross } from 'react-icons/im';
 import Select, { ValueType } from 'react-select';
-import { Value } from '../../models/filter.model';
 import { CellTypes } from '../../enums/cellTypes.enum';
 import { Dimension, OptionType, Filter_ } from './Filters';
 
@@ -20,6 +19,7 @@ export interface FilterStepProps {
 	onDelete: (event: number) => void;
 	metadata: { [p: string]: { key: string; label: string; type: string } };
 	disabled: boolean;
+	stepnumber: number;
 }
 
 interface FilterStepState {
@@ -29,6 +29,23 @@ interface FilterStepState {
 	setFromValue: OptionType;
 	setToValue: OptionType;
 	filterLabel: string;
+	expanded: boolean;
+}
+
+type ExpandArrowProps = {
+	size: number;
+	opacity: number;
+	expanded: boolean;
+};
+
+class ExpandArrow extends Component<ExpandArrowProps> {
+	render(): React.ReactNode {
+		if (this.props.expanded) {
+			return <FaAngleDown size={this.props.size} opacity={this.props.opacity} />;
+		} else {
+			return <FaAngleRight size={this.props.size} opacity={this.props.opacity} />;
+		}
+	}
 }
 
 const Range = Slider.createSliderWithTooltip(Slider.Range);
@@ -47,6 +64,7 @@ export class FilterStep extends Component<FilterStepProps, FilterStepState> {
 			setFromValue: null,
 			setToValue: null,
 			filterLabel: '*',
+			expanded: false,
 		};
 	}
 
@@ -234,20 +252,33 @@ export class FilterStep extends Component<FilterStepProps, FilterStepState> {
 		}
 	};
 
+	moveArrow = (): void => {
+		this.setState({ expanded: !this.state.expanded });
+	};
+
 	render(): React.ReactNode {
 		const { values } = this.props;
 		return (
 			<Card id={this.props.id.toString()} className="overflow-visible">
 				<Card.Header className="filter-header">
 					<Row>
-						<Col xs={2}>
-							<Accordion.Toggle as={Button} variant="link" eventKey={'' + this.props.id}>
-								<FaAngleRight size="20" opacity={this.props.disabled ? 0.4 : 1} />
-							</Accordion.Toggle>
-						</Col>
+						<Accordion.Toggle
+							className="arrow-button"
+							as={Button}
+							variant="link"
+							eventKey={'' + this.props.id}
+							onClick={this.moveArrow}
+						>
+							<ExpandArrow
+								size={25}
+								opacity={this.props.disabled ? 0.4 : 1}
+								expanded={this.state.expanded}
+							/>
+						</Accordion.Toggle>
+						<div className="step-number">{this.props.stepnumber}.</div>
 						<Col xs={4}>
-							<Form>
-								<Form.Control as="select" onChange={this.changeDimension}>
+							<Form className="select-form">
+								<Form.Control className="select-form" as="select" onChange={this.changeDimension}>
 									{this.props.dimensions.map((dim) => (
 										<option
 											key={this.props.id + '.' + dim.value}
@@ -260,15 +291,15 @@ export class FilterStep extends Component<FilterStepProps, FilterStepState> {
 								</Form.Control>
 							</Form>
 						</Col>
-						<Col xs={3}>
-							<h5 className="text-center filter-text">{this.state.filterLabel}</h5>
+						<Col xs={4}>
+							<h6 className="text-center filter-text">{this.state.filterLabel}</h6>
 						</Col>
-						<Col xs={3}>
-							<Button variant="link" onClick={this.notifyEyeClick}>
-								<FaRegEye size="24" opacity={this.props.disabled ? 0.4 : 1} />
-							</Button>
-							<Button variant="link" onClick={this.notifyDelete}>
+						<Col>
+							<Button className="float-right step-btn" variant="link" onClick={this.notifyDelete}>
 								<ImCross size="18" color="red" opacity={this.props.disabled ? 0.4 : 1} />
+							</Button>
+							<Button className="float-right step-btn" variant="link" onClick={this.notifyEyeClick}>
+								<FaRegEye size="24" opacity={this.props.disabled ? 0.4 : 1} />
 							</Button>
 						</Col>
 					</Row>

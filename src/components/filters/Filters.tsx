@@ -5,7 +5,6 @@ import { CellTypes } from '../../enums/cellTypes.enum';
 import { FilterParameter, Value } from '../../models/filter.model';
 import { DataProcessingService } from '../../services/dataProcessing.service';
 import { FilterStep, FilterStepProps } from './FilterStep';
-import { CubeCellModel } from '../../models/cell.model';
 import { RangeFilter } from '../../models/rangeFilter.model';
 
 export type Filter_ = {
@@ -104,6 +103,7 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 			onChange: this.handleChange,
 			metadata: this.props.metadata,
 			disabled: false,
+			stepnumber: 0,
 		};
 		result.filterStep = new FilterStep(props);
 
@@ -200,14 +200,15 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 				<h1>Filters</h1>
 				<Accordion>
 					{this.state.elements.length <= 0 ? (
-						<Alert show={true} variant="secondary">
+						<Alert className="filter-alert" show={true} variant="secondary">
 							There are no steps yet. Click &ldquo;Add step&rdquo; to add your first step!
 						</Alert>
 					) : (
-						this.state.elements.map((elem) => (
+						this.state.elements.map((elem, index) => (
 							<FilterStep
 								id={elem.id}
 								key={elem.id}
+								stepnumber={index + 1}
 								dimensions={dimensions}
 								values={elem.values}
 								onChange={this.handleChange}
@@ -222,7 +223,7 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 				<button
 					onClick={this.addFilter}
 					type="submit"
-					className="btn btn-primary add-step-btn m-2"
+					className="btn btn-primary add-step-btn"
 					// disable adding another step, if the last step has a value of '*' <==> null
 					disabled={this.state.disableFilterAdd}
 				>

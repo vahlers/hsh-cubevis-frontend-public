@@ -17,3 +17,20 @@
 	justify-content: center;
 	align-items: center;
 }
+
+.select-form {
+	height: 100% !important;
+}
+
+.step-number {
+	text-align: center;
+	vertical-align: middle;
+	font-size: 1.5em;
+	margin: auto;
+	font-weight: bold;;
+}
+
+.arrow-button {
+	padding: 0.1em !important;
+	margin-right: 5px;
+}

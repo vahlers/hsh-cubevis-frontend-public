@@ -9,3 +9,18 @@
 .filter-header {
 	color: black;
 }
+
+.filter-alert {
+	border-radius: 0rem !important;
+}
+
+.card {
+	border-left: 0px !important;
+	border-right: 0px !important;
+
+	border-radius: 0rem !important;
+}
+
+.add-step-btn {
+	margin-left: 1em;
+}

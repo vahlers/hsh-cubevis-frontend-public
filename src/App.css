@@ -39,6 +39,8 @@
 	grid-row-start: 1;
 	grid-row-end: 2;
 	overflow: auto;
+	padding-left: 0px;
+	padding-right: 0px;
 }
 
 .chart-container {

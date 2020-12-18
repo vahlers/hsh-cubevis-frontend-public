@@ -1,5 +1,4 @@
 import React from 'react';
-import * as d3 from 'd3';
 import { COLOR_SCALE, SCORE_MIN, SCORE_MAX } from '../../helpers/constants';
 import './Colorbar.css';
 
