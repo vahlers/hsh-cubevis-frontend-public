@@ -18,6 +18,10 @@
 	align-items: center;
 }
 
+
+.hide-filter-step {
+	display: none;
+}
 .select-form {
 	height: 100% !important;
 }

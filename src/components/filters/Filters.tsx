@@ -4,12 +4,14 @@ import { Accordion, Alert } from 'react-bootstrap';
 import { CellTypes } from '../../enums/cellTypes.enum';
 import { FilterParameter, Value } from '../../models/filter.model';
 import { DataProcessingService } from '../../services/dataProcessing.service';
-import { FilterStep, FilterStepProps } from './FilterStep';
+import { FilterStep, FilterStepProps, FilterStepMode } from './FilterStep';
+
 import { RangeFilter } from '../../models/rangeFilter.model';
+import { Ip } from '../../models/ip.modell';
 
 export type Filter_ = {
 	type: CellTypes;
-	value: RangeFilter<Value>;
+	value: Value | Value[] | RangeFilter<Value>;
 };
 
 export type Dimension = {
@@ -30,7 +32,7 @@ type FilterState = {
 type StateElem = {
 	id: number;
 	values: OptionType[];
-	rangefilter: Filter_;
+	filter: Filter_;
 	filterStep: FilterStep;
 	disabled: boolean;
 };
@@ -67,7 +69,7 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 		// get all elems with an id smaller than the given one
 		const applicableStateElems = this.state.elements.filter((elem) => elem.id < filterId);
 		// map our filters to an object, that fits the getCuboid Signature
-		let cuboidDimensions: CellTypes[] = applicableStateElems.map((elem) => elem.rangefilter.type);
+		let cuboidDimensions: CellTypes[] = applicableStateElems.map((elem) => elem.filter.type);
 		// append our new dimensionType
 		cuboidDimensions = cuboidDimensions.concat(dimensionType);
 
@@ -88,7 +90,7 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 
 		const result: StateElem = {
 			id: newID,
-			rangefilter: { type: defaultDim.value, value: null },
+			filter: { type: defaultDim.value, value: null },
 			values: await this.getDataValues(defaultDim.value, newID),
 			filterStep: null,
 			disabled: false,
@@ -128,8 +130,7 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 		await this.setState({
 			elements: this.state.elements.filter((elem) => elem.id !== id),
 			// if the last filter after deletion has value null (<==> '*'), disable adding a step
-			disableFilterAdd:
-				this.state.elements.length > 1 && this.state.elements[lastFilterId].rangefilter.value === null,
+			disableFilterAdd: this.state.elements.length > 1 && this.state.elements[lastFilterId].filter.value === null,
 		});
 		this.emitChange();
 	};
@@ -142,14 +143,13 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 		this.emitChange();
 	};
 
-	handleChange = async (id: number, updatedFilter: Filter_): Promise<void> => {
-		const prevDimension = this.state.elements[id].rangefilter.type;
+	handleChange = async (id: number, mode: FilterStepMode, updatedFilter: Filter_): Promise<void> => {
+		const prevDimension = this.state.elements[id].filter.type;
 		// here the state is set by using an object spread '{ }', inserting all of the old object '{ ...el'
-		// and then updating the changed properties ', values: optValues, filter: updatedFilter }'
+		// and then updating the changed properties ', filter: updatedFilter }'
+
 		await this.setState({
-			elements: this.state.elements.map((el) => (el.id === id ? { ...el, rangefilter: updatedFilter } : el)),
-			disableFilterAdd:
-				updatedFilter.value === null || (updatedFilter.value.from === null && updatedFilter.value.to === null),
+			elements: this.state.elements.map((el) => (el.id === id ? { ...el, filter: updatedFilter } : el)),
 		});
 
 		// get the updated optValues, can't do this before, because getDataValues depends on getFilterParamFromState,
@@ -162,7 +162,6 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 
 		await this.setState({
 			elements: this.state.elements.map((el) => (el.id === id ? { ...el, values: optValues } : el)),
-			disableFilterAdd: updatedFilter.value === null,
 		});
 
 		this.emitChange();
@@ -171,22 +170,26 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 	private getFilterParamFromState() {
 		const filters: FilterParameter = new FilterParameter();
 		this.state.elements.forEach((stateElem) => {
-			if (!stateElem.disabled) {
-				if (stateElem.rangefilter.value === null) {
-					filters.addFilter(stateElem.rangefilter.type, null);
-				} else {
-					const from = stateElem.rangefilter.value.from;
-					const to = stateElem.rangefilter.value.to;
+			let value = stateElem.filter.value;
+			if (value === null) {
+				filters.addFilter(stateElem.filter.type, null);
+			} else if (typeof value === 'string' || typeof value === 'number' || value instanceof Ip) {
+				filters.addFilter(stateElem.filter.type, value);
+			} else if (Array.isArray(value)) {
+				filters.addFilter(stateElem.filter.type, value);
+			} else {
+				value = value as RangeFilter<Value>;
+				const from = value.from;
+				const to = value.to;
 
-					if (from == to) {
-						filters.addFilter(stateElem.rangefilter.type, from);
-					} else if (from !== null && to === null) {
-						filters.addFilter(stateElem.rangefilter.type, from);
-					} else if (to !== null && from === null) {
-						filters.addFilter(stateElem.rangefilter.type, to);
-					} else {
-						filters.addFilter(stateElem.rangefilter.type, stateElem.rangefilter.value);
-					}
+				if (from == to) {
+					filters.addFilter(stateElem.filter.type, from);
+				} else if (from !== null && to === null) {
+					filters.addFilter(stateElem.filter.type, from);
+				} else if (to !== null && from === null) {
+					filters.addFilter(stateElem.filter.type, to);
+				} else {
+					filters.addFilter(stateElem.filter.type, value);
 				}
 			}
 		});
@@ -229,9 +232,9 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 				>
 					Add Step
 				</button>
-				<br></br>
-				<br></br>
-				<br></br>
+				<br />
+				<br />
+				<br />
 			</div>
 		);
 	}
