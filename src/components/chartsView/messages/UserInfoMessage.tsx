@@ -1,10 +1,6 @@
 import React from 'react';
 import { GiMagnifyingGlass } from 'react-icons/gi';
-
-type InfoMessageProps = {
-	className: string;
-	message: string;
-};
+import { InfoMessageProps } from './InfoMessageProps';
 
 class UserInfoMessage extends React.Component<InfoMessageProps> {
 	constructor(props: InfoMessageProps) {

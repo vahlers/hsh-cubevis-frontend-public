@@ -6,7 +6,7 @@ import { HeatMapUtils } from './HeatMapUtils';
 import { HeatMapProps } from './HeatMapProps';
 import { HeatMapState, initialState } from './HeatMapState';
 import { SCORE_KEY } from '../../../helpers/constants.js';
-import UserInfoMessage from '../UserInfoMessage';
+import UserInfoMessage from '../messages/UserInfoMessage';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Plotly = require('plotly.js-dist');

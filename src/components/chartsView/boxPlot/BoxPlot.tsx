@@ -6,6 +6,7 @@ import { initialState, PlotState } from './BoxPlotState';
 import { PlotProps } from './BoxPlotProps';
 import { BoxPlotUtils } from './BoxPlotUtils';
 import { BoxPlotData } from './BoxPlotData';
+import UserInfoMessage from '../messages/UserInfoMessage';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Plotly = require('plotly.js-dist');
@@ -118,11 +119,10 @@ class BoxPlot extends React.Component<PlotProps, PlotState> {
 				<div className={this.state.showGraph ? 'chart' : 'chart hide-chart'}>
 					<div ref={this.boxPlot} id="barChart" />
 				</div>
-				<div className={!this.state.showGraph ? 'chart chart-no-data' : 'chart chart-no-data hide-chart'}>
-					<GiMagnifyingGlass size={80} />
-					<h2>No Data</h2>
-					<h5> {this.state.message}</h5>
-				</div>
+				<UserInfoMessage
+					className={!this.state.showGraph ? 'chart chart-no-data' : 'chart chart-no-data hide-chart'}
+					message={this.state.message}
+				/>
 			</div>
 		);
 	}

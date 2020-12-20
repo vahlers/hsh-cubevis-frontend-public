@@ -4,7 +4,7 @@ import '../ChartsView.css';
 import ChartsView from '../ChartsView';
 import { initialState, ChartState } from './BarChartState';
 import { ChartProps } from './BarChartProps';
-import UserInfoMessage from '../UserInfoMessage';
+import UserInfoMessage from '../messages/UserInfoMessage';
 import { SCORE_KEY } from '../../../helpers/constants.js';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
