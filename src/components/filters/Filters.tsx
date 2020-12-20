@@ -35,10 +35,11 @@ type StateElem = {
 	filter: Filter_;
 	filterStep: FilterStep;
 	disabled: boolean;
+	setFilterFromChart: Filter_;
 };
 
 type FilterProps = {
-	onChange: any;
+	onChange: (filters: FilterParameter) => void;
 	chartSelection: FilterParameter;
 	metadata: { [p: string]: { key: string; label: string; type: string } };
 };
@@ -53,6 +54,24 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 		this.state = { elements: [], disableFilterAdd: true };
 	}
 	componentDidUpdate = (prevProps: FilterProps): void => {
+		if (this.props.chartSelection !== null && this.props.chartSelection !== prevProps.chartSelection) {
+			// get the last added filter
+			const allFilters = this.props.chartSelection.getOrderedFilters();
+			const newStep = allFilters[allFilters.length - 1];
+			let newFilter = newStep.filter;
+			console.log('handling chartSelection', newStep);
+
+			if (Array.isArray(newFilter)) {
+				// TODO this ignores the Type RangeFilter[] because i dont think that is ever used
+				newFilter = newFilter as Value[];
+			} else if ((newFilter as RangeFilter<Value>).from !== undefined) {
+				newFilter = newFilter as RangeFilter<Value>;
+			} else {
+				newFilter = newFilter as Value;
+			}
+			this.applyChartSelection({ type: newStep.type, value: newFilter });
+		}
+
 		if (this.props.metadata !== prevProps.metadata) {
 			dimensions =
 				this.props.metadata === null
@@ -65,16 +84,16 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 		}
 	};
 
-	async getDataValues(dimensionType: CellTypes, filterId: number): Promise<OptionType[]> {
+	async getDataValues(newDimensionType: CellTypes, filterId: number): Promise<OptionType[]> {
 		// get all elems with an id smaller than the given one
 		const applicableStateElems = this.state.elements.filter((elem) => elem.id < filterId);
 		// map our filters to an object, that fits the getCuboid Signature
 		let cuboidDimensions: CellTypes[] = applicableStateElems.map((elem) => elem.filter.type);
-		// append our new dimensionType
-		cuboidDimensions = cuboidDimensions.concat(dimensionType);
+		// append our new newDimensionType
+		cuboidDimensions = cuboidDimensions.concat(newDimensionType);
 
 		const result = (await dataService.getAvailableValues(cuboidDimensions, this.getFilterParamFromState()))[
-			dimensionType
+			newDimensionType
 		];
 
 		// Map the resulting Values to OptionType values so the Select elements can use them as options
@@ -85,15 +104,16 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 	}
 
 	addFilter = async (): Promise<void> => {
-		const defaultDim: Dimension = dimensions[0];
+		const newFilterDimension: Dimension = dimensions[0];
 		const newID = this.state === null ? 0 : this.state.elements.length;
 
 		const result: StateElem = {
 			id: newID,
-			filter: { type: defaultDim.value, value: null },
-			values: await this.getDataValues(defaultDim.value, newID),
+			filter: { type: newFilterDimension.value, value: null },
+			values: await this.getDataValues(newFilterDimension.value, newID),
 			filterStep: null,
 			disabled: false,
+			setFilterFromChart: null,
 		};
 
 		const props: FilterStepProps = {
@@ -106,6 +126,7 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 			metadata: this.props.metadata,
 			disabled: false,
 			stepnumber: 0,
+			chartSelection: null,
 		};
 		result.filterStep = new FilterStep(props);
 
@@ -116,6 +137,14 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 		}
 		this.emitChange();
 	};
+
+	applyChartSelection(chartSelection: Filter_): void {
+		this.setState({
+			elements: this.state.elements.map((el) =>
+				el.id === this.state.elements.length - 1 ? { ...el, setFilterFromChart: chartSelection } : el,
+			),
+		});
+	}
 
 	//sends all non disabled filters to the props.onChange
 	// TODO change Filters to natively use the FilterParameter class instead of creating one when emitting change
@@ -162,6 +191,7 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 
 		await this.setState({
 			elements: this.state.elements.map((el) => (el.id === id ? { ...el, values: optValues } : el)),
+			disableFilterAdd: false,
 		});
 
 		this.emitChange();
@@ -219,12 +249,13 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 								onDelete={this.deleteFilter}
 								metadata={this.props.metadata}
 								disabled={elem.disabled}
+								chartSelection={this.state.elements[elem.id].setFilterFromChart}
 							/>
 						))
 					)}
 				</Accordion>
 				<button
-					onClick={this.addFilter}
+					onClick={(e) => this.addFilter()}
 					type="submit"
 					className="btn btn-primary add-step-btn"
 					// disable adding another step, if the last step has a value of '*' <==> null

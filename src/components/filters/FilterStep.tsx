@@ -23,6 +23,7 @@ export interface FilterStepProps {
 	metadata: { [p: string]: { key: string; label: string; type: string } };
 	disabled: boolean;
 	stepnumber: number;
+	chartSelection: Filter_;
 }
 
 export enum FilterStepMode {
@@ -39,6 +40,7 @@ interface FilterStepState {
 	filterLabel: string;
 	mode: FilterStepMode;
 	expanded: boolean;
+	setMultiSelectValue: OptionType;
 }
 
 type ExpandArrowProps = {
@@ -83,6 +85,7 @@ export class FilterStep extends Component<FilterStepProps, FilterStepState> {
 			},
 			valueIdFrom: -1,
 			valueIdTo: -1,
+			setMultiSelectValue: null,
 			setFromValue: null,
 			setToValue: null,
 			filterLabel: '*',
@@ -95,6 +98,50 @@ export class FilterStep extends Component<FilterStepProps, FilterStepState> {
 
 	componentDidMount(): void {
 		this.filterByValue.current.checked = true;
+	}
+
+	componentDidUpdate(prevProps: FilterStepProps): void {
+		if (this.props.chartSelection !== prevProps.chartSelection) {
+			console.log('chartSelection in FilterStep', this.props.chartSelection);
+			const newFilter = this.props.chartSelection;
+			let newSetMulti = null;
+			let newSetFrom = null;
+			let newSetTo = null;
+			let valueIdFrom = -1;
+			let valueIdTo = -1;
+
+			if (isValue(newFilter.value)) {
+				this.filterByValue.current.checked = true;
+				this.handleRadioBtnChange();
+				newSetMulti = this.props.values.find((value) => value.value === newFilter.value);
+			} else if (isValueArray(newFilter.value)) {
+				this.filterByValue.current.checked = true;
+				const newFilterValues = newFilter.value as Value[];
+				newSetMulti = this.props.values.filter((value) => newFilterValues.includes(value.value));
+			} else {
+				this.filterByRange.current.checked = true;
+				this.handleRadioBtnChange();
+				const newFilterValue = newFilter.value as RangeFilter<Value>;
+				newSetFrom = this.props.values.find((value) => value.value === newFilterValue.from.toString());
+				valueIdFrom = this.props.values.indexOf(newSetFrom);
+				newSetTo = this.props.values.find((value) => value.value === newFilterValue.to.toString());
+				valueIdTo = this.props.values.indexOf(newSetTo);
+			}
+			this.setState(
+				{
+					filter: newFilter,
+					setMultiSelectValue: newSetMulti,
+					setFromValue: newSetFrom,
+					setToValue: newSetTo,
+					valueIdFrom: valueIdFrom,
+					valueIdTo: valueIdTo,
+				},
+				() => {
+					this.updateFilterLabel();
+					this.emitChange();
+				},
+			);
+		}
 	}
 
 	notifyEyeClick = (): void => {
@@ -235,23 +282,28 @@ export class FilterStep extends Component<FilterStepProps, FilterStepState> {
 
 	handleMultiSelect = async (selected?: ValueType<OptionType> | OptionType[] | null): Promise<void> => {
 		let newValue = null;
+		let setMultiValue = null;
 		if (selected !== undefined && selected !== null) {
 			const value = selected as OptionType;
 			if (Array.isArray(value)) {
 				newValue = (selected as OptionType[]).map((elem) => elem.value);
+				setMultiValue = selected as OptionType[];
 			} else {
 				newValue = (selected as OptionType).value;
+				setMultiValue = selected as OptionType;
 			}
 		}
-		await this.setState({ filter: { type: this.state.filter.type, value: newValue } });
+		await this.setState({
+			filter: { type: this.state.filter.type, value: newValue },
+			setMultiSelectValue: setMultiValue,
+		});
 		this.emitChange({ type: this.state.filter.type, value: newValue });
 		this.updateFilterLabel();
 	};
 
 	updateFilterLabel = (): void => {
+		console.log('updateFilterLabel');
 		const value = this.state.filter.value;
-		// TODO
-		console.log('value', value);
 		let newLabel = '';
 		if (value === null) {
 			newLabel = '*';
@@ -289,6 +341,7 @@ export class FilterStep extends Component<FilterStepProps, FilterStepState> {
 				newLabel = from.toString() + ' : ' + to.toString();
 			}
 		}
+		console.log('updateFilterLabel Result: ', newLabel);
 		this.setState({ filterLabel: newLabel });
 	};
 
@@ -409,6 +462,7 @@ export class FilterStep extends Component<FilterStepProps, FilterStepState> {
 							<Form.Group>
 								<Form.Label>Select</Form.Label>
 								<Select
+									value={this.state.setMultiSelectValue}
 									isMulti={true}
 									options={values}
 									isSearchable={true}

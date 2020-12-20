@@ -19,7 +19,7 @@ type AppState = {
 	filters: FilterParameter;
 	filteredData: CubeCellModel[];
 	filteredCountData: CubeCellModel[];
-	chartSelection: FilterParameter;
+	chartSelection: any;
 };
 
 class App extends React.Component<unknown, AppState> {
@@ -34,7 +34,7 @@ class App extends React.Component<unknown, AppState> {
 		filters: new FilterParameter(),
 		filteredData: [],
 		filteredCountData: [],
-		chartSelection: new FilterParameter(),
+		chartSelection: null,
 	};
 
 	// kinda hacky, but does its job. is there a better alternative?
@@ -60,7 +60,7 @@ class App extends React.Component<unknown, AppState> {
 		await this.setStateAsync({ chartSelection });
 
 		// to be able to listen for the same click twice, the selection is removed immediately after setting it
-		return this.setState({ chartSelection: new FilterParameter() });
+		return this.setState({ chartSelection: null });
 	};
 
 	getMetadata = async (): Promise<unknown> => {
