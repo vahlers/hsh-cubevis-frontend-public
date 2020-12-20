@@ -38,7 +38,7 @@ const initialState = (): PlotState => {
 		data: [],
 		layout: {
 			width: 300,
-			hovermode: 'y',
+			hovermode: 'y unified',
 			margin: {
 				l: 120,
 				r: 120,

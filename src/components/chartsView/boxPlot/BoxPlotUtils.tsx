@@ -16,7 +16,7 @@ export class BoxPlotUtils {
 			orientation: 'h',
 			sd: data.stdDeviation,
 			showlegend: false,
-			hoverinfo: 'none',
+			hoverinfo: 'skip',
 			marker: {
 				color: '#007bff',
 			},
@@ -33,8 +33,7 @@ export class BoxPlotUtils {
 			opacity: 0,
 			// setting the hovertemplate for the whole boxplot
 			hovertemplate:
-				data.dimension.toString() +
-				'<br>expected: ' +
+				'expected value: ' +
 				data.meanValue +
 				'<br>+/- ' +
 				data.stdDeviation +
@@ -53,7 +52,7 @@ export class BoxPlotUtils {
 			x: [data.countValue],
 			y: [data.dimension],
 			showlegend: false,
-			hoverinfo: 'none',
+			hoverinfo: 'skip',
 			name: data.dimension,
 			marker: {
 				// Setting the color depending on the anomaly score
@@ -77,7 +76,8 @@ export class BoxPlotUtils {
 		// Round numbers and set lower or upper bound
 		data.firstQuartile = data.firstQuartile > 0 ? Math.round((data.firstQuartile + Number.EPSILON) * 100) / 100 : 0;
 		data.lowerFence = data.lowerFence > 0 ? Math.round((data.lowerFence + Number.EPSILON) * 100) / 100 : 0;
-		data.anomalyScore = data.lowerFence < 10 ? Math.round((data.lowerFence + Number.EPSILON) * 100) / 100 : 10;
+		data.anomalyScore = data.anomalyScore < 0 ? -1 * data.anomalyScore : data.anomalyScore;
+		data.anomalyScore = data.anomalyScore < 10 ? Math.round((data.anomalyScore + Number.EPSILON) * 100) / 100 : 10;
 
 		return data;
 	}
