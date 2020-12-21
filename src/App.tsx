@@ -12,6 +12,7 @@ import { CubeCellModel } from './models/cell.model';
 import { Filter } from './models/filter.model';
 import { DataServiceHelper } from './helpers/dataService.helper';
 import { FilterParameter } from './models/filter.model';
+import { Resizable, ResizeCallback } from 're-resizable';
 
 type AppState = {
 	metadata: any;
@@ -23,9 +24,12 @@ type AppState = {
 };
 
 class App extends React.Component<unknown, AppState> {
+	private chartRef;
+
 	constructor(props: unknown) {
 		super(props);
 		this.setup();
+		this.chartRef = React.createRef();
 	}
 
 	state = {
@@ -99,34 +103,65 @@ class App extends React.Component<unknown, AppState> {
 
 		return this.setStateAsync({ data });
 	};
+
+	refreshAfterResize = (ResizeCallback): void => {
+		this.handleFilterChange(this.state.filters);
+	};
+
 	render(): React.ReactNode {
 		return (
-			<div className="App grid-container">
-				<div className="filter-container item-container">
+			<div className="App flex-container">
+				<Resizable
+					defaultSize={{
+						width: '45vw',
+						height: '100%',
+					}}
+					minWidth="20%"
+					maxWidth="75%"
+					bounds="parent"
+					enable={{ right: true }}
+					onResizeStop={this.refreshAfterResize}
+					className="filter-container-flex item-container"
+				>
 					<Filters
 						onChange={this.handleFilterChange}
 						metadata={this.state.metadata}
 						chartSelection={this.state.chartSelection}
 					/>
-				</div>
-				<div className="chart-container item-container">
-					<ChartsView
-						data={this.state.filteredData}
-						countData={this.state.filteredCountData}
-						filters={this.state.filters}
-						metadata={this.state.metadata}
-						onSelection={this.handleChartSelection}
-					/>
-				</div>
-				<div className="parallel-container item-container">
-					<ParallelCoords
-						metadata={this.state.metadata}
-						data={this.state.data}
-						filters={this.state.filters}
-					/>
-				</div>
-				<div className="colorbar-container item-container">
-					<Colorbar />
+				</Resizable>
+
+				<div className="charts-container">
+					<Resizable
+						enable={{ bottom: true }}
+						defaultSize={{
+							width: '100%',
+							height: '40vh',
+						}}
+						onResizeStop={this.refreshAfterResize}
+						minWidth="20vh"
+						minHeight="30vh"
+						maxHeight="60vh"
+						className="parallel-container-flex item-container"
+					>
+						<ParallelCoords
+							metadata={this.state.metadata}
+							data={this.state.data}
+							filters={this.state.filters}
+						/>
+					</Resizable>
+					<div className="chart-container-flex item-container">
+						<ChartsView
+							data={this.state.filteredData}
+							countData={this.state.filteredCountData}
+							filters={this.state.filters}
+							metadata={this.state.metadata}
+							onSelection={this.handleChartSelection}
+							ref={this.chartRef}
+						/>
+					</div>
+					<div className="colorbar-container item-container">
+						<Colorbar />
+					</div>
 				</div>
 			</div>
 		);

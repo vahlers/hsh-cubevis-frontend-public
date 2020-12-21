@@ -21,6 +21,7 @@
 		"plotly.js-dist": "^1.57.1",
 		"prettier": "^2.1.2",
 		"rc-slider": "^9.6.5",
+		"re-resizable": "^6.9.0",
 		"react": "^17.0.1",
 		"react-activity": "^1.2.2",
 		"react-bootstrap": "^1.4.0",
