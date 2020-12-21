@@ -36,6 +36,7 @@ type StateElem = {
 	filterStep: FilterStep;
 	disabled: boolean;
 	setFilterFromChart: Filter_;
+	expanded: boolean;
 };
 
 type FilterProps = {
@@ -114,6 +115,7 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 			filterStep: null,
 			disabled: false,
 			setFilterFromChart: null,
+			expanded: false,
 		};
 
 		const props: FilterStepProps = {
@@ -123,10 +125,12 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 			onDelete: this.deleteFilter,
 			onEyeClick: this.handleEyeClick,
 			onChange: this.handleChange,
+			onExpand: this.rotateArrow,
 			metadata: this.props.metadata,
 			disabled: false,
 			stepnumber: 0,
 			chartSelection: null,
+			expanded: false,
 		};
 		result.filterStep = new FilterStep(props);
 
@@ -226,6 +230,20 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 		return filters;
 	}
 
+	rotateArrow = (eventKey: number): void => {
+		const elements = this.state.elements;
+		elements.forEach((step) => {
+			if (step.id == eventKey) {
+				step.expanded = !step.expanded;
+			} else {
+				step.expanded = false;
+			}
+		});
+		this.setState({
+			elements: elements,
+		});
+	};
+
 	render(): React.ReactNode {
 		// Use bootstrap classes
 		return (
@@ -250,6 +268,8 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 								metadata={this.props.metadata}
 								disabled={elem.disabled}
 								chartSelection={this.state.elements[elem.id].setFilterFromChart}
+								onExpand={this.rotateArrow}
+								expanded={elem.expanded}
 							/>
 						))
 					)}

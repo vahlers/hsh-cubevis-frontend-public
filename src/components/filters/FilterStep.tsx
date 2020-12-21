@@ -24,6 +24,8 @@ export interface FilterStepProps {
 	disabled: boolean;
 	stepnumber: number;
 	chartSelection: Filter_;
+	onExpand: (eventKey: number) => void;
+	expanded: boolean;
 }
 
 export enum FilterStepMode {
@@ -39,7 +41,6 @@ interface FilterStepState {
 	setToValue: OptionType;
 	filterLabel: string;
 	mode: FilterStepMode;
-	expanded: boolean;
 	setMultiSelectValue: OptionType;
 }
 
@@ -89,7 +90,6 @@ export class FilterStep extends Component<FilterStepProps, FilterStepState> {
 			setFromValue: null,
 			setToValue: null,
 			filterLabel: '*',
-			expanded: false,
 		};
 
 		this.filterByValue = React.createRef();
@@ -341,12 +341,12 @@ export class FilterStep extends Component<FilterStepProps, FilterStepState> {
 				newLabel = from.toString() + ' : ' + to.toString();
 			}
 		}
-		console.log('updateFilterLabel Result: ', newLabel);
+		//console.log('updateFilterLabel Result: ', newLabel);
 		this.setState({ filterLabel: newLabel });
 	};
 
-	moveArrow = (): void => {
-		this.setState({ expanded: !this.state.expanded });
+	rotateArrow = (): void => {
+		this.props.onExpand(this.props.id);
 	};
 
 	render(): React.ReactNode {
@@ -360,12 +360,12 @@ export class FilterStep extends Component<FilterStepProps, FilterStepState> {
 							as={Button}
 							variant="link"
 							eventKey={'' + this.props.id}
-							onClick={this.moveArrow}
+							onClick={this.rotateArrow}
 						>
 							<ExpandArrow
 								size={25}
 								opacity={this.props.disabled ? 0.4 : 1}
-								expanded={this.state.expanded}
+								expanded={this.props.expanded}
 							/>
 						</Accordion.Toggle>
 						<div className="step-number">{this.props.stepnumber}.</div>
