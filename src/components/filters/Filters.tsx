@@ -1,6 +1,6 @@
 import React from 'react';
 import './Filters.css';
-import { Accordion, Alert } from 'react-bootstrap';
+import { Accordion, Alert, Col, Row } from 'react-bootstrap';
 import { CellTypes } from '../../enums/cellTypes.enum';
 import { FilterParameter, Value } from '../../models/filter.model';
 import { DataProcessingService } from '../../services/dataProcessing.service';
@@ -35,15 +35,17 @@ type StateElem = {
 	filter: Filter_;
 	filterStep: FilterStep;
 	disabled: boolean;
-	setFilterFromChart: Filter_;
+	isLooseStep: boolean;
 	expanded: boolean;
+	setFilterFromChart: Filter_;
 };
 
 type FilterProps = {
-	onChange: (filters: FilterParameter) => void;
+	onChange: (FilterParameter) => void;
 	chartSelection: FilterParameter;
 	metadata: { [p: string]: { key: string; label: string; type: string } };
 };
+const allowedLooseDim = 2;
 const dataService = DataProcessingService.instance();
 let dimensions: Dimension[] = [];
 
@@ -60,8 +62,6 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 			const allFilters = this.props.chartSelection.getOrderedFilters();
 			const newStep = allFilters[allFilters.length - 1];
 			let newFilter = newStep.filter;
-			console.log('handling chartSelection', newStep);
-
 			if (Array.isArray(newFilter)) {
 				// TODO this ignores the Type RangeFilter[] because i dont think that is ever used
 				newFilter = newFilter as Value[];
@@ -114,8 +114,9 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 			values: await this.getDataValues(newFilterDimension.value, newID),
 			filterStep: null,
 			disabled: false,
-			setFilterFromChart: null,
+			isLooseStep: true,
 			expanded: false,
+			setFilterFromChart: null,
 		};
 
 		const props: FilterStepProps = {
@@ -128,18 +129,20 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 			onExpand: this.rotateArrow,
 			metadata: this.props.metadata,
 			disabled: false,
+			disableLooseFiltering: false,
 			stepnumber: 0,
-			chartSelection: null,
 			expanded: false,
+			chartSelection: null,
 		};
 		result.filterStep = new FilterStep(props);
 
 		if (this.state.elements === null) {
-			await this.setState({ elements: [result], disableFilterAdd: true });
+			await this.setState({ elements: [result] });
 		} else {
-			await this.setState({ elements: this.state.elements.concat(result), disableFilterAdd: true });
+			await this.setState({ elements: this.state.elements.concat(result) });
 		}
 		this.emitChange();
+		this.checkAllowFilterAdd();
 	};
 
 	applyChartSelection(chartSelection: Filter_): void {
@@ -151,21 +154,16 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 	}
 
 	//sends all non disabled filters to the props.onChange
-	// TODO change Filters to natively use the FilterParameter class instead of creating one when emitting change
 	emitChange = (): void => {
 		this.props.onChange(this.getFilterParamFromState());
 	};
 
 	deleteFilter = async (id: number): Promise<void> => {
-		const filterCount = this.state.elements.length;
-		// get the id of the last filter, that is left after deletion
-		const lastFilterId = filterCount - 1 === id ? filterCount - 2 : filterCount - 1;
 		await this.setState({
 			elements: this.state.elements.filter((elem) => elem.id !== id),
-			// if the last filter after deletion has value null (<==> '*'), disable adding a step
-			disableFilterAdd: this.state.elements.length > 1 && this.state.elements[lastFilterId].filter.value === null,
 		});
 		this.emitChange();
+		this.checkAllowFilterAdd();
 	};
 
 	handleEyeClick = async (id: number): Promise<void> => {
@@ -174,15 +172,39 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 			elements: this.state.elements.map((el) => (el.id === id ? { ...el, disabled: !el.disabled } : el)),
 		});
 		this.emitChange();
+		this.checkAllowFilterAdd();
 	};
 
 	handleChange = async (id: number, mode: FilterStepMode, updatedFilter: Filter_): Promise<void> => {
 		const prevDimension = this.state.elements[id].filter.type;
+
+		let isLoose = false;
+		// if filter is empty, it's considered loose
+		if (updatedFilter === null || updatedFilter.value === null) {
+			isLoose = true;
+			// if filter is array, and has more than one element, it's considered loose
+		} else if (Array.isArray(updatedFilter)) {
+			isLoose = updatedFilter.length > 1;
+			// if filter is RangeFilter, and has either both or neither from and to set, it's considered loose
+		} else if ((updatedFilter.value as RangeFilter<Value>).from !== undefined) {
+			const newValue = updatedFilter.value as RangeFilter<Value>;
+			isLoose =
+				(newValue.from === null && newValue.to === null) || (newValue.from !== null && newValue.to !== null);
+		}
+
+		// if one of the loose dimensions is no longer loose, we need to update our state.disableFilterAdd before we
+		// set the isLooseStep to false
+		if (this.state.elements[id].isLooseStep && !isLoose) {
+			this.setState({ disableFilterAdd: false });
+		}
+
 		// here the state is set by using an object spread '{ }', inserting all of the old object '{ ...el'
 		// and then updating the changed properties ', filter: updatedFilter }'
 
 		await this.setState({
-			elements: this.state.elements.map((el) => (el.id === id ? { ...el, filter: updatedFilter } : el)),
+			elements: this.state.elements.map((el) =>
+				el.id === id ? { ...el, filter: updatedFilter, isLooseStep: isLoose } : el,
+			),
 		});
 
 		// get the updated optValues, can't do this before, because getDataValues depends on getFilterParamFromState,
@@ -199,7 +221,17 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 		});
 
 		this.emitChange();
+		this.checkAllowFilterAdd();
 	};
+
+	private checkAllowFilterAdd() {
+		// we filter all elements for those that have a * as filter and check the result length against the allowed
+		const result =
+			this.state.elements
+				// remove disabled elements
+				.filter((elem) => !elem.disabled && elem.isLooseStep).length >= allowedLooseDim;
+		this.setState({ disableFilterAdd: result });
+	}
 
 	private getFilterParamFromState() {
 		const filters: FilterParameter = new FilterParameter();
@@ -247,45 +279,61 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 	render(): React.ReactNode {
 		// Use bootstrap classes
 		return (
-			<div className="filters">
+			<div className="filters m-0">
 				<h1>Filters</h1>
-				<Accordion>
-					{this.state.elements.length <= 0 ? (
-						<Alert className="filter-alert" show={true} variant="secondary">
-							There are no steps yet. Click &ldquo;Add step&rdquo; to add your first step!
+				<Row className="m-0">
+					<Col>
+						<Accordion>
+							{this.state.elements.length <= 0 ? (
+								<Alert className="filter-alert" show={true} variant="secondary">
+									There are no steps yet. Click &ldquo;Add step&rdquo; to add your first step!
+								</Alert>
+							) : (
+								this.state.elements.map((elem, index) => (
+									<FilterStep
+										id={elem.id}
+										key={elem.id}
+										stepnumber={index + 1}
+										dimensions={dimensions}
+										values={elem.values}
+										onChange={this.handleChange}
+										onEyeClick={this.handleEyeClick}
+										onDelete={this.deleteFilter}
+										metadata={this.props.metadata}
+										disabled={elem.disabled}
+										// disable setting a loose dimension if n are already set to loose,
+										// and it itself is not a loose dimension
+										disableLooseFiltering={this.state.disableFilterAdd && !elem.isLooseStep}
+										onExpand={this.rotateArrow}
+										expanded={elem.expanded}
+										chartSelection={elem.setFilterFromChart}
+									/>
+								))
+							)}
+						</Accordion>
+					</Col>
+				</Row>
+				<Row className="m-0 p-0">
+					<Col className="m-0 p-0 text-center my-auto" md="2">
+						<button
+							onClick={() => this.addFilter()}
+							type="submit"
+							className="btn btn-primary m-2 add-step-btn"
+							// disable adding another step, if the last step has a value of '*' <==> null
+							disabled={this.state.disableFilterAdd}
+						>
+							Add Step
+						</button>
+					</Col>
+					<Col md="10" className="m-0 p-0 text-center my-auto">
+						<Alert
+							className={this.state.disableFilterAdd ? 'm-4 loose-alert' : 'm-4 loose-alert hide-alert'}
+							variant="secondary"
+						>
+							You have selected the maximum number of ranges ({allowedLooseDim}).
 						</Alert>
-					) : (
-						this.state.elements.map((elem, index) => (
-							<FilterStep
-								id={elem.id}
-								key={elem.id}
-								stepnumber={index + 1}
-								dimensions={dimensions}
-								values={elem.values}
-								onChange={this.handleChange}
-								onEyeClick={this.handleEyeClick}
-								onDelete={this.deleteFilter}
-								metadata={this.props.metadata}
-								disabled={elem.disabled}
-								chartSelection={this.state.elements[elem.id].setFilterFromChart}
-								onExpand={this.rotateArrow}
-								expanded={elem.expanded}
-							/>
-						))
-					)}
-				</Accordion>
-				<button
-					onClick={(e) => this.addFilter()}
-					type="submit"
-					className="btn btn-primary add-step-btn"
-					// disable adding another step, if the last step has a value of '*' <==> null
-					disabled={this.state.disableFilterAdd}
-				>
-					Add Step
-				</button>
-				<br />
-				<br />
-				<br />
+					</Col>
+				</Row>
 			</div>
 		);
 	}

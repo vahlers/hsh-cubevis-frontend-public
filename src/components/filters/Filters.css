@@ -21,6 +21,14 @@
 	border-radius: 0rem !important;
 }
 
+.hide-alert {
+	visibility: hidden;
+}
+
+.loose-alert {
+	height: 48px;
+}
+
 .add-step-btn {
-	margin-left: 1em;
+	height: 48px;
 }

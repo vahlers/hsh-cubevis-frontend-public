@@ -23,9 +23,10 @@ export interface FilterStepProps {
 	metadata: { [p: string]: { key: string; label: string; type: string } };
 	disabled: boolean;
 	stepnumber: number;
-	chartSelection: Filter_;
+	disableLooseFiltering: boolean;
 	onExpand: (eventKey: number) => void;
 	expanded: boolean;
+	chartSelection: Filter_;
 }
 
 export enum FilterStepMode {
@@ -37,11 +38,11 @@ interface FilterStepState {
 	filter: Filter_;
 	valueIdFrom: number;
 	valueIdTo: number;
+	setMultiSelectValue: OptionType | OptionType[];
 	setFromValue: OptionType;
 	setToValue: OptionType;
 	filterLabel: string;
 	mode: FilterStepMode;
-	setMultiSelectValue: OptionType;
 }
 
 type ExpandArrowProps = {
@@ -100,9 +101,28 @@ export class FilterStep extends Component<FilterStepProps, FilterStepState> {
 		this.filterByValue.current.checked = true;
 	}
 
-	componentDidUpdate(prevProps: FilterStepProps): void {
+	componentDidUpdate = async (prevProps: FilterStepProps): Promise<void> => {
+		// if the dimension was changed, while disableClearing was set
+		if (this.props.disableLooseFiltering && this.props.disableLooseFiltering !== prevProps.disableLooseFiltering) {
+			this.filterByValue.current.checked = true;
+			let currentOption = null;
+			let currentValue = this.state.filter.value;
+			if (currentValue !== null) {
+				if (Array.isArray(currentValue) && currentValue.length === 1) {
+					currentValue = currentValue[0];
+				} else if (isRangeFilter(currentValue)) {
+					// currentValue = currentValue as RangeFilter<Value>;
+					if (currentValue.from !== null) {
+						currentValue = currentValue.from;
+					} else {
+						currentValue = currentValue.to;
+					}
+				}
+				currentOption = this.props.values.find((opt) => opt.value === currentValue);
+			}
+			this.setState({ mode: FilterStepMode.ByValue, setMultiSelectValue: currentOption });
+		}
 		if (this.props.chartSelection !== prevProps.chartSelection) {
-			console.log('chartSelection in FilterStep', this.props.chartSelection);
 			const newFilter = this.props.chartSelection;
 			let newSetMulti = null;
 			let newSetFrom = null;
@@ -142,7 +162,7 @@ export class FilterStep extends Component<FilterStepProps, FilterStepState> {
 				},
 			);
 		}
-	}
+	};
 
 	notifyEyeClick = (): void => {
 		this.props.onEyeClick(this.props.id);
@@ -156,14 +176,15 @@ export class FilterStep extends Component<FilterStepProps, FilterStepState> {
 		this.props.onChange(this.props.id, this.state.mode, updated);
 	};
 
-	changeDimension = (event: React.ChangeEvent<HTMLSelectElement>): void => {
+	changeDimension = async (event: React.ChangeEvent<HTMLSelectElement>): Promise<void> => {
 		// first set the state by casting the event value to an enum
 
 		const newType: CellTypes = parseInt(event.currentTarget.value);
 
-		this.setState(
+		await this.setState(
 			{
 				filter: { type: newType, value: null },
+				setMultiSelectValue: null,
 				setFromValue: null,
 				setToValue: null,
 				valueIdFrom: -1,
@@ -173,7 +194,7 @@ export class FilterStep extends Component<FilterStepProps, FilterStepState> {
 		);
 
 		// then publish the state to the onChange
-		this.emitChange({ type: newType, value: null });
+		this.emitChange(this.state.filter);
 	};
 
 	changeRangeValue = async (isFromValue: boolean, selectedOption: OptionType): Promise<void> => {
@@ -247,26 +268,45 @@ export class FilterStep extends Component<FilterStepProps, FilterStepState> {
 		}
 	};
 
-	handleSliderChange = async ([valueFrom, valueTo]: number[]): Promise<void> => {
+	handleSliderChange = async ([indexFrom, indexTo]: number[]): Promise<void> => {
 		// object destructing assignment
 		const { values } = this.props;
-		if (valueFrom > valueTo) {
-			const tmp = valueFrom;
-			valueFrom = valueTo;
-			valueTo = tmp;
+		if (indexFrom > indexTo) {
+			const tmp = indexFrom;
+			indexFrom = indexTo;
+			indexTo = tmp;
 		}
 
-		const fromValue = valueFrom >= 0 ? values[valueFrom].value : null;
-		const toValue = valueTo >= 0 ? values[valueTo].value : null;
+		const fromValue = indexFrom >= 0 ? values[indexFrom].value : null;
+		const toValue = indexTo >= 0 ? values[indexTo].value : null;
 
 		await this.setState({
-			valueIdFrom: valueFrom,
-			valueIdTo: valueTo,
-			setFromValue: values[valueFrom],
-			setToValue: values[valueTo],
+			valueIdFrom: indexFrom,
+			valueIdTo: indexTo,
+			setFromValue: values[indexFrom],
+			setToValue: values[indexTo],
 			filter: {
 				type: this.state.filter.type,
 				value: { from: fromValue, to: toValue },
+			},
+		});
+		this.updateFilterLabel();
+	};
+
+	sliderChange = async (index: number): Promise<void> => {
+		// object destructing assignment
+		const { values } = this.props;
+
+		const newValue = index >= 0 ? values[index].value : null;
+
+		await this.setState({
+			valueIdFrom: index,
+			valueIdTo: -1,
+			setFromValue: values[index],
+			setToValue: values[-1],
+			filter: {
+				type: this.state.filter.type,
+				value: { from: newValue, to: null },
 			},
 		});
 		this.updateFilterLabel();
@@ -286,8 +326,12 @@ export class FilterStep extends Component<FilterStepProps, FilterStepState> {
 		if (selected !== undefined && selected !== null) {
 			const value = selected as OptionType;
 			if (Array.isArray(value)) {
-				newValue = (selected as OptionType[]).map((elem) => elem.value);
-				setMultiValue = selected as OptionType[];
+				if (value.length === 0) {
+					newValue = null;
+				} else {
+					newValue = (selected as OptionType[]).map((elem) => elem.value);
+					setMultiValue = selected as OptionType[];
+				}
 			} else {
 				newValue = (selected as OptionType).value;
 				setMultiValue = selected as OptionType;
@@ -302,13 +346,15 @@ export class FilterStep extends Component<FilterStepProps, FilterStepState> {
 	};
 
 	updateFilterLabel = (): void => {
-		console.log('updateFilterLabel');
 		const value = this.state.filter.value;
 		let newLabel = '';
-		if (value === null) {
+		if (value === null || value === undefined) {
 			newLabel = '*';
 		} else if (this.state.mode === FilterStepMode.ByValue) {
 			if (Array.isArray(value)) {
+				if (value.length === 0) {
+					newLabel = '*';
+				}
 				// showing more than 4 values gets crowded
 				for (let i = 0; i < value.length && i <= 3; i++) {
 					if (i > 0) {
@@ -341,7 +387,6 @@ export class FilterStep extends Component<FilterStepProps, FilterStepState> {
 				newLabel = from.toString() + ' : ' + to.toString();
 			}
 		}
-		//console.log('updateFilterLabel Result: ', newLabel);
 		this.setState({ filterLabel: newLabel });
 	};
 
@@ -406,7 +451,7 @@ export class FilterStep extends Component<FilterStepProps, FilterStepState> {
 							name="radioGroup"
 							label="Filter by value(s)"
 							type="radio"
-							id={`inline-radio-1`}
+							id={`step-${this.props.id}-inline-radio-1`}
 						/>
 						<Form.Check
 							onChange={this.handleRadioBtnChange}
@@ -415,7 +460,8 @@ export class FilterStep extends Component<FilterStepProps, FilterStepState> {
 							name="radioGroup"
 							label="Filter by range"
 							type="radio"
-							id={`inline-radio-2`}
+							id={`step-${this.props.id}-inline-radio-2`}
+							disabled={this.props.disableLooseFiltering}
 						/>
 						<div className={this.state.mode === FilterStepMode.ByRange ? '' : 'hide-filter-step'}>
 							<Row>
@@ -463,10 +509,10 @@ export class FilterStep extends Component<FilterStepProps, FilterStepState> {
 								<Form.Label>Select</Form.Label>
 								<Select
 									value={this.state.setMultiSelectValue}
-									isMulti={true}
+									isMulti={!this.props.disableLooseFiltering}
 									options={values}
 									isSearchable={true}
-									isClearable={true}
+									isClearable={!this.props.disableLooseFiltering}
 									onChange={this.handleMultiSelect}
 									placeholder={'*'}
 								/>

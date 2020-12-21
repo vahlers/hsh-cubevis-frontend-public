@@ -26,6 +26,10 @@
 	height: 100% !important;
 }
 
+.hide-filter-step {
+	display: none;
+}
+
 .step-number {
 	text-align: center;
 	vertical-align: middle;
