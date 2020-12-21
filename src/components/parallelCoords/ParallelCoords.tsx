@@ -121,6 +121,7 @@ class ParallelCoords extends React.Component<ParallelCoordsProps, ParallelCoords
 	};
 
 	resizeChart = (): void => {
+		if (!this.state.graphLoaded) return;
 		const layoutUpdate = { width: this.getComputedWidth(), height: this.getComputedHeight() };
 		if (this.parCoords.current) Plotly.relayout(this.parCoords.current, layoutUpdate);
 	};

@@ -109,8 +109,9 @@ class BoxPlot extends React.Component<PlotProps, PlotState> {
 	};
 
 	resizeChart = (): void => {
+		if (!this.state.showGraph) return;
 		const layoutUpdate = { width: this.currentParentWidth(), height: this.currentParentHeight() };
-		if (this.boxPlot.current && this.state.showGraph) Plotly.relayout(this.boxPlot.current, layoutUpdate);
+		if (this.boxPlot.current) Plotly.relayout(this.boxPlot.current, layoutUpdate);
 	};
 
 	render(): JSX.Element {

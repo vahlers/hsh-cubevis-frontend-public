@@ -165,6 +165,7 @@ class HeatMap extends React.Component<HeatMapProps, HeatMapState> {
 	};
 
 	resizeChart = (): void => {
+		if (!this.state.showGraph) return;
 		const layoutUpdate = { width: this.currentParentWidth(), height: this.currentParentHeight() };
 		if (this.heatMap.current) Plotly.relayout(this.heatMap.current, layoutUpdate);
 	};

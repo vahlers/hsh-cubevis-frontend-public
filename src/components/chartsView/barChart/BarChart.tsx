@@ -114,8 +114,9 @@ class BarChart extends React.Component<ChartProps, ChartState> {
 	};
 
 	resizeChart = (): void => {
+		if (!this.state.showGraph) return;
 		const layoutUpdate = { width: this.currentParentWidth(), height: this.currentParentHeight() };
-		if (this.barChart.current && this.state.showGraph) Plotly.relayout(this.barChart.current, layoutUpdate);
+		if (this.barChart.current) Plotly.relayout(this.barChart.current, layoutUpdate);
 	};
 
 	render(): JSX.Element {
