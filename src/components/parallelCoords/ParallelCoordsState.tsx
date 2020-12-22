@@ -1,21 +1,22 @@
 import { CellTypes } from '../../enums/cellTypes.enum';
 import { COLOR_SCALE, SCORE_MAX, SCORE_MIN } from '../../helpers/constants';
 import { Dimension } from '../../models/dimension.model';
-import { FilterParameter } from '../../models/filter.model';
+import { FilterParameter, Value } from '../../models/filter.model';
+
+type ParallelCoordsData = {
+	type: string;
+	line: {
+		color: Array<Value>;
+		showscale: boolean;
+		colorscale: Array<Array<string>>;
+		cmin: number;
+		cmax: number;
+	};
+	dimensions: Dimension[];
+};
 
 type ParallelCoordsState = {
-	data: {
-		type: string;
-		line: {
-			color: any;
-			showscale: boolean;
-			colorscale: Array<Array<string>>;
-			cmin: number;
-			cmax: number;
-		};
-		dimensions: Dimension[];
-	};
-
+	data: ParallelCoordsData;
 	layout: {
 		margin: {
 			l: number;
@@ -60,8 +61,8 @@ const initialState = (): ParallelCoordsState => {
 			margin: {
 				l: 80,
 				r: 80,
-				b: 20,
-				t: 50,
+				b: 5,
+				t: 40,
 				pad: 0,
 			},
 			height: 0,
@@ -82,4 +83,4 @@ const initialState = (): ParallelCoordsState => {
 };
 
 export { initialState };
-export type { ParallelCoordsState };
+export type { ParallelCoordsState, ParallelCoordsData };

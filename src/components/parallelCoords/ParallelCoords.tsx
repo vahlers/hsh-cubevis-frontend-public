@@ -7,7 +7,7 @@ import { FaArrowDown, FaArrowUp, FaUndo } from 'react-icons/fa';
 
 import { SCORE_KEY } from '../../helpers/constants';
 import { CellTypes } from '../../enums/cellTypes.enum';
-import { initialState, ParallelCoordsState } from './ParallelCoordsState';
+import { initialState, ParallelCoordsState, ParallelCoordsData } from './ParallelCoordsState';
 import { ParallelCoordsProps } from './ParallelCoordsProps';
 import { Button, OverlayTrigger, Tooltip, Alert, Row, Col } from 'react-bootstrap';
 
@@ -112,7 +112,7 @@ class ParallelCoords extends React.Component<ParallelCoordsProps, ParallelCoords
 
 	getComputedHeight = (): number => {
 		return this.rootContainer.current
-			? (this.rootContainer.current.clientHeight - this.buttonContainer.current.clientHeight) * 0.8
+			? (this.rootContainer.current.clientHeight - this.buttonContainer.current.clientHeight) * 0.85
 			: 0;
 	};
 
@@ -140,6 +140,7 @@ class ParallelCoords extends React.Component<ParallelCoordsProps, ParallelCoords
 			Plotly.redraw(this.parCoords.current, [this.state.data], layout);
 		} else {
 			Plotly.newPlot(this.parCoords.current, [this.state.data], layout, this.state.config);
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			(this.parCoords.current as any).on('plotly_restyle', (event) => {
 				this.onPlotlyRestyle(event);
 			});
@@ -152,7 +153,7 @@ class ParallelCoords extends React.Component<ParallelCoordsProps, ParallelCoords
 	 * Important for e.g. controlling the sort button order!
 	 * @param event The restyle event with payload.
 	 */
-	onPlotlyRestyle = (event): void => {
+	onPlotlyRestyle = (event: MouseEvent): void => {
 		if (event && event instanceof Array && event.length && event[0].dimensions) {
 			const orderedCellTypes = event[0].dimensions[0].map((d) => d.type);
 			this.setState({ orderedCellTypes, customDimensionOrder: true });
@@ -211,7 +212,7 @@ class ParallelCoords extends React.Component<ParallelCoordsProps, ParallelCoords
 	 * the filters are configured.
 	 * @param data Already pre-processed data structure for Plotly parallel coords.
 	 */
-	setModifiedData = (data: any): void => {
+	setModifiedData = (data: ParallelCoordsData): void => {
 		if (!this.state.customDimensionOrder) {
 			this.getOrderedCellTypes()
 				.reverse()
@@ -234,7 +235,7 @@ class ParallelCoords extends React.Component<ParallelCoordsProps, ParallelCoords
 			const dimension = this.state.data.dimensions.find((d) => d.type === type);
 			const ascendingOrder = dimension && dimension.range[0] <= dimension.range[1];
 			buttons.push(
-				<Col className="btn-column" key={`col-${type}`}>
+				<Col className="text-center" key={`col-${type}`}>
 					<OverlayTrigger
 						placement="top"
 						delay={{ show: 250, hide: 400 }}
@@ -242,6 +243,7 @@ class ParallelCoords extends React.Component<ParallelCoordsProps, ParallelCoords
 					>
 						<span>
 							<Button
+								className="m-0 p-0"
 								variant="link"
 								disabled={this.isWildcard(type)}
 								key={type}
@@ -262,7 +264,7 @@ class ParallelCoords extends React.Component<ParallelCoordsProps, ParallelCoords
 	 * Once a user has clicked the reset button, the dimensions are ordered in the way they are in the filters.
 	 * Plus, the arrow direction of sort buttons will be reset.
 	 */
-	resetCustomDimensionOrder = () => {
+	resetCustomDimensionOrder = (): void => {
 		const data = this.state.data;
 		// reset axis-internal order of dimensions
 		data.dimensions.forEach((d) => {
@@ -290,17 +292,22 @@ class ParallelCoords extends React.Component<ParallelCoordsProps, ParallelCoords
 
 	render(): JSX.Element {
 		return (
-			<div ref={this.rootContainer} className="h-100">
-				<div className={this.state.filtersMatch ? '' : 'hide-plot'}>
-					<div ref={this.buttonContainer}>
+			<div ref={this.rootContainer} className="h-100 sample">
+				<div className={this.state.filtersMatch ? '' : 'd-none'}>
+					<div ref={this.buttonContainer} className="m-0 p-0">
+						<Row className="btn-container">{this.createButtons()}</Row>
+					</div>
+					<div ref={this.parCoords} id={this.state.plotContainerName}></div>
+					<div className="float-right">
 						<OverlayTrigger
-							placement="right"
+							placement="left"
 							delay={{ show: 250, hide: 400 }}
 							overlay={this.renderTooltip(`Reset custom ordering`)}
 						>
 							<span>
 								<Button
 									variant="link"
+									className="m-0 p-0"
 									onClick={this.resetCustomDimensionOrder}
 									disabled={!this.state.customDimensionOrder && !this.state.customSorting}
 								>
@@ -308,9 +315,7 @@ class ParallelCoords extends React.Component<ParallelCoordsProps, ParallelCoords
 								</Button>
 							</span>
 						</OverlayTrigger>
-						<Row className="btn-container">{this.createButtons()}</Row>
 					</div>
-					<div ref={this.parCoords} id={this.state.plotContainerName}></div>
 				</div>
 				<Alert show={!this.state.filtersMatch} variant="warning">
 					<Alert.Heading>Warning</Alert.Heading>

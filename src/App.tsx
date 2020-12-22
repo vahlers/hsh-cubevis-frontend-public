@@ -9,18 +9,17 @@ import Filters from './components/filters/Filters';
 import ChartsView from './components/chartsView/ChartsView';
 import Colorbar from './components/colorBar/Colorbar';
 import { CubeCellModel } from './models/cell.model';
-import { Filter } from './models/filter.model';
-import { DataServiceHelper } from './helpers/dataService.helper';
 import { FilterParameter } from './models/filter.model';
-import { Resizable, ResizeCallback } from 're-resizable';
+import { Resizable } from 're-resizable';
+import { DataType } from './enums/dataType.enum';
 
 type AppState = {
-	metadata: any;
-	data: any;
+	metadata: { [id: string]: { key: string; label: string; type: DataType } };
+	data: CubeCellModel[];
 	filters: FilterParameter;
 	filteredData: CubeCellModel[];
 	filteredCountData: CubeCellModel[];
-	chartSelection: any;
+	chartSelection: FilterParameter;
 };
 
 class App extends React.Component<unknown, AppState> {
@@ -28,8 +27,11 @@ class App extends React.Component<unknown, AppState> {
 
 	constructor(props: unknown) {
 		super(props);
-		this.setup();
 		this.chartRef = React.createRef();
+	}
+
+	componentDidMount(): void {
+		this.setup();
 	}
 
 	state = {
@@ -104,7 +106,7 @@ class App extends React.Component<unknown, AppState> {
 		return this.setStateAsync({ data });
 	};
 
-	refreshAfterResize = (ResizeCallback): void => {
+	refreshAfterResize = (): void => {
 		this.handleFilterChange(this.state.filters);
 	};
 
