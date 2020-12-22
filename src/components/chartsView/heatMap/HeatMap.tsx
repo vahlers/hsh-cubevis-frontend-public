@@ -7,6 +7,7 @@ import { HeatMapProps } from './HeatMapProps';
 import { HeatMapState, initialState } from './HeatMapState';
 import { SCORE_KEY } from '../../../helpers/constants.js';
 import UserInfoMessage from '../messages/UserInfoMessage';
+import { DataServiceHelper } from '../../../helpers/dataService.helper';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Plotly = require('plotly.js-dist');
@@ -141,12 +142,27 @@ class HeatMap extends React.Component<HeatMapProps, HeatMapState> {
 		if (y2 < y1 || x2 < x1) return;
 
 		// find values based on selection
-		const valuesDimX = this.state.data.x.filter((element, i) => i >= x1 && i <= x2);
-		const valuesDimY = this.state.data.y.filter((element, i) => i >= y1 && i <= y2);
+		const lowerValueDimX = this.state.data.x.find((elem, idx) => idx === x1);
+		const upperValueDimX = this.state.data.x.find((elem, idx) => idx === x2);
+		const lowerValueDimY = this.state.data.y.find((elem, idx) => idx === y1);
+		const upperValueDimY = this.state.data.y.find((elem, idx) => idx === y2);
+
+		if (!lowerValueDimX || !upperValueDimX || !lowerValueDimY || !upperValueDimY) {
+			return;
+		}
 
 		const filters: FilterParameter = new FilterParameter();
-		filters.addFilter(this.state.cellTypeX, valuesDimX);
-		filters.addFilter(this.state.cellTypeY, valuesDimY);
+		if (DataServiceHelper.equals(lowerValueDimX, upperValueDimX)) {
+			filters.addFilter(this.state.cellTypeX, lowerValueDimX);
+		} else {
+			filters.addFilter(this.state.cellTypeX, { from: lowerValueDimX, to: upperValueDimX });
+		}
+
+		if (DataServiceHelper.equals(lowerValueDimY, upperValueDimY)) {
+			filters.addFilter(this.state.cellTypeY, lowerValueDimY);
+		} else {
+			filters.addFilter(this.state.cellTypeY, { from: lowerValueDimY, to: upperValueDimY });
+		}
 		this.props.onSelection(filters);
 	};
 	constructor(props: HeatMapProps) {

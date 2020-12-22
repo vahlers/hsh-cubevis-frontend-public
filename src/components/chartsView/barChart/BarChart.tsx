@@ -93,7 +93,12 @@ class BarChart extends React.Component<ChartProps, ChartState> {
 		const filters: FilterParameter = new FilterParameter();
 		if (selection.points && selection.points.length) {
 			const selectedBars = selection.points.map((p) => p.x);
-			filters.addFilter(this.state.currentCellType, selectedBars);
+			if (selectedBars.length >= 2) {
+				const rangeFilter = { from: selectedBars[0], to: selectedBars[selectedBars.length - 1] };
+				filters.addFilter(this.state.currentCellType, rangeFilter);
+			} else {
+				filters.addFilter(this.state.currentCellType, selectedBars);
+			}
 		}
 		this.props.onSelection(filters);
 	};
