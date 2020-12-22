@@ -98,6 +98,12 @@ export class DataFilterService {
 			} else if (sortBy === SortType.DESC) {
 				return result.valueB - result.valueA;
 			}
+		} else if (result.valueA instanceof Ip && result.valueB instanceof Ip) {
+			if (sortBy === SortType.ASC) {
+				return result.valueA.valueOf() - result.valueB.valueOf();
+			} else if (sortBy === SortType.DESC) {
+				return result.valueB.valueOf() - result.valueA.valueOf();
+			}
 		}
 	}
 }

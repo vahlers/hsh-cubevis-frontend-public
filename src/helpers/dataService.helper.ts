@@ -58,7 +58,7 @@ export class DataServiceHelper {
 		a: CubeCellModel,
 		b: CubeCellModel,
 		type: CellTypes,
-	): { valueA: string | number; valueB: string | number } {
+	): { valueA: string | number | Ip; valueB: string | number | Ip } {
 		const propertyString = this.dataMapping.find((value) => value.cellType === type).cellProperty;
 		const valueA = a[propertyString];
 		const valueB = b[propertyString];

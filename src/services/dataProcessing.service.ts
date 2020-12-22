@@ -109,7 +109,14 @@ export class DataProcessingService {
 			dimension.forEach((dim) => {
 				let array = filtered.map((item) => item[DataServiceHelper.getModelKeyName(dim)]);
 				//Remove Duplicates
-				array = array.filter((item, index) => array.indexOf(item) === index);
+				array = array.filter((item, index) => DataServiceHelper.indexOf(array, item) === index);
+				//Sort Ascending
+				array = array.sort((a, b) => {
+					if (typeof a === 'number') return a - b;
+					if (typeof a === 'string') return a < b ? -1 : 1;
+					if (a instanceof Ip) return a.valueOf() - b.valueOf();
+					return 0;
+				});
 				result[dim] = array;
 			});
 
