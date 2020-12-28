@@ -34,7 +34,7 @@ type StateElem = {
 	values: OptionType[];
 	filter: Filter_;
 	filterStep: FilterStep;
-	disabled: boolean;
+	isDisabled: boolean;
 	isLooseStep: boolean;
 	expanded: boolean;
 	setFilterFromChart: Filter_;
@@ -113,7 +113,7 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 			filter: { type: newFilterDimension.value, value: null },
 			values: await this.getDataValues(newFilterDimension.value, newID),
 			filterStep: null,
-			disabled: false,
+			isDisabled: false,
 			isLooseStep: true,
 			expanded: false,
 			setFilterFromChart: null,
@@ -167,12 +167,16 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 	};
 
 	handleEyeClick = async (id: number): Promise<void> => {
-		await this.setState({
-			// if the element has the id of the eyeClick, its	 disabled value is flipped
-			elements: this.state.elements.map((el) => (el.id === id ? { ...el, disabled: !el.disabled } : el)),
-		});
-		this.emitChange();
-		this.checkAllowFilterAdd();
+		if (this.state.disableFilterAdd && this.state.elements[id].isLooseStep && this.state.elements[id].isDisabled) {
+			alert('Enabling this step is not possible, as it would exceed the maximum amount of selectable ranges.');
+		} else {
+			await this.setState({
+				// if the element has the id of the eyeClick, its	 disabled value is flipped
+				elements: this.state.elements.map((el) => (el.id === id ? { ...el, isDisabled: !el.isDisabled } : el)),
+			});
+			this.emitChange();
+			this.checkAllowFilterAdd();
+		}
 	};
 
 	handleChange = async (id: number, mode: FilterStepMode, updatedFilter: Filter_): Promise<void> => {
@@ -229,7 +233,7 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 		const result =
 			this.state.elements
 				// remove disabled elements
-				.filter((elem) => !elem.disabled && elem.isLooseStep).length >= allowedLooseDim;
+				.filter((elem) => !elem.isDisabled && elem.isLooseStep).length >= allowedLooseDim;
 		this.setState({ disableFilterAdd: result });
 	}
 
@@ -300,7 +304,7 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 										onEyeClick={this.handleEyeClick}
 										onDelete={this.deleteFilter}
 										metadata={this.props.metadata}
-										disabled={elem.disabled}
+										disabled={elem.isDisabled}
 										// disable setting a loose dimension if n are already set to loose,
 										// and it itself is not a loose dimension
 										disableLooseFiltering={this.state.disableFilterAdd && !elem.isLooseStep}
