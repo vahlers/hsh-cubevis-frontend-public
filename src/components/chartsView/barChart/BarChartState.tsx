@@ -25,7 +25,6 @@ type ChartState = {
 			t: number;
 			pad: number;
 		};
-		height: string;
 		autosize: boolean;
 		xaxis: {
 			title: string;
@@ -37,6 +36,7 @@ type ChartState = {
 			autorange: boolean;
 		};
 		width: number;
+		height: number;
 		dragmode: string;
 	};
 	config: {
@@ -79,7 +79,6 @@ const initialState = (): ChartState => {
 				t: 30,
 				pad: 0,
 			},
-			height: '380',
 			autosize: true,
 			xaxis: {
 				title: 'dimension',
@@ -91,6 +90,7 @@ const initialState = (): ChartState => {
 				autorange: false,
 			},
 			width: 0,
+			height: 0,
 		},
 		config: {
 			responsive: true,

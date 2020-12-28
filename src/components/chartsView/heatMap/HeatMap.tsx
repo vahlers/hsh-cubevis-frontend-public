@@ -103,6 +103,7 @@ class HeatMap extends React.Component<HeatMapProps, HeatMapState> {
 	draw = (): void => {
 		const layout = this.state.layout;
 		layout.width = this.currentParentWidth();
+		layout.height = this.currentParentHeight();
 		// Is a graph already loaded?
 		if (this.state.graphLoaded) {
 			Plotly.redraw(this.heatMap.current, [this.state.data], layout, this.state.config);
@@ -173,11 +174,13 @@ class HeatMap extends React.Component<HeatMapProps, HeatMapState> {
 	}
 
 	currentParentWidth = (): number => {
-		return document.getElementById(ChartsView.containerName).clientWidth * 0.95;
+		const parent = document.getElementById(ChartsView.containerName);
+		return parent ? parent.clientWidth * 0.95 : 0;
 	};
 
 	currentParentHeight = (): number => {
-		return document.getElementById(ChartsView.containerName).clientHeight * 0.95;
+		const parent = document.getElementById(ChartsView.containerName);
+		return parent ? parent.clientHeight * 0.95 : 0;
 	};
 
 	resizeChart = (): void => {

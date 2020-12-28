@@ -1,6 +1,5 @@
 import React from 'react';
 import '../ChartsView.css';
-import { GiMagnifyingGlass } from 'react-icons/gi';
 import ChartsView from '../ChartsView';
 import { initialState, PlotState } from './BoxPlotState';
 import { PlotProps } from './BoxPlotProps';
@@ -90,6 +89,7 @@ class BoxPlot extends React.Component<PlotProps, PlotState> {
 		//if (!this.state.showGraph) return;
 		const layout = this.state.layout;
 		layout.width = this.currentParentWidth();
+		layout.height = this.currentParentHeight();
 		Plotly.react(this.boxPlot.current, this.state.data, layout, this.state.config);
 	};
 
@@ -101,11 +101,13 @@ class BoxPlot extends React.Component<PlotProps, PlotState> {
 	}
 
 	currentParentWidth = (): number => {
-		return document.getElementById(ChartsView.containerName).clientWidth * 0.95;
+		const parent = document.getElementById(ChartsView.containerName);
+		return parent ? parent.clientWidth * 0.95 : 0;
 	};
 
 	currentParentHeight = (): number => {
-		return document.getElementById(ChartsView.containerName).clientHeight * 0.95;
+		const parent = document.getElementById(ChartsView.containerName);
+		return parent ? parent.clientHeight * 0.95 : 0;
 	};
 
 	resizeChart = (): void => {

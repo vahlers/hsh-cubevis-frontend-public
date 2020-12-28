@@ -27,7 +27,7 @@ type HeatMapState = {
 			t: number;
 			pad: number;
 		};
-		height: string;
+		height: number;
 		autosize: boolean;
 		xaxis: {
 			title: string;
@@ -87,7 +87,7 @@ const initialState = (): HeatMapState => {
 				pad: 0,
 			},
 			width: 0,
-			height: '380',
+			height: 0,
 			autosize: true,
 			xaxis: {
 				title: 'dimension',
