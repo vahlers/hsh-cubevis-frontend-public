@@ -27,10 +27,12 @@ export type OptionType = {
 type FilterState = {
 	elements: StateElem[];
 	disableFilterAdd: boolean;
+	available_dimensions: Dimension[];
 };
 
 type StateElem = {
 	id: number;
+	dimensions: Dimension[];
 	values: OptionType[];
 	filter: Filter_;
 	filterStep: FilterStep;
@@ -47,14 +49,14 @@ type FilterProps = {
 };
 const allowedLooseDim = 2;
 const dataService = DataProcessingService.instance();
-let dimensions: Dimension[] = [];
+let all_dimensions: Dimension[] = [];
 
 export class Filters extends React.Component<FilterProps, FilterState> {
 	constructor(props: FilterProps) {
 		super(props);
 
 		// Initial empty state
-		this.state = { elements: [], disableFilterAdd: true };
+		this.state = { elements: [], disableFilterAdd: true, available_dimensions: [] };
 	}
 	componentDidUpdate = (prevProps: FilterProps): void => {
 		if (this.props.chartSelection !== null && this.props.chartSelection !== prevProps.chartSelection) {
@@ -74,14 +76,14 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 		}
 
 		if (this.props.metadata !== prevProps.metadata) {
-			dimensions =
+			all_dimensions =
 				this.props.metadata === null
 					? []
 					: Object.keys(this.props.metadata).map((type) => ({
 							value: parseInt(type) as CellTypes,
 							label: this.props.metadata[parseInt(type) as CellTypes].label,
 					  }));
-			this.setState({ disableFilterAdd: dimensions === undefined });
+			this.setState({ disableFilterAdd: all_dimensions === undefined, available_dimensions: all_dimensions });
 		}
 	};
 
@@ -105,11 +107,12 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 	}
 
 	addFilter = async (): Promise<void> => {
-		const newFilterDimension: Dimension = dimensions[0];
-		const newID = this.state === null ? 0 : this.state.elements.length;
+		const newFilterDimension: Dimension = this.state.available_dimensions[0];
+		const newID = this.state.elements === null ? 0 : this.state.elements.length;
 
 		const result: StateElem = {
 			id: newID,
+			dimensions: this.state.available_dimensions,
 			filter: { type: newFilterDimension.value, value: null },
 			values: await this.getDataValues(newFilterDimension.value, newID),
 			filterStep: null,
@@ -122,7 +125,7 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 		const props: FilterStepProps = {
 			id: result.id,
 			values: result.values,
-			dimensions: dimensions,
+			dimensions: this.state.available_dimensions,
 			onDelete: this.deleteFilter,
 			onEyeClick: this.handleEyeClick,
 			onChange: this.handleChange,
@@ -143,6 +146,7 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 		}
 		this.emitChange();
 		this.checkAllowFilterAdd();
+		this.updateAvailableDimensions();
 	};
 
 	applyChartSelection(chartSelection: Filter_): void {
@@ -155,6 +159,7 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 
 	//sends all non disabled filters to the props.onChange
 	emitChange = (): void => {
+		console.log(this.getFilterParamFromState());
 		this.props.onChange(this.getFilterParamFromState());
 	};
 
@@ -164,19 +169,33 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 		});
 		this.emitChange();
 		this.checkAllowFilterAdd();
+		this.updateAvailableDimensions();
 	};
 
 	handleEyeClick = async (id: number): Promise<void> => {
-		if (this.state.disableFilterAdd && this.state.elements[id].isLooseStep && this.state.elements[id].isDisabled) {
-			alert('Enabling this step is not possible, as it would exceed the maximum amount of selectable ranges.');
-		} else {
-			await this.setState({
-				// if the element has the id of the eyeClick, its	 disabled value is flipped
-				elements: this.state.elements.map((el) => (el.id === id ? { ...el, isDisabled: !el.isDisabled } : el)),
-			});
-			this.emitChange();
-			this.checkAllowFilterAdd();
+		console.log('eyeClick on ', id);
+		console.log('before elements', this.state.elements);
+
+		if (this.state.elements[id].isDisabled) {
+			if (this.state.disableFilterAdd && this.state.elements[id].isLooseStep) {
+				alert(
+					'Enabling this step is not possible, as it would exceed the maximum amount of selectable ranges.',
+				);
+				return;
+			} else if (!this.state.available_dimensions.includes(all_dimensions[this.state.elements[id].filter.type])) {
+				alert('Enabling this step is not possible, the dimension is already selected.');
+				return;
+			}
 		}
+		await this.setState({
+			// if the element has the id of the eyeClick, its disabled value is flipped
+			elements: this.state.elements.map((el) => (el.id === id ? { ...el, isDisabled: !el.isDisabled } : el)),
+		});
+		console.log('after elements', this.state.elements);
+
+		this.emitChange();
+		this.checkAllowFilterAdd();
+		this.updateAvailableDimensions();
 	};
 
 	handleChange = async (id: number, mode: FilterStepMode, updatedFilter: Filter_): Promise<void> => {
@@ -226,6 +245,7 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 
 		this.emitChange();
 		this.checkAllowFilterAdd();
+		this.updateAvailableDimensions();
 	};
 
 	private checkAllowFilterAdd() {
@@ -237,29 +257,61 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 		this.setState({ disableFilterAdd: result });
 	}
 
+	private updateAvailableDimensions() {
+		// all dimensions that are not included in a filter already
+		const new_dimensions = all_dimensions.filter(
+			(dim) =>
+				!this.state.elements
+					.map((elem) => (!elem.isDisabled && elem.filter !== null ? elem.filter.type : null))
+					.includes(dim.value),
+		);
+
+		this.setState({
+			available_dimensions: new_dimensions,
+			elements: this.state.elements.map((el) => {
+				if (el.filter === null || el.filter.type === null) {
+					return { ...el, dimensions: new_dimensions };
+				} else {
+					// insert the dimension (all_dimensions[el.filter.type]) used by elem
+					// at index of the dimension
+					const index = new_dimensions.findIndex((dim) => dim.value > el.filter.type);
+					return {
+						...el,
+						dimensions: new_dimensions
+							.slice(0, index)
+							.concat(all_dimensions[el.filter.type])
+							.concat(new_dimensions.slice(index)),
+					};
+				}
+			}),
+		});
+	}
+
 	private getFilterParamFromState() {
 		const filters: FilterParameter = new FilterParameter();
 		this.state.elements.forEach((stateElem) => {
-			let value = stateElem.filter.value;
-			if (value === null) {
-				filters.addFilter(stateElem.filter.type, null);
-			} else if (typeof value === 'string' || typeof value === 'number' || value instanceof Ip) {
-				filters.addFilter(stateElem.filter.type, value);
-			} else if (Array.isArray(value)) {
-				filters.addFilter(stateElem.filter.type, value);
-			} else {
-				value = value as RangeFilter<Value>;
-				const from = value.from;
-				const to = value.to;
-
-				if (from == to) {
-					filters.addFilter(stateElem.filter.type, from);
-				} else if (from !== null && to === null) {
-					filters.addFilter(stateElem.filter.type, from);
-				} else if (to !== null && from === null) {
-					filters.addFilter(stateElem.filter.type, to);
-				} else {
+			if (!stateElem.isDisabled) {
+				let value = stateElem.filter.value;
+				if (value === null) {
+					filters.addFilter(stateElem.filter.type, null);
+				} else if (typeof value === 'string' || typeof value === 'number' || value instanceof Ip) {
 					filters.addFilter(stateElem.filter.type, value);
+				} else if (Array.isArray(value)) {
+					filters.addFilter(stateElem.filter.type, value);
+				} else {
+					value = value as RangeFilter<Value>;
+					const from = value.from;
+					const to = value.to;
+
+					if (from == to) {
+						filters.addFilter(stateElem.filter.type, from);
+					} else if (from !== null && to === null) {
+						filters.addFilter(stateElem.filter.type, from);
+					} else if (to !== null && from === null) {
+						filters.addFilter(stateElem.filter.type, to);
+					} else {
+						filters.addFilter(stateElem.filter.type, value);
+					}
 				}
 			}
 		});
@@ -298,7 +350,7 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 										id={elem.id}
 										key={elem.id}
 										stepnumber={index + 1}
-										dimensions={dimensions}
+										dimensions={elem.dimensions}
 										values={elem.values}
 										onChange={this.handleChange}
 										onEyeClick={this.handleEyeClick}
