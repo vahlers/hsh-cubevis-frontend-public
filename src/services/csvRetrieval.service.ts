@@ -70,6 +70,7 @@ class D3CsvRetrievalService extends CsvRetrievalService {
 		const result = csv(DataServiceHelper.getCountFilePath() + filename)
 			.then(async (data) => {
 				let models: CubeCellModel[] = [];
+				const hashTable: { [id: string]: CubeCellModel } = {};
 				//Filter stars expression
 				const expr = (type: CellTypes) => {
 					if (dimensions.includes(type)) return (x: string) => x !== '*';
@@ -96,7 +97,11 @@ class D3CsvRetrievalService extends CsvRetrievalService {
 					model.count = null;
 					model.countMean = parseFloat(row['count_z_score_mean']);
 					model.countStandardDeviation = parseFloat(row['count_z_score_standard_deviation']);
-					if (addToModel) models.push(<CubeCellModel>model);
+					if (addToModel) {
+						models.push(<CubeCellModel>model);
+						const hashString: string = this.convertModelToHash(<CubeCellModel>model).toString();
+						hashTable[hashString] = <CubeCellModel>model;
+					}
 				});
 
 				//This loads the file that contains the validation count
@@ -114,10 +119,9 @@ class D3CsvRetrievalService extends CsvRetrievalService {
 							model[DataServiceHelper.getModelKeyName(dim)] = new Ip(e);
 						else model[DataServiceHelper.getModelKeyName(dim)] = e;
 					});
-
+					const hashString: string = this.convertModelToHash(<CubeCellModel>model).toString();
 					//find corresponding cubecell in existing model
-					const result = models.find((cubecell) => compareCubeCells(cubecell, model));
-
+					const result = hashTable[hashString];
 					//Drop results with no corresponding mean and standard dev
 					if (result !== undefined) result.count = parseFloat(row['count'].replace('[', '').replace(']', ''));
 				});
@@ -141,7 +145,28 @@ class D3CsvRetrievalService extends CsvRetrievalService {
 				);
 				return [];
 			});
-
 		return result;
+	}
+
+	private convertModelToHash(model: CubeCellModel) {
+		const modelString: string =
+			model?.destinationPort +
+			model?.argusTransaction +
+			model?.destinationIp?.toString() +
+			model?.sourcePort +
+			model?.sourceIp?.toString() +
+			model?.networkProtocol +
+			model?.networkTransport;
+
+		let hash = 0;
+		if (modelString.length == 0) {
+			return hash;
+		}
+		for (let i = 0; i < modelString.length; i++) {
+			const char = modelString.charCodeAt(i);
+			hash = (hash << 5) - hash + char;
+			hash = hash & hash; // Convert to 32bit integer
+		}
+		return hash;
 	}
 }
