@@ -50,6 +50,7 @@
 	flex-basis: 40%;
 	z-index: 10;
 	margin-right: 16px;
+	overflow-y: auto;
 }
 
 .chart-container-flex {
