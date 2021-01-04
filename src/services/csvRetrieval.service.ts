@@ -1,5 +1,4 @@
 import { CellTypes } from '../enums/cellTypes.enum';
-import { DataType } from '../enums/dataType.enum';
 import { compareCubeCells, CubeCellModel } from '../models/cell.model';
 import { csv } from 'd3';
 import { Ip } from '../models/ip.modell';
@@ -123,8 +122,16 @@ class D3CsvRetrievalService extends CsvRetrievalService {
 					if (result !== undefined) result.count = parseFloat(row['count'].replace('[', '').replace(']', ''));
 				});
 
-				//Drop results with no corresponding count
+				//loading anomaly data
+				const anomalyModel = await this.getAnomalyData(dimensions);
+				models.forEach((row) => {
+					const result = anomalyModel.find((anomalyCell) => compareCubeCells(anomalyCell, row));
+					if (result !== undefined) row.anomalyScore = result.anomalyScore;
+				});
+
+				//Drop results with no corresponding count or anomaly score
 				models = models.filter((cell) => cell.count !== null);
+				models = models.filter((cell) => cell.anomalyScore !== null);
 				return models;
 			})
 			.catch((error) => {

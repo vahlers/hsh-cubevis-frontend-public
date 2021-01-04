@@ -1,4 +1,3 @@
-import { valueFocusAriaMessage } from 'react-select/src/accessibility';
 import { configDataMapping, filePathPattern, filePaths } from '../dataservice.config';
 import { CellTypes } from '../enums/cellTypes.enum';
 import { DataType } from '../enums/dataType.enum';
