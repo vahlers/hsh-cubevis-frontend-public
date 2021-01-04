@@ -15,6 +15,7 @@ type ChartState = {
 			cmax: number;
 			showscale: boolean;
 		};
+		selectedpoints: any;
 	};
 
 	layout: {
@@ -69,6 +70,7 @@ const initialState = (): ChartState => {
 				cmin: SCORE_MIN,
 				cmax: SCORE_MAX,
 			},
+			selectedpoints: [],
 		},
 		layout: {
 			dragmode: 'select',

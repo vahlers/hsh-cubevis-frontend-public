@@ -29,6 +29,7 @@ class BarChart extends React.Component<ChartProps, ChartState> {
 		const metaData = this.props.metadata;
 
 		let message = '';
+		data.selectedpoints = null;
 		data.x = [];
 		data.y = [];
 		data.marker.color = [];
