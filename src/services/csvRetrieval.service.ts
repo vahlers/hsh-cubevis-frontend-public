@@ -150,10 +150,10 @@ class D3CsvRetrievalService extends CsvRetrievalService {
 
 	private convertModelToHash(model: CubeCellModel) {
 		const modelString: string =
-			model?.destinationPort +
+			model?.destinationPort?.toString() +
 			model?.argusTransaction +
 			model?.destinationIp?.toString() +
-			model?.sourcePort +
+			model?.sourcePort?.toString() +
 			model?.sourceIp?.toString() +
 			model?.networkProtocol +
 			model?.networkTransport;
