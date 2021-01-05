@@ -182,10 +182,13 @@ export class ParallelCoordsUtils {
 					filters.forEach((filter) => {
 						if (filter === null) return;
 						if (typeof filter === 'string' || typeof filter === 'number' || filter instanceof Ip) {
+							filter = filter === Infinity ? -1 : filter;
 							const filterValue = (dimension as NominalDimension).map[filter.toString()];
 							constraintrange.push([filterValue, filterValue]);
 						} else {
 							const rangeFilter: RangeFilter<Value> = filter as RangeFilter<Value>;
+							rangeFilter.from = rangeFilter.from === Infinity ? -1 : rangeFilter.from;
+							rangeFilter.to = rangeFilter.to === Infinity ? -1 : rangeFilter.to;
 							const from = (dimension as NominalDimension).map[rangeFilter.from.toString()];
 							const to = (dimension as NominalDimension).map[rangeFilter.to.toString()];
 							constraintrange.push([from, to]);
