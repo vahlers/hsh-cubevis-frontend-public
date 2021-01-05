@@ -146,6 +146,7 @@ class BarChart extends React.Component<ChartProps, ChartState> {
 				<div className={this.state.graphLoaded ? 'chart' : 'chart hide-chart'}>
 					<div ref={this.barChart} id="barChart" />
 				</div>
+
 				<UserInfoMessage
 					className={!this.state.graphLoaded ? 'chart chart-no-data' : 'chart chart-no-data hide-chart'}
 					message={this.state.message}

@@ -88,7 +88,7 @@ class ChartsView extends React.Component<ChartsViewProps, ChartsViewState> {
 				<Carousel.Item className="carousel-child">
 					<div
 						className={
-							this.state.looseDimensions === this.state.looseDimensionMapping[this.state.selectedIndex]
+							this.state.looseDimensions <= this.state.looseDimensionMapping[this.state.selectedIndex]
 								? ''
 								: 'hide-chart'
 						}
@@ -101,9 +101,9 @@ class ChartsView extends React.Component<ChartsViewProps, ChartsViewState> {
 						/>
 					</div>
 					<ChartsNotAvailableMessage
-						message="To enable the chart, add exactly one filter which is not settled to a specific value."
+						message="To enable the chart, choose at most one filter which is not settled to a specific value."
 						className={
-							this.state.looseDimensions === this.state.looseDimensionMapping[this.state.selectedIndex]
+							this.state.looseDimensions <= this.state.looseDimensionMapping[this.state.selectedIndex]
 								? 'hide-chart chart chart-no-data'
 								: 'chart chart-no-data'
 						}
@@ -136,7 +136,7 @@ class ChartsView extends React.Component<ChartsViewProps, ChartsViewState> {
 				<Carousel.Item className="carousel-child">
 					<div
 						className={
-							this.state.looseDimensions === this.state.looseDimensionMapping[this.state.selectedIndex]
+							this.state.looseDimensions <= this.state.looseDimensionMapping[this.state.selectedIndex]
 								? ''
 								: 'hide-chart'
 						}
@@ -148,9 +148,9 @@ class ChartsView extends React.Component<ChartsViewProps, ChartsViewState> {
 						/>
 					</div>
 					<ChartsNotAvailableMessage
-						message="To enable the chart, add exactly one filter which is not settled to a specific value."
+						message="To enable the chart, choose at most one filter which is not settled to a specific value."
 						className={
-							this.state.looseDimensions === this.state.looseDimensionMapping[this.state.selectedIndex]
+							this.state.looseDimensions <= this.state.looseDimensionMapping[this.state.selectedIndex]
 								? 'hide-chart chart chart-no-data'
 								: 'chart chart-no-data'
 						}
