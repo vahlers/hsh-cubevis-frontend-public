@@ -6,8 +6,12 @@ import { DataServiceHelper } from '../helpers/dataService.helper';
 
 type Value = number | string | Ip;
 type Filter = { type: CellTypes; value: Value };
-
-export type { Filter, Value };
+type SingleFilter = {
+	index: number;
+	type: CellTypes;
+	filter: Value | Value[] | RangeFilter<Value> | RangeFilter<Value>[];
+};
+export type { Filter, Value, SingleFilter };
 
 /**
  * This class wraps all possible parameters for filters
@@ -106,11 +110,7 @@ export class FilterParameter {
 	/**
 	 * Returns an array with each type, filter and their index. It can be used to ascertain their order.
 	 */
-	public getOrderedFilters(): {
-		index: number;
-		type: CellTypes;
-		filter: Value | Value[] | RangeFilter<Value> | RangeFilter<Value>[];
-	}[] {
+	public getOrderedFilters(): SingleFilter[] {
 		return this.countReferences;
 	}
 

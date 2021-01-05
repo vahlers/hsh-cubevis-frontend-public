@@ -1,5 +1,5 @@
 import React from 'react';
-import { FilterParameter } from '../../../models/filter.model';
+import { FilterParameter, SingleFilter } from '../../../models/filter.model';
 import '../ChartsView.css';
 import ChartsView from '../ChartsView';
 import { HeatMapUtils } from './HeatMapUtils';
@@ -8,6 +8,7 @@ import { HeatMapState, initialState } from './HeatMapState';
 import { SCORE_KEY } from '../../../helpers/constants.js';
 import UserInfoMessage from '../messages/UserInfoMessage';
 import { DataServiceHelper } from '../../../helpers/dataService.helper';
+import { ChartsViewUtils } from '../ChartsViewUtils';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Plotly = require('plotly.js-dist');
@@ -25,6 +26,14 @@ class HeatMap extends React.Component<HeatMapProps, HeatMapState> {
 			this.setState({ currentFilters: this.props.filters.clone() }, () => this.preProcess());
 		}
 	}
+
+	/** Extract the relevant filters from filter props.
+	 *	If a loose dimension is in the filters, it will be selected.
+	 *	If not, the last added dimension will be selected.
+	 */
+	getDimensionsForChart = (): SingleFilter[] => {
+		return ChartsViewUtils.getLooseDimensions(this.state.currentFilters);
+	};
 
 	/**
 	 * Pre-processes new or changed data to prepare the scatter plot
@@ -48,7 +57,7 @@ class HeatMap extends React.Component<HeatMapProps, HeatMapState> {
 		data.z = [];
 		data.color = [];
 		let showGraph = false;
-		const orderedFilters = this.state.currentFilters.getOrderedFilters();
+		const orderedFilters = this.getDimensionsForChart();
 
 		let cellTypeX = null;
 		let cellTypeY = null;

@@ -6,6 +6,8 @@ import { PlotProps } from './BoxPlotProps';
 import { BoxPlotUtils } from './BoxPlotUtils';
 import { BoxPlotData } from './BoxPlotData';
 import UserInfoMessage from '../messages/UserInfoMessage';
+import { SingleFilter } from '../../../models/filter.model';
+import { ChartsViewUtils } from '../ChartsViewUtils';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Plotly = require('plotly.js-dist');
@@ -24,6 +26,16 @@ class BoxPlot extends React.Component<PlotProps, PlotState> {
 		}
 	}
 
+	/** Extract the relevant filters from filter props.
+	 *	If a loose dimension is in the filters, it will be selected.
+	 *	If not, the last added dimension will be selected.
+	 */
+	getDimensionsForChart = (): SingleFilter => {
+		const orderedFilters = this.state.currentFilters.getOrderedFilters();
+		const looseFilters = ChartsViewUtils.getLooseDimensions(this.state.currentFilters);
+		return looseFilters.length ? looseFilters.pop() : orderedFilters.pop();
+	};
+
 	/**
 	 * Pre-processes new or changed data to prepare the boxplot
 	 * This Method also checks if all necessary information for the plot is provided.
@@ -41,14 +53,14 @@ class BoxPlot extends React.Component<PlotProps, PlotState> {
 		const plotData = [];
 		let helpMessage = '';
 		let showGraph = false;
-		const orderedFilters = this.state.currentFilters.getOrderedFilters();
+		const filter = this.getDimensionsForChart();
 
 		// At least two filters and one data entry is given.
-		if (orderedFilters.length > 0 && this.props.data.length > 0) {
+		if (filter && this.props.data.length > 0) {
 			// Necessary information is provided, so set the graph to be displayed.
 			showGraph = true;
 			// The filtertypes will be obtained from metadata
-			const lastFilterType = metaData[orderedFilters[orderedFilters.length - 1].type];
+			const lastFilterType = metaData[filter.type];
 			layout.yaxis.title = lastFilterType.label;
 
 			// For every data entry  push the values and names into the plot data.
@@ -75,7 +87,7 @@ class BoxPlot extends React.Component<PlotProps, PlotState> {
 				plotData.push(BoxPlotUtils.createScoreMarker(rowData));
 			}
 			// necessary filters not provided
-		} else if (orderedFilters.length == 0) {
+		} else if (!filter) {
 			helpMessage = 'Please select at least one filters';
 			// data list is empty
 		} else {

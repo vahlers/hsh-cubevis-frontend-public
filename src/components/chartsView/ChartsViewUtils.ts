@@ -1,5 +1,5 @@
 import { DataServiceHelper } from '../../helpers/dataService.helper';
-import { FilterParameter, Value } from '../../models/filter.model';
+import { FilterParameter, SingleFilter, Value } from '../../models/filter.model';
 import { RangeFilter } from '../../models/rangeFilter.model';
 
 export class ChartsViewUtils {
@@ -10,6 +10,10 @@ export class ChartsViewUtils {
 	 * 		Filter is a Range filter with from != to
 	 */
 	static getLooseDimensionsCount = (filters: FilterParameter): number => {
+		return ChartsViewUtils.getLooseDimensions(filters).length;
+	};
+
+	static getLooseDimensions = (filters: FilterParameter): SingleFilter[] => {
 		return filters
 			.getOrderedFilters()
 			.filter(
@@ -22,6 +26,6 @@ export class ChartsViewUtils {
 							(f.filter as RangeFilter<Value>).from,
 							(f.filter as RangeFilter<Value>).to,
 						)),
-			).length;
+			);
 	};
 }

@@ -6,6 +6,8 @@ import { initialState, ChartState } from './BarChartState';
 import { ChartProps } from './BarChartProps';
 import UserInfoMessage from '../messages/UserInfoMessage';
 import { SCORE_KEY } from '../../../helpers/constants.js';
+import { SingleFilter } from '../../../models/filter.model';
+import { ChartsViewUtils } from '../ChartsViewUtils';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Plotly = require('plotly.js-dist');
@@ -18,6 +20,16 @@ class BarChart extends React.Component<ChartProps, ChartState> {
 			this.setState({ currentFilters: this.props.filters.clone() }, () => this.preProcess());
 		}
 	}
+
+	/** Extract the relevant filters from filter props.
+	 *	If a loose dimension is in the filters, it will be selected.
+	 *	If not, the last added dimension will be selected.
+	 */
+	getDimensionsForChart = (): SingleFilter => {
+		const orderedFilters = this.state.currentFilters.getOrderedFilters();
+		const looseFilters = ChartsViewUtils.getLooseDimensions(this.state.currentFilters);
+		return looseFilters.length ? looseFilters.pop() : orderedFilters.pop();
+	};
 
 	preProcess = (): void => {
 		if (this.props.data === null) return;
@@ -34,11 +46,11 @@ class BarChart extends React.Component<ChartProps, ChartState> {
 		data.y = [];
 		data.marker.color = [];
 		let showGraph = false;
-		const orderedFilters = this.state.currentFilters.getOrderedFilters();
+		const filter = this.getDimensionsForChart();
 		let currentCellType = null;
-		if (orderedFilters.length && this.props.data.length) {
+		if (filter && this.props.data.length) {
 			showGraph = true;
-			currentCellType = orderedFilters[orderedFilters.length - 1].type;
+			currentCellType = filter.type;
 			const lastFilterType = metaData[currentCellType];
 			layout.xaxis.title = lastFilterType.label;
 			// For every data entry  push the values and names into the plot data.
@@ -47,7 +59,7 @@ class BarChart extends React.Component<ChartProps, ChartState> {
 				data.y.push(row[SCORE_KEY]);
 				data.marker.color.push(row[SCORE_KEY]);
 			});
-		} else if (orderedFilters.length < 1) {
+		} else if (!filter) {
 			message = 'Please select at least one filter.';
 		} else {
 			message = 'There is no data matching the given filters. Please choose other filters.';
