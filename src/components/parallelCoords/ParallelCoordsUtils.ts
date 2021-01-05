@@ -6,6 +6,7 @@ import { Value } from '../../models/filter.model';
 import { CellTypes } from '../../enums/cellTypes.enum';
 import { RangeFilter } from '../../models/rangeFilter.model';
 import { DataServiceHelper } from '../../helpers/dataService.helper';
+import { FilterOutOfRangeError } from '../../errors/FilterOutOfRangeError';
 
 export class ParallelCoordsUtils {
 	static unpack = (rows: Array<DataRecord>, columName: string): Array<Value> => {
@@ -181,16 +182,20 @@ export class ParallelCoordsUtils {
 				default:
 					filters.forEach((filter) => {
 						if (filter === null) return;
+						const map = (dimension as NominalDimension).map;
 						if (typeof filter === 'string' || typeof filter === 'number' || filter instanceof Ip) {
 							filter = filter === Infinity ? -1 : filter;
-							const filterValue = (dimension as NominalDimension).map[filter.toString()];
+							const filterValue = map[filter.toString()];
+							if (!filterValue) throw new FilterOutOfRangeError(filter, dimension.label);
 							constraintrange.push([filterValue, filterValue]);
 						} else {
 							const rangeFilter: RangeFilter<Value> = filter as RangeFilter<Value>;
 							rangeFilter.from = rangeFilter.from === Infinity ? -1 : rangeFilter.from;
 							rangeFilter.to = rangeFilter.to === Infinity ? -1 : rangeFilter.to;
-							const from = (dimension as NominalDimension).map[rangeFilter.from.toString()];
-							const to = (dimension as NominalDimension).map[rangeFilter.to.toString()];
+							const from = map[rangeFilter.from.toString()];
+							const to = map[rangeFilter.to.toString()];
+							if (!from) throw new FilterOutOfRangeError(from, dimension.label);
+							if (!to) throw new FilterOutOfRangeError(to, dimension.label);
 							constraintrange.push([from, to]);
 						}
 					});
