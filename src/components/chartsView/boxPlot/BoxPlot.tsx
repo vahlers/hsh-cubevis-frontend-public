@@ -75,8 +75,7 @@ class BoxPlot extends React.Component<PlotProps, PlotState> {
 					thirdQuartile: datarows[i]['countMean'] + datarows[i]['countStandardDeviation'],
 					lowerFence: datarows[i]['countMean'] - 2 * datarows[i]['countStandardDeviation'],
 					upperFence: datarows[i]['countMean'] + 2 * datarows[i]['countStandardDeviation'],
-					anomalyScore:
-						(datarows[i]['count'] - datarows[i]['countMean']) / datarows[i]['countStandardDeviation'],
+					anomalyScore: datarows[i]['anomalyScore'],
 				});
 
 				// Add a trace containing the boxes
