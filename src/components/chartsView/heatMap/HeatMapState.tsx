@@ -10,6 +10,7 @@ type HeatMapState = {
 		y: string[];
 		z: number[];
 		hovertemplate: string;
+		hoverongaps: boolean;
 		text: string[];
 		colorscale: Array<Array<string>>;
 		zmin: number;
@@ -64,6 +65,7 @@ const initialState = (): HeatMapState => {
 			x: [],
 			y: [],
 			z: [],
+			hoverongaps: false,
 			hovertemplate: '',
 			text: [],
 			showscale: false,
