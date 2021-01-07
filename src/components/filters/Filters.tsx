@@ -309,6 +309,9 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 						filters.addFilter(stateElem.filter.type, from);
 					} else if (to !== null && from === null) {
 						filters.addFilter(stateElem.filter.type, to);
+					} else if (value.from.valueOf() > value.to.valueOf()) {
+						const tempValue: RangeFilter<Value> = { from: to, to: from };
+						filters.addFilter(stateElem.filter.type, tempValue);
 					} else {
 						filters.addFilter(stateElem.filter.type, value);
 					}
