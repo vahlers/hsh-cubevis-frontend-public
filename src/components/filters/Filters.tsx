@@ -377,7 +377,7 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 						<button
 							onClick={() => this.addFilter()}
 							type="submit"
-							className="btn btn-primary m-2 add-step-btn"
+							className="btn btn-primary m-2 add-step-btn text-nowrap"
 							// disable adding another step, if the last step has a value of '*' <==> null
 							disabled={this.state.disableFilterAdd}
 						>
@@ -385,10 +385,7 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 						</button>
 					</Col>
 					<Col md="10" className="m-0 p-0 text-center my-auto">
-						<Alert
-							className={this.state.disableFilterAdd ? 'm-4 loose-alert' : 'm-4 loose-alert hide-alert'}
-							variant="secondary"
-						>
+						<Alert className={this.state.disableFilterAdd ? 'm-4' : 'm-4 hide-alert'} variant="secondary">
 							You have selected the maximum number of ranges ({allowedLooseDim}).
 						</Alert>
 					</Col>
