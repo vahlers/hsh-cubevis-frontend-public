@@ -1,6 +1,6 @@
 import { FilterParameter } from '../../../models/filter.model';
 import { CellTypes } from '../../../enums/cellTypes.enum';
-import { SCORE_MIN, SCORE_MAX } from '../../../helpers/constants';
+import { SCORE_MIN, SCORE_MAX, COLOR_SCALE } from '../../../config';
 
 type HeatMapState = {
 	data: {
@@ -70,11 +70,7 @@ const initialState = (): HeatMapState => {
 			text: [],
 			showscale: false,
 			showlegend: false,
-			colorscale: [
-				['0.0', '#00ff00'],
-				['0.33', '#FBFF31'],
-				['1.0', '#ff0000'],
-			],
+			colorscale: COLOR_SCALE,
 			zmin: SCORE_MIN,
 			zmax: SCORE_MAX,
 		},

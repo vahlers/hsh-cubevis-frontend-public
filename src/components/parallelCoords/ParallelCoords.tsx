@@ -5,7 +5,7 @@ import { ParallelCoordsUtils } from './ParallelCoordsUtils';
 import { FilterOutOfRangeError } from '../../errors/FilterOutOfRangeError';
 import { FaArrowDown, FaArrowUp, FaUndo } from 'react-icons/fa';
 
-import { SCORE_KEY } from '../../helpers/constants';
+import { SCORE_KEY } from '../../config';
 import { CellTypes } from '../../enums/cellTypes.enum';
 import { initialState, ParallelCoordsState, ParallelCoordsData } from './ParallelCoordsState';
 import { ParallelCoordsProps } from './ParallelCoordsProps';

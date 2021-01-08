@@ -1,4 +1,4 @@
-import { configDataMapping, filePathPattern, filePaths } from '../dataservice.config';
+import { CONFIG_DATA_MAPPING, FILE_PATH_PATTERN, FILE_PATHS } from '../config';
 import { CellTypes } from '../enums/cellTypes.enum';
 import { DataType } from '../enums/dataType.enum';
 import { CubeCellModel } from '../models/cell.model';
@@ -13,7 +13,7 @@ export class DataServiceHelper {
 		dimLabel: string;
 		dimName: string;
 		orderInFile: number;
-	}[] = configDataMapping;
+	}[] = CONFIG_DATA_MAPPING;
 
 	public static getParameterForCelltype(cell: CubeCellModel, type: CellTypes): Value {
 		const propertyString = this.dataMapping.find((entries) => entries.cellType == type).cellProperty;
@@ -67,38 +67,38 @@ export class DataServiceHelper {
 	public static getFileName(dimensions: CellTypes[]): string {
 		const isGrouped = (dim: CellTypes) => {
 			if (dimensions.includes(dim)) return DataServiceHelper.getDimName(dim);
-			else return filePathPattern.notIncludedFlag;
+			else return FILE_PATH_PATTERN.notIncludedFlag;
 		};
 
 		const sortedData = this.dataMapping.sort((a, b) => a.orderInFile - b.orderInFile);
-		let uriString = filePathPattern.prefix;
+		let uriString = FILE_PATH_PATTERN.prefix;
 
 		// Get the last order count
 		const lastEntryCount = sortedData[sortedData.length - 1].orderInFile;
 		sortedData.forEach((entry) => {
 			// Add name and seperator to the uri. The last element doesn't have separator.
 			uriString +=
-				isGrouped(entry.cellType) + (entry.orderInFile !== lastEntryCount ? filePathPattern.separator : '');
+				isGrouped(entry.cellType) + (entry.orderInFile !== lastEntryCount ? FILE_PATH_PATTERN.separator : '');
 		});
-		uriString += filePathPattern.appendix;
+		uriString += FILE_PATH_PATTERN.appendix;
 
 		return uriString;
 	}
 
 	public static getCountFileName(): string {
-		return filePaths.countFileName;
+		return FILE_PATHS.countFileName;
 	}
 
 	public static getAnomalyFilePath(): string {
-		return filePaths.anomalyFilePath;
+		return FILE_PATHS.anomalyFilePath;
 	}
 
 	public static getCountFilePath(): string {
-		return filePaths.countFilePath;
+		return FILE_PATHS.countFilePath;
 	}
 
 	public static getSingleCountFilePath(): string {
-		return filePaths.singleCountFilePath;
+		return FILE_PATHS.singleCountFilePath;
 	}
 
 	/**

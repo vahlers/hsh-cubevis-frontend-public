@@ -5,7 +5,7 @@ import ChartsView from '../ChartsView';
 import { HeatMapUtils } from './HeatMapUtils';
 import { HeatMapProps } from './HeatMapProps';
 import { HeatMapState, initialState } from './HeatMapState';
-import { SCORE_KEY } from '../../../helpers/constants.js';
+import { SCORE_KEY } from '../../../config';
 import UserInfoMessage from '../messages/UserInfoMessage';
 import { DataServiceHelper } from '../../../helpers/dataService.helper';
 import { ChartsViewUtils } from '../ChartsViewUtils';

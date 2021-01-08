@@ -1,4 +1,4 @@
-import { COLOR_SCALE, SCORE_MIN, SCORE_MAX } from '../../../helpers/constants';
+import { COLOR_SCALE, SCORE_MIN, SCORE_MAX } from '../../../config';
 import { BoxPlotData } from './BoxPlotData';
 
 export class BoxPlotUtils {

@@ -1,6 +1,6 @@
 import { FilterParameter } from '../../../models/filter.model';
 import { CellTypes } from '../../../enums/cellTypes.enum';
-import { SCORE_MIN, SCORE_MAX } from '../../../helpers/constants';
+import { SCORE_MIN, SCORE_MAX } from '../../../config';
 
 type ChartState = {
 	data: {

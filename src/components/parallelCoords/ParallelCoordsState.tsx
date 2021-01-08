@@ -1,5 +1,5 @@
 import { CellTypes } from '../../enums/cellTypes.enum';
-import { COLOR_SCALE, SCORE_MAX, SCORE_MIN } from '../../helpers/constants';
+import { COLOR_SCALE, SCORE_MAX, SCORE_MIN } from '../../config';
 import { Dimension } from '../../models/dimension.model';
 import { FilterParameter, Value } from '../../models/filter.model';
 

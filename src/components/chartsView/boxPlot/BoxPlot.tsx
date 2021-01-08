@@ -8,6 +8,7 @@ import { BoxPlotData } from './BoxPlotData';
 import UserInfoMessage from '../messages/UserInfoMessage';
 import { SingleFilter } from '../../../models/filter.model';
 import { ChartsViewUtils } from '../ChartsViewUtils';
+import { CubeCellModel } from '../../../models/cell.model';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Plotly = require('plotly.js-dist');
@@ -64,18 +65,18 @@ class BoxPlot extends React.Component<PlotProps, PlotState> {
 			layout.yaxis.title = lastFilterType.label;
 
 			// For every data entry  push the values and names into the plot data.
-			for (let i = 0; i < datarows.length; i++) {
+			datarows.forEach((row: CubeCellModel) => {
 				//Create data for the current plotentry
 				const rowData: BoxPlotData = BoxPlotUtils.formatBoxPlotData({
-					dimension: datarows[i][lastFilterType.key].toString(),
-					countValue: datarows[i]['count'],
-					meanValue: datarows[i]['countMean'],
-					stdDeviation: datarows[i]['countStandardDeviation'],
-					firstQuartile: datarows[i]['countMean'] - datarows[i]['countStandardDeviation'],
-					thirdQuartile: datarows[i]['countMean'] + datarows[i]['countStandardDeviation'],
-					lowerFence: datarows[i]['countMean'] - 2 * datarows[i]['countStandardDeviation'],
-					upperFence: datarows[i]['countMean'] + 2 * datarows[i]['countStandardDeviation'],
-					anomalyScore: datarows[i]['anomalyScore'],
+					dimension: row[lastFilterType.key].toString(),
+					countValue: row.count,
+					meanValue: row.countMean,
+					stdDeviation: row.countStandardDeviation,
+					firstQuartile: row.countMean - row.countStandardDeviation,
+					thirdQuartile: row.countMean + row.countStandardDeviation,
+					lowerFence: row.countMean - 2 * row.countStandardDeviation,
+					upperFence: row.countMean + 2 * row.countStandardDeviation,
+					anomalyScore: row.anomalyScore,
 				});
 
 				// Add a trace containing the boxes
@@ -84,7 +85,7 @@ class BoxPlot extends React.Component<PlotProps, PlotState> {
 				plotData.push(BoxPlotUtils.createHoverTrace(rowData));
 				// Add a trace containing the actual count value
 				plotData.push(BoxPlotUtils.createScoreMarker(rowData));
-			}
+			});
 			// necessary filters not provided
 		} else if (!filter) {
 			helpMessage = 'Please select at least one filters';

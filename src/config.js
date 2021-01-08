@@ -1,7 +1,7 @@
 import { CellTypes } from './enums/cellTypes.enum';
 import { DataType } from './enums/dataType.enum';
 
-export const configDataMapping = [
+export const CONFIG_DATA_MAPPING = [
 	{
 		cellProperty: 'destinationIp',
 		cellType: CellTypes.DESTINATION_IP,
@@ -60,16 +60,29 @@ export const configDataMapping = [
 	},
 ];
 
-export const filePathPattern = {
+export const FILE_PATH_PATTERN = {
 	prefix: '(',
 	appendix: ').csv',
 	separator: ', ',
 	notIncludedFlag: '_',
 };
 
-export const filePaths = {
+export const FILE_PATHS = {
 	countFilePath: '/data/checkpoints/epoch_0/',
 	countFileName: 'cell_models.csv',
 	anomalyFilePath: './data/estimates/epoch_0/full_anomaly_cube/',
 	singleCountFilePath: './data/validation_data/epoch_0/batch_0/item_0_sub_item_0/',
 };
+
+export const SCORE_KEY = 'anomalyScore';
+
+export const SCORE_MIN = 0.0;
+
+export const SCORE_MAX = 10.0;
+
+export const COLOR_SCALE = [
+	['0.0', '#00ff00'],
+	['0.33', '#FBFF31'],
+	['0.66', '#EB9A65'],
+	['1.0', '#ff0000'],
+];
