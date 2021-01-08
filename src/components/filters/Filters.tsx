@@ -60,19 +60,22 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 	}
 	componentDidUpdate = (prevProps: FilterProps): void => {
 		if (this.props.chartSelection !== null && this.props.chartSelection !== prevProps.chartSelection) {
-			// get the last added filter
-			const allFilters = this.props.chartSelection.getOrderedFilters();
-			const newStep = allFilters[allFilters.length - 1];
-			let newFilter = newStep.filter;
-			if (Array.isArray(newFilter)) {
-				// TODO this ignores the Type RangeFilter[] because i dont think that is ever used
-				newFilter = newFilter as Value[];
-			} else if ((newFilter as RangeFilter<Value>).from !== undefined) {
-				newFilter = newFilter as RangeFilter<Value>;
-			} else {
-				newFilter = newFilter as Value;
-			}
-			this.applyChartSelection({ type: newStep.type, value: newFilter });
+			// get the last added filter, need to reverse as well because order is flipped
+			const allFilters = this.props.chartSelection.getOrderedFilters().reverse();
+			const newFilterArray = [];
+			allFilters.forEach((filterStep) => {
+				let newFilter = filterStep.filter;
+				if (Array.isArray(newFilter)) {
+					// TODO this ignores the Type RangeFilter[] because i dont think that is ever used
+					newFilter = newFilter as Value[];
+				} else if ((newFilter as RangeFilter<Value>).from !== undefined) {
+					newFilter = newFilter as RangeFilter<Value>;
+				} else {
+					newFilter = newFilter as Value;
+				}
+				newFilterArray.push({ type: filterStep.type, value: newFilter });
+			});
+			this.applyChartSelection(newFilterArray);
 		}
 
 		if (this.props.metadata !== prevProps.metadata) {
@@ -149,17 +152,30 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 		this.updateAvailableDimensions();
 	};
 
-	applyChartSelection(chartSelection: Filter_): void {
-		this.setState({
-			elements: this.state.elements.map((el) =>
-				el.id === this.state.elements.length - 1 ? { ...el, setFilterFromChart: chartSelection } : el,
-			),
+	async applyChartSelection(chartSelection: Filter_[]): Promise<void> {
+		await this.setState({
+			elements: this.state.elements.map((el) => {
+				const corresponding_chartSelection = chartSelection.find((filter) => filter.type === el.filter.type);
+				return corresponding_chartSelection !== undefined
+					? { ...el, setFilterFromChart: corresponding_chartSelection }
+					: el;
+			}),
 		});
+
+		for (const newFilter of chartSelection) {
+			const id = this.state.elements.find((ele) => ele.filter.type === newFilter.type).id;
+			await this.handleChange(
+				id,
+				(newFilter.value as RangeFilter<Value>).from !== undefined
+					? FilterStepMode.ByValue
+					: FilterStepMode.ByRange,
+				newFilter,
+			);
+		}
 	}
 
 	//sends all non disabled filters to the props.onChange
 	emitChange = (): void => {
-		console.log(this.getFilterParamFromState());
 		this.props.onChange(this.getFilterParamFromState());
 	};
 
@@ -173,9 +189,6 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 	};
 
 	handleEyeClick = async (id: number): Promise<void> => {
-		console.log('eyeClick on ', id);
-		console.log('before elements', this.state.elements);
-
 		if (this.state.elements[id].isDisabled) {
 			if (this.state.disableFilterAdd && this.state.elements[id].isLooseStep) {
 				alert(
@@ -191,7 +204,6 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 			// if the element has the id of the eyeClick, its disabled value is flipped
 			elements: this.state.elements.map((el) => (el.id === id ? { ...el, isDisabled: !el.isDisabled } : el)),
 		});
-		console.log('after elements', this.state.elements);
 
 		this.emitChange();
 		this.checkAllowFilterAdd();

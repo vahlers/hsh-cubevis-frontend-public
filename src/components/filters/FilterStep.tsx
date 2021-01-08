@@ -158,7 +158,6 @@ export class FilterStep extends Component<FilterStepProps, FilterStepState> {
 				},
 				() => {
 					this.updateFilterLabel();
-					this.emitChange();
 				},
 			);
 		}
