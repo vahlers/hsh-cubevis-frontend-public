@@ -151,11 +151,14 @@ class HeatMap extends React.Component<HeatMapProps, HeatMapState> {
 		// invalid selection from user, do nothing
 		if (y2 < y1 || x2 < x1) return;
 
+		const uniqueX = this.state.data.x.filter((item, i, ar) => DataServiceHelper.indexOf(ar, item) === i);
+		const uniqueY = this.state.data.y.filter((item, i, ar) => DataServiceHelper.indexOf(ar, item) === i);
+
 		// find values based on selection
-		const lowerValueDimX = this.state.data.x.find((elem, idx) => idx === x1);
-		const upperValueDimX = this.state.data.x.find((elem, idx) => idx === x2);
-		const lowerValueDimY = this.state.data.y.find((elem, idx) => idx === y1);
-		const upperValueDimY = this.state.data.y.find((elem, idx) => idx === y2);
+		let lowerValueDimX = uniqueX.find((elem, idx) => idx === x1);
+		let upperValueDimX = uniqueX.find((elem, idx) => idx === x2);
+		let lowerValueDimY = uniqueY.find((elem, idx) => idx === y1);
+		let upperValueDimY = uniqueY.find((elem, idx) => idx === y2);
 
 		if (!lowerValueDimX || !upperValueDimX || !lowerValueDimY || !upperValueDimY) {
 			return;
@@ -165,12 +168,18 @@ class HeatMap extends React.Component<HeatMapProps, HeatMapState> {
 		if (DataServiceHelper.equals(lowerValueDimX, upperValueDimX)) {
 			filters.addFilter(this.state.cellTypeX, lowerValueDimX);
 		} else {
+			if (lowerValueDimX > upperValueDimX) {
+				[lowerValueDimX, upperValueDimX] = [upperValueDimX, lowerValueDimX];
+			}
 			filters.addFilter(this.state.cellTypeX, { from: lowerValueDimX, to: upperValueDimX });
 		}
 
 		if (DataServiceHelper.equals(lowerValueDimY, upperValueDimY)) {
 			filters.addFilter(this.state.cellTypeY, lowerValueDimY);
 		} else {
+			if (lowerValueDimY > upperValueDimY) {
+				[lowerValueDimY, upperValueDimY] = [upperValueDimY, lowerValueDimY];
+			}
 			filters.addFilter(this.state.cellTypeY, { from: lowerValueDimY, to: upperValueDimY });
 		}
 		this.props.onSelection(filters);
