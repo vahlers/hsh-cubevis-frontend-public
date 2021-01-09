@@ -413,7 +413,7 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 					<Col md="10" className="m-0 p-0 text-center my-auto">
 						<Alert className={this.state.disableFilterAdd ? 'm-4' : 'm-4 hide-alert'} variant="secondary">
 							{this.state.elements.length < all_dimensions.length
-								? 'You have selected the maximum number of ranges ({allowedLooseDim}).'
+								? `You have selected the maximum number of ranges (${allowedLooseDim}).`
 								: 'You have added a filter for every dimension.'}
 						</Alert>
 					</Col>
