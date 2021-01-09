@@ -276,6 +276,7 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 	private checkAllowFilterAdd() {
 		// we filter all elements for those that have a * as filter and check the result length against the allowed
 		const result =
+			this.state.elements.length === all_dimensions.length ||
 			this.state.elements
 				// remove disabled elements
 				.filter((elem) => !elem.isDisabled && elem.isLooseStep).length >= allowedLooseDim;
@@ -411,7 +412,9 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 					</Col>
 					<Col md="10" className="m-0 p-0 text-center my-auto">
 						<Alert className={this.state.disableFilterAdd ? 'm-4' : 'm-4 hide-alert'} variant="secondary">
-							You have selected the maximum number of ranges ({allowedLooseDim}).
+							{this.state.elements.length < all_dimensions.length
+								? 'You have selected the maximum number of ranges ({allowedLooseDim}).'
+								: 'You have added a filter for every dimension.'}
 						</Alert>
 					</Col>
 				</Row>
