@@ -111,7 +111,15 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 
 	addFilter = async (): Promise<void> => {
 		const newFilterDimension: Dimension = this.state.available_dimensions[0];
-		const newID = this.state.elements === null ? 0 : this.state.elements.length;
+
+		let newID = 0;
+		for (const elem of this.state.elements) {
+			if (elem.id == newID) {
+				newID++;
+			} else {
+				break;
+			}
+		}
 
 		const result: StateElem = {
 			id: newID,
@@ -189,6 +197,11 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 	};
 
 	handleEyeClick = async (id: number): Promise<void> => {
+		console.log(
+			id,
+			this.state.elements.map((e) => e.id + ': ' + e.filter.type),
+		);
+
 		if (this.state.elements[id].isDisabled) {
 			if (this.state.disableFilterAdd && this.state.elements[id].isLooseStep) {
 				alert(
