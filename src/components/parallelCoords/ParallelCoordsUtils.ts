@@ -186,7 +186,8 @@ export class ParallelCoordsUtils {
 						if (typeof filter === 'string' || typeof filter === 'number' || filter instanceof Ip) {
 							filter = filter === Infinity ? -1 : filter;
 							const filterValue = map[filter.toString()];
-							if (!filterValue) throw new FilterOutOfRangeError(filter, dimension.label);
+							if (filterValue === null || filterValue === undefined)
+								throw new FilterOutOfRangeError(filter, dimension.label);
 							constraintrange.push([filterValue, filterValue]);
 						} else {
 							const rangeFilter: RangeFilter<Value> = filter as RangeFilter<Value>;
@@ -194,8 +195,9 @@ export class ParallelCoordsUtils {
 							rangeFilter.to = rangeFilter.to === Infinity ? -1 : rangeFilter.to;
 							const from = map[rangeFilter.from.toString()];
 							const to = map[rangeFilter.to.toString()];
-							if (!from) throw new FilterOutOfRangeError(from, dimension.label);
-							if (!to) throw new FilterOutOfRangeError(to, dimension.label);
+							if (from === null || from === undefined)
+								throw new FilterOutOfRangeError(from, dimension.label);
+							if (to === null || to === undefined) throw new FilterOutOfRangeError(to, dimension.label);
 							constraintrange.push([from, to]);
 						}
 					});
