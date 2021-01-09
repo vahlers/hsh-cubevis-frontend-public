@@ -43,6 +43,7 @@ interface FilterStepState {
 	setToValue: OptionType;
 	filterLabel: string;
 	mode: FilterStepMode;
+	radios: { name: string; value: FilterStepMode }[];
 }
 
 type ExpandArrowProps = {
@@ -74,8 +75,6 @@ const isRangeFilter = (testElem: Value | Value[] | RangeFilter<Value>): testElem
 	(testElem as RangeFilter<Value>).from !== undefined;
 
 export class FilterStep extends Component<FilterStepProps, FilterStepState> {
-	filterByValue: React.RefObject<HTMLInputElement>;
-	filterByRange: React.RefObject<HTMLInputElement>;
 	constructor(props: FilterStepProps) {
 		super(props);
 
@@ -91,20 +90,17 @@ export class FilterStep extends Component<FilterStepProps, FilterStepState> {
 			setFromValue: null,
 			setToValue: null,
 			filterLabel: '*',
+			radios: [
+				{ name: 'By Value', value: FilterStepMode.ByValue },
+				{ name: 'By Range', value: FilterStepMode.ByRange },
+			],
 		};
-
-		this.filterByValue = React.createRef();
-		this.filterByRange = React.createRef();
-	}
-
-	componentDidMount(): void {
-		this.filterByValue.current.checked = true;
 	}
 
 	componentDidUpdate = async (prevProps: FilterStepProps): Promise<void> => {
 		// if the dimension was changed, while disableClearing was set
 		if (this.props.disableLooseFiltering && this.props.disableLooseFiltering !== prevProps.disableLooseFiltering) {
-			this.filterByValue.current.checked = true;
+			this.setState({ mode: FilterStepMode.ByValue });
 			let currentOption = null;
 			let currentValue = this.state.filter.value;
 			if (currentValue !== null) {
@@ -120,7 +116,7 @@ export class FilterStep extends Component<FilterStepProps, FilterStepState> {
 				}
 				currentOption = this.props.values.find((opt) => opt.value === currentValue);
 			}
-			this.setState({ mode: FilterStepMode.ByValue, setMultiSelectValue: currentOption });
+			this.setState({ setMultiSelectValue: currentOption });
 		}
 		if (this.props.chartSelection !== prevProps.chartSelection) {
 			const newFilter = this.props.chartSelection;
@@ -129,26 +125,24 @@ export class FilterStep extends Component<FilterStepProps, FilterStepState> {
 			let newSetTo = null;
 			let valueIdFrom = -1;
 			let valueIdTo = -1;
+			let mode = FilterStepMode.ByValue;
 
 			if (isValue(newFilter.value)) {
-				this.filterByValue.current.checked = true;
-				this.handleRadioBtnChange();
 				newSetMulti = this.props.values.find((value) => value.value === newFilter.value);
 			} else if (isValueArray(newFilter.value)) {
-				this.filterByValue.current.checked = true;
 				const newFilterValues = newFilter.value as Value[];
 				newSetMulti = this.props.values.filter((value) => newFilterValues.includes(value.value));
 			} else {
-				this.filterByRange.current.checked = true;
-				this.handleRadioBtnChange();
 				const newFilterValue = newFilter.value as RangeFilter<Value>;
 				newSetFrom = this.props.values.find((value) => value.value === newFilterValue.from.toString());
 				valueIdFrom = this.props.values.indexOf(newSetFrom);
 				newSetTo = this.props.values.find((value) => value.value === newFilterValue.to.toString());
 				valueIdTo = this.props.values.indexOf(newSetTo);
+				mode = FilterStepMode.ByRange;
 			}
 			this.setState(
 				{
+					mode: mode,
 					filter: newFilter,
 					setMultiSelectValue: newSetMulti,
 					setFromValue: newSetFrom,
@@ -311,12 +305,10 @@ export class FilterStep extends Component<FilterStepProps, FilterStepState> {
 		this.updateFilterLabel();
 	};
 
-	handleRadioBtnChange = (): void => {
-		if (this.filterByRange.current.checked) {
-			this.setState({ mode: FilterStepMode.ByRange });
-		} else if (this.filterByValue.current.checked) {
-			this.setState({ mode: FilterStepMode.ByValue });
-		}
+	handleRadioBtnChange = (event: any): void => {
+		const value = parseInt(event.target.id.slice(-1)) as FilterStepMode;
+		if (value != FilterStepMode.ByValue && value != FilterStepMode.ByRange) return;
+		this.setState({ mode: value });
 	};
 
 	handleMultiSelect = async (selected?: ValueType<OptionType> | OptionType[] | null): Promise<void> => {
@@ -393,6 +385,25 @@ export class FilterStep extends Component<FilterStepProps, FilterStepState> {
 		this.props.onExpand(this.props.id);
 	};
 
+	radioButtons = (): JSX.Element[] => {
+		const radioButtons = [];
+		this.state.radios.forEach((radio, idx) => {
+			radioButtons.push(
+				<Form.Check
+					onChange={(e) => this.handleRadioBtnChange(e)}
+					inline
+					checked={this.state.mode === radio.value}
+					name={`button-group-${this.props.id}`}
+					label={radio.name}
+					type="radio"
+					id={`radio-${this.props.id}-${idx}`}
+					disabled={this.props.disableLooseFiltering}
+				/>,
+			);
+		});
+		return radioButtons;
+	};
+
 	render(): React.ReactNode {
 		const { values } = this.props;
 		return (
@@ -443,25 +454,7 @@ export class FilterStep extends Component<FilterStepProps, FilterStepState> {
 				</Card.Header>
 				<Accordion.Collapse eventKey={this.props.id.toString()}>
 					<Card.Body className="filter-body">
-						<Form.Check
-							onChange={this.handleRadioBtnChange}
-							ref={this.filterByValue}
-							inline
-							name="radioGroup"
-							label="Filter by value(s)"
-							type="radio"
-							id={`step-${this.props.id}-inline-radio-1`}
-						/>
-						<Form.Check
-							onChange={this.handleRadioBtnChange}
-							ref={this.filterByRange}
-							inline
-							name="radioGroup"
-							label="Filter by range"
-							type="radio"
-							id={`step-${this.props.id}-inline-radio-2`}
-							disabled={this.props.disableLooseFiltering}
-						/>
+						{this.radioButtons()}
 						<div className={this.state.mode === FilterStepMode.ByRange ? '' : 'hide-filter-step'}>
 							<Row>
 								<Col>
