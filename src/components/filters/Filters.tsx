@@ -4,7 +4,7 @@ import { Accordion, Alert, Col, Row } from 'react-bootstrap';
 import { CellTypes } from '../../enums/cellTypes.enum';
 import { FilterParameter, Value } from '../../models/filter.model';
 import { DataProcessingService } from '../../services/dataProcessing.service';
-import { FilterStep, FilterStepProps, FilterStepMode } from './FilterStep';
+import { FilterStep, FilterStepMode, FilterStepProps } from './FilterStep';
 
 import { RangeFilter } from '../../models/rangeFilter.model';
 import { Ip } from '../../models/ip.modell';
@@ -197,11 +197,6 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 	};
 
 	handleEyeClick = async (id: number): Promise<void> => {
-		console.log(
-			id,
-			this.state.elements.map((e) => e.id + ': ' + e.filter.type),
-		);
-
 		if (this.state.elements[id].isDisabled) {
 			if (this.state.disableFilterAdd && this.state.elements[id].isLooseStep) {
 				alert(
@@ -227,28 +222,28 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 		const prevDimension = this.state.elements[id].filter.type;
 
 		let isLoose = false;
-		// if filter is empty, it's considered loose
+
+		// if we want to set a default value, we actually prevent the step from being loose
 		if (updatedFilter === null || updatedFilter.value === null) {
 			isLoose = true;
 			// if filter is array, and has more than one element, it's considered loose
 		} else if (Array.isArray(updatedFilter)) {
 			isLoose = updatedFilter.length > 1;
 			// if filter is RangeFilter, and has either both or neither from and to set, it's considered loose
-		} else if ((updatedFilter.value as RangeFilter<Value>).from !== undefined) {
+		} else if (
+			updatedFilter.value !== undefined &&
+			(updatedFilter.value as RangeFilter<Value>).from !== undefined
+		) {
 			const newValue = updatedFilter.value as RangeFilter<Value>;
 			isLoose =
 				(newValue.from === null && newValue.to === null) || (newValue.from !== null && newValue.to !== null);
 		}
 
-		// if one of the loose dimensions is no longer loose, we need to update our state.disableFilterAdd before we
-		// set the isLooseStep to false
-		if (this.state.elements[id].isLooseStep && !isLoose) {
-			this.setState({ disableFilterAdd: false });
-		}
+		// if the step has a loose value but n loose values are already selected, we need a default value
+		const needDefaultValue = this.state.disableFilterAdd && !this.state.elements[id].isLooseStep && isLoose;
 
 		// here the state is set by using an object spread '{ }', inserting all of the old object '{ ...el'
 		// and then updating the changed properties ', filter: updatedFilter }'
-
 		await this.setState({
 			elements: this.state.elements.map((el) =>
 				el.id === id ? { ...el, filter: updatedFilter, isLooseStep: isLoose } : el,
@@ -265,12 +260,26 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 
 		await this.setState({
 			elements: this.state.elements.map((el) => (el.id === id ? { ...el, values: optValues } : el)),
-			disableFilterAdd: false,
 		});
 
-		this.emitChange();
-		this.checkAllowFilterAdd();
-		this.updateAvailableDimensions();
+		if (needDefaultValue) {
+			await this.setState({
+				elements: this.state.elements.map((el) =>
+					el.id === id
+						? { ...el, setFilterFromChart: { type: updatedFilter.type, value: optValues?.[0].value } }
+						: el,
+				),
+			});
+			await this.handleChange(id, FilterStepMode.ByValue, {
+				type: updatedFilter.type,
+				value: optValues?.[0].value,
+			});
+		} else {
+			// prevent emitting update until the FilterStep call handleChange again with the default Value
+			this.emitChange();
+			this.checkAllowFilterAdd();
+			this.updateAvailableDimensions();
+		}
 	};
 
 	private checkAllowFilterAdd() {
@@ -295,7 +304,10 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 		this.setState({
 			available_dimensions: new_dimensions,
 			elements: this.state.elements.map((el) => {
-				if (el.filter === null || el.filter.type === null) {
+				// if filter, or filter.type are null for some reason we don't need to insert the filters
+				// selected dimension into it's available dimensions
+				// also don't need to do that for disabled dims
+				if (el.filter === null || el.filter.type === null || el.isDisabled) {
 					return { ...el, dimensions: new_dimensions };
 				} else {
 					// insert the dimension (all_dimensions[el.filter.type]) used by elem
@@ -318,7 +330,7 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 		this.state.elements.forEach((stateElem) => {
 			if (!stateElem.isDisabled) {
 				let value = stateElem.filter.value;
-				if (value === null) {
+				if (value === null || value == undefined) {
 					filters.addFilter(stateElem.filter.type, null);
 				} else if (typeof value === 'string' || typeof value === 'number' || value instanceof Ip) {
 					filters.addFilter(stateElem.filter.type, value);

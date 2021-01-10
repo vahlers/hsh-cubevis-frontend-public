@@ -118,7 +118,7 @@ export class FilterStep extends Component<FilterStepProps, FilterStepState> {
 			}
 			this.setState({ setMultiSelectValue: currentOption });
 		}
-		if (this.props.chartSelection !== prevProps.chartSelection) {
+		if (this.props.chartSelection !== null && this.props.chartSelection !== prevProps.chartSelection) {
 			const newFilter = this.props.chartSelection;
 			let newSetMulti = null;
 			let newSetFrom = null;
