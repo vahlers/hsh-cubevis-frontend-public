@@ -24,6 +24,8 @@ type AppState = {
 	chartSelection: FilterParameter;
 };
 
+const dataService = DataProcessingService.instance();
+
 class App extends React.Component<unknown, AppState> {
 	private chartRef;
 
@@ -51,8 +53,7 @@ class App extends React.Component<unknown, AppState> {
 	}
 
 	setup = async (): Promise<unknown> => {
-		await this.getMetadata();
-		await this.getData();
+		await Promise.all([this.getMetadata(), this.getData()]);
 
 		return this.setState({ filteredData: this.state.data, filteredCountData: this.state.data });
 	};
@@ -72,23 +73,23 @@ class App extends React.Component<unknown, AppState> {
 	};
 
 	getMetadata = async (): Promise<unknown> => {
-		const dataService = DataProcessingService.instance();
-		const metadata = await dataService.getMetadata();
+		const metadata = dataService.getMetadata();
 
 		return this.setStateAsync({ metadata });
 	};
 
 	setFilteredData = async (filters: FilterParameter): Promise<unknown> => {
-		const dataService = DataProcessingService.instance();
 		// if filter array is empty, select all dimensions
 		const dimensions =
 			filters && filters.getAllCelltypes().length
 				? filters.getAllCelltypes().map((t) => ({ type: t }))
 				: Object.keys(this.state.metadata).map((type) => ({ type: parseInt(type) as CellTypes }));
 
-		const filteredData = await dataService.getCuboid(dimensions, filters);
-		const filteredCountData = await dataService.getCuboidWithCount(dimensions, filters);
-		const data = await dataService.getCuboid(dimensions);
+		const [filteredData, filteredCountData, data] = await Promise.all([
+			dataService.getCuboid(dimensions, filters),
+			dataService.getCuboidWithCount(dimensions, filters),
+			dataService.getCuboid(dimensions),
+		]);
 
 		// caution: if you call setState once for each of the props, all children will rerender multiple times
 		// this is probably not a desired behavior and costs performance
@@ -101,7 +102,6 @@ class App extends React.Component<unknown, AppState> {
 	};
 
 	getData = async (): Promise<unknown> => {
-		const dataService = DataProcessingService.instance();
 		const dimensions = Object.keys(this.state.metadata).map((type) => ({ type: parseInt(type) as CellTypes }));
 		const data = await dataService.getCuboid(dimensions);
 
