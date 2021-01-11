@@ -197,13 +197,17 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 	};
 
 	handleEyeClick = async (id: number): Promise<void> => {
-		if (this.state.elements[id].isDisabled) {
-			if (this.state.disableFilterAdd && this.state.elements[id].isLooseStep) {
+		if (this.state.elements.find((e) => e.id == id).isDisabled) {
+			if (this.state.disableFilterAdd && this.state.elements.find((e) => e.id == id).isLooseStep) {
 				alert(
 					'Enabling this step is not possible, as it would exceed the maximum amount of selectable ranges.',
 				);
 				return;
-			} else if (!this.state.available_dimensions.includes(all_dimensions[this.state.elements[id].filter.type])) {
+			} else if (
+				!this.state.available_dimensions.includes(
+					all_dimensions[this.state.elements.find((e) => e.id == id).filter.type],
+				)
+			) {
 				alert('Enabling this step is not possible, the dimension is already selected.');
 				return;
 			}
@@ -219,7 +223,7 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 	};
 
 	handleChange = async (id: number, mode: FilterStepMode, updatedFilter: Filter_): Promise<void> => {
-		const prevDimension = this.state.elements[id].filter.type;
+		const prevDimension = this.state.elements.find((e) => e.id == id).filter.type;
 
 		let isLoose = false;
 
@@ -240,8 +244,7 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 		}
 
 		// if the updated filter was loose before, and still is.
-		const disableFilterAdd = this.state.elements[id].isLooseStep && isLoose;
-		console.log(this.state.elements[id].isLooseStep, isLoose);
+		const disableFilterAdd = this.state.elements.find((e) => e.id == id).isLooseStep && isLoose;
 		// here the state is set by using an object spread '{ }', inserting all of the old object '{ ...el'
 		// and then updating the changed properties ', filter: updatedFilter }'
 		await this.setState({
@@ -253,7 +256,7 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 
 		// get the updated optValues, can't do this before, because getDataValues depends on getFilterParamFromState,
 		// which depends on the updated state
-		let optValues = this.state.elements[id].values;
+		let optValues = this.state.elements.find((e) => e.id == id).values;
 		if (prevDimension !== updatedFilter.type) {
 			// the dimension changed, and the filterStep needs new opt values
 			optValues = await this.getDataValues(updatedFilter.type, id);
@@ -264,7 +267,7 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 		});
 
 		// if the step has a loose value but n loose values are already selected, we need to set a default value
-		if (this.state.disableFilterAdd && !this.state.elements[id].isLooseStep && isLoose) {
+		if (this.state.disableFilterAdd && !this.state.elements.find((e) => e.id == id).isLooseStep && isLoose) {
 			await this.setState({
 				elements: this.state.elements.map((el) =>
 					el.id === id
@@ -309,8 +312,25 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 				// if filter, or filter.type are null for some reason we don't need to insert the filters
 				// selected dimension into it's available dimensions
 				// also don't need to do that for disabled dims
-				if (el.filter === null || el.filter.type === null || el.isDisabled) {
+				if (el.filter === null || el.filter.type === null) {
 					return { ...el, dimensions: new_dimensions };
+				} else if (el.isDisabled) {
+					// if a filter is disabled and another filter uses the same dimension we
+					// need to insert the dimension into it's available dimensions again
+
+					if (!new_dimensions.includes(all_dimensions[el.filter.type])) {
+						const index = new_dimensions.findIndex((dim) => dim.value > el.filter.type);
+
+						return {
+							...el,
+							dimensions: new_dimensions
+								.slice(0, index)
+								.concat(all_dimensions[el.filter.type])
+								.concat(new_dimensions.slice(index)),
+						};
+					} else {
+						return { ...el, dimensions: new_dimensions };
+					}
 				} else {
 					// insert the dimension (all_dimensions[el.filter.type]) used by elem
 					// at index of the dimension
@@ -426,7 +446,7 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 					</Col>
 					<Col md="10" className="m-0 p-0 text-center my-auto">
 						<Alert className={this.state.disableFilterAdd ? 'm-4' : 'm-4 hide-alert'} variant="secondary">
-							{this.state.elements.length < all_dimensions.length
+							{this.state.elements.filter((e) => !e.isDisabled).length < all_dimensions.length
 								? `You have selected the maximum number of ranges (${allowedLooseDim}).`
 								: 'You have added a filter for every dimension.'}
 						</Alert>

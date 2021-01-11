@@ -445,11 +445,7 @@ export class FilterStep extends Component<FilterStepProps, FilterStepState> {
 								<Form>
 									<Form.Control as="select" onChange={this.changeDimension}>
 										{this.props.dimensions.map((dim) => (
-											<option
-												key={this.props.id + '.' + dim.value}
-												value={dim.value}
-												disabled={this.props.disabled}
-											>
+											<option key={this.props.id + '.' + dim.value} value={dim.value}>
 												{dim.label}
 											</option>
 										))}
