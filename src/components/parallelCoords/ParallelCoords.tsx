@@ -39,6 +39,7 @@ class ParallelCoords extends React.Component<ParallelCoordsProps, ParallelCoords
 			this.setState({ currentFilters: this.props.filters.clone() }, () => this.filterData());
 		}
 	}
+
 	/**
 	 * Filters the data. Only call this once filters (but not data) have changed.
 	 */
@@ -67,12 +68,10 @@ class ParallelCoords extends React.Component<ParallelCoordsProps, ParallelCoords
 		data.dimensions = [];
 		data.line.color = ParallelCoordsUtils.unpack(rows, SCORE_KEY);
 
-		const metadata = this.props.metadata;
-
 		try {
 			this.getOrderedCellTypes().forEach((cellType) => {
 				const filters = this.state.currentFilters.getFiltersByCelltype(cellType);
-				const dimensionInfo = metadata[cellType.toString()];
+				const dimensionInfo = this.props.metadata[cellType.toString()];
 				const dimension = this.isWildcard(cellType)
 					? ParallelCoordsUtils.convertToWildcard(rows, dimensionInfo, cellType)
 					: ParallelCoordsUtils.convertDimension(rows, dimensionInfo, cellType, filters);
@@ -110,16 +109,28 @@ class ParallelCoords extends React.Component<ParallelCoordsProps, ParallelCoords
 		return activeFilterCellTypes.length > 0 && activeFilterCellTypes.indexOf(dimension) === -1;
 	};
 
+	/**
+	 * For dynamic resizing.
+	 * @returns Height to be set after resizing.
+	 */
 	getComputedHeight = (): number => {
 		return this.rootContainer.current
 			? (this.rootContainer.current.clientHeight - this.buttonContainer.current.clientHeight) * 0.85
 			: 0;
 	};
 
+	/**
+	 * For dynamic resizing.
+	 * @returns Width to be set after resizing.
+	 */
 	getComputedWidth = (): number => {
 		return this.rootContainer.current ? this.rootContainer.current.clientWidth : 0;
 	};
 
+	/**
+	 * Event handler, called once the window size changes.
+	 * Updates the plot component width and height.
+	 */
 	resizeChart = (): void => {
 		if (!this.state.graphLoaded) return;
 		const layoutUpdate = { width: this.getComputedWidth(), height: this.getComputedHeight() };
