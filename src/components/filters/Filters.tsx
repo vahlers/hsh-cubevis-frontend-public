@@ -92,7 +92,15 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 
 	async getDataValues(newDimensionType: CellTypes, filterId: number): Promise<OptionType[]> {
 		// get all elems with an id smaller than the given one
-		const applicableStateElems = this.state.elements.filter((elem) => elem.id < filterId);
+		const searchIndex = this.state.elements.findIndex((e) => e.id == filterId);
+		//if searchIndex not found
+		let applicableStateElems = this.state.elements;
+
+		if (searchIndex > 0) {
+			applicableStateElems = this.state.elements.filter((elem, id) => id < searchIndex);
+		}
+		console.log('searching ' + searchIndex + ' in ', this.state.elements);
+		console.log(applicableStateElems);
 		// map our filters to an object, that fits the getCuboid Signature
 		let cuboidDimensions: CellTypes[] = applicableStateElems.map((elem) => elem.filter.type);
 		// append our new newDimensionType
@@ -244,7 +252,8 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 		}
 
 		// if the updated filter was loose before, and still is.
-		const disableFilterAdd = this.state.elements.find((e) => e.id == id).isLooseStep && isLoose;
+		const disableFilterAdd =
+			this.state.disableFilterAdd && this.state.elements.find((e) => e.id == id).isLooseStep && isLoose;
 		// here the state is set by using an object spread '{ }', inserting all of the old object '{ ...el'
 		// and then updating the changed properties ', filter: updatedFilter }'
 		await this.setState({
