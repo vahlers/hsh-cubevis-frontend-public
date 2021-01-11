@@ -1,5 +1,5 @@
 import React, { Component, FormEvent } from 'react';
-import { Accordion, Button, Card, Col, Form, Row } from 'react-bootstrap';
+import { Accordion, Button, Card, Col, Form, Row, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import './FilterStep.css';
 import { FaAngleRight, FaAngleDown, FaRegEye } from 'react-icons/fa';
 import { ImCross } from 'react-icons/im';
@@ -385,6 +385,12 @@ export class FilterStep extends Component<FilterStepProps, FilterStepState> {
 		this.props.onExpand(this.props.id);
 	};
 
+	/**
+	 * Renders tooltip with custom message.
+	 * @param message The tooltip message.
+	 */
+	renderTooltip = (message: string): JSX.Element => <Tooltip id="button-tooltip">{message}</Tooltip>;
+
 	radioButtons = (): JSX.Element[] => {
 		const radioButtons = [];
 		this.state.radios.forEach((radio, idx) => {
@@ -411,45 +417,69 @@ export class FilterStep extends Component<FilterStepProps, FilterStepState> {
 			<Card id={this.props.id.toString()} className="overflow-visible">
 				<Card.Header className="filter-header">
 					<Row>
-						<Accordion.Toggle
-							className="arrow-button"
-							as={Button}
-							variant="link"
-							eventKey={'' + this.props.id}
-							onClick={this.rotateArrow}
+						<OverlayTrigger
+							placement="top"
+							delay={{ show: 250, hide: 400 }}
+							overlay={this.renderTooltip("Expand dimension's value selection")}
 						>
-							<ExpandArrow
-								size={25}
-								opacity={this.props.disabled ? 0.4 : 1}
-								expanded={this.props.expanded}
-							/>
-						</Accordion.Toggle>
+							<Accordion.Toggle
+								className="arrow-button"
+								as={Button}
+								variant="link"
+								eventKey={'' + this.props.id}
+								onClick={this.rotateArrow}
+							>
+								<ExpandArrow
+									size={25}
+									opacity={this.props.disabled ? 0.4 : 1}
+									expanded={this.props.expanded}
+								/>
+							</Accordion.Toggle>
+						</OverlayTrigger>
 						<div className="step-number">{this.props.stepnumber}.</div>
 						<Col xs={4}>
-							<Form className="select-form">
-								<Form.Control className="select-form" as="select" onChange={this.changeDimension}>
-									{this.props.dimensions.map((dim) => (
-										<option
-											key={this.props.id + '.' + dim.value}
-											value={dim.value}
-											disabled={this.props.disabled}
-										>
-											{dim.label}
-										</option>
-									))}
-								</Form.Control>
-							</Form>
+							<OverlayTrigger
+								placement="top"
+								delay={{ show: 250, hide: 400 }}
+								overlay={this.renderTooltip('Select dimension')}
+							>
+								<Form>
+									<Form.Control as="select" onChange={this.changeDimension}>
+										{this.props.dimensions.map((dim) => (
+											<option
+												key={this.props.id + '.' + dim.value}
+												value={dim.value}
+												disabled={this.props.disabled}
+											>
+												{dim.label}
+											</option>
+										))}
+									</Form.Control>
+								</Form>
+							</OverlayTrigger>
 						</Col>
 						<Col xs={4}>
 							<h6 className="text-center filter-text">{this.state.filterLabel}</h6>
 						</Col>
-						<Col>
-							<Button className="float-right step-btn" variant="link" onClick={this.notifyDelete}>
-								<ImCross size="18" color="red" opacity={this.props.disabled ? 0.4 : 1} />
-							</Button>
-							<Button className="float-right step-btn" variant="link" onClick={this.notifyEyeClick}>
-								<FaRegEye size="24" opacity={this.props.disabled ? 0.4 : 1} />
-							</Button>
+						<Col xs={3}>
+							<OverlayTrigger
+								placement="top"
+								delay={{ show: 250, hide: 250 }}
+								overlay={this.renderTooltip('Delete step')}
+							>
+								<Button className="float-right step-btn" variant="link" onClick={this.notifyDelete}>
+									<ImCross size="18" color="red" opacity={this.props.disabled ? 0.4 : 1} />
+								</Button>
+							</OverlayTrigger>
+							<OverlayTrigger
+								placement="top"
+								delay={{ show: 250, hide: 250 }}
+								overlay={this.renderTooltip('Hide or show this step')}
+							>
+								<Button className="float-right step-btn" variant="link" onClick={this.notifyEyeClick}>
+									<FaRegEye size="24" opacity={this.props.disabled ? 0.4 : 1} />
+								</Button>
+							</OverlayTrigger>
 						</Col>
 					</Row>
 				</Card.Header>

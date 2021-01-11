@@ -1,5 +1,6 @@
 import React from 'react';
 import './App.css';
+import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 
 import { DataProcessingService } from './services/dataProcessing.service';
 import { CellTypes } from './enums/cellTypes.enum';
@@ -10,6 +11,7 @@ import ChartsView from './components/chartsView/ChartsView';
 import Colorbar from './components/colorBar/Colorbar';
 import { CubeCellModel } from './models/cell.model';
 import { FilterParameter } from './models/filter.model';
+import { FcInfo } from 'react-icons/fc';
 import { Resizable } from 're-resizable';
 import { DataType } from './enums/dataType.enum';
 
@@ -106,6 +108,11 @@ class App extends React.Component<unknown, AppState> {
 		return this.setStateAsync({ data });
 	};
 
+	/**
+	 * Renders tooltip with custom message.
+	 * @param message The tooltip message.
+	 */
+	renderTooltip = (message: string): JSX.Element => <Tooltip id="button-tooltip">{message}</Tooltip>;
 	refreshAfterResize = (): void => {
 		this.handleFilterChange(this.state.filters);
 	};
@@ -125,6 +132,17 @@ class App extends React.Component<unknown, AppState> {
 					onResizeStop={this.refreshAfterResize}
 					className="filter-container-flex item-container"
 				>
+					<OverlayTrigger
+						placement="right"
+						delay={{ show: 250, hide: 400 }}
+						overlay={this.renderTooltip(
+							'Add a filter by specifying a dimension and a value, or a star to show all the values of the current filtered dimension. There must be only up to two dimensions with a star to show data. Clicking on an eye icon enables or disables the filter.',
+						)}
+					>
+						<span className="infoGrid">
+							<FcInfo size={25}></FcInfo>
+						</span>
+					</OverlayTrigger>
 					<Filters
 						onChange={this.handleFilterChange}
 						metadata={this.state.metadata}
@@ -145,6 +163,17 @@ class App extends React.Component<unknown, AppState> {
 						maxHeight="60vh"
 						className="parallel-container-flex item-container"
 					>
+						<OverlayTrigger
+							placement="left"
+							delay={{ show: 250, hide: 400 }}
+							overlay={this.renderTooltip(
+								'Parallel coordinates show the filtered data in a more global way. It can be used to see the available dimensions, and understand what to filter next. A column represents a dimension, and can be dragged horizontally or sorted vertically.',
+							)}
+						>
+							<span className="infoGrid">
+								<FcInfo size={25}></FcInfo>
+							</span>
+						</OverlayTrigger>
 						<ParallelCoords
 							metadata={this.state.metadata}
 							data={this.state.data}
@@ -152,6 +181,17 @@ class App extends React.Component<unknown, AppState> {
 						/>
 					</Resizable>
 					<div className="chart-container-flex item-container">
+						<OverlayTrigger
+							placement="left"
+							delay={{ show: 250, hide: 400 }}
+							overlay={this.renderTooltip(
+								'You can navigate between charts using the left and right arrows or the bottom bars. The elements are colored according to their anomaly score.',
+							)}
+						>
+							<span className="infoGrid">
+								<FcInfo size={25}></FcInfo>
+							</span>
+						</OverlayTrigger>
 						<ChartsView
 							data={this.state.filteredData}
 							countData={this.state.filteredCountData}
@@ -162,6 +202,15 @@ class App extends React.Component<unknown, AppState> {
 						/>
 					</div>
 					<div className="colorbar-container item-container">
+						<OverlayTrigger
+							placement="top"
+							delay={{ show: 250, hide: 400 }}
+							overlay={this.renderTooltip("Anomaly score's color bar")}
+						>
+							<div className="colorbar-container item-container">
+								<Colorbar />
+							</div>
+						</OverlayTrigger>
 						<Colorbar />
 					</div>
 				</div>

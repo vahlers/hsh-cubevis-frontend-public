@@ -5,7 +5,7 @@ import './ChartsView.css';
 import BarChart from './barChart/BarChart';
 import BoxPlot from './boxPlot/BoxPlot';
 import HeatMap from './heatMap/HeatMap';
-import { Carousel } from 'react-bootstrap';
+import { Carousel, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import ChartsNotAvailableMessage from './ChartsNotAvailableMessage';
 import { ChartsViewUtils } from './ChartsViewUtils';
 
@@ -78,13 +78,42 @@ class ChartsView extends React.Component<ChartsViewProps, ChartsViewState> {
 		};
 	}
 
+	/**
+	 * Renders tooltip with custom message.
+	 * @param message The tooltip message.
+	 */
+	renderTooltip = (message: string): JSX.Element => <Tooltip id="button-tooltip">{message}</Tooltip>;
+
 	onSelect = (selectedIndex: number): void => {
 		this.setState({ selectedIndex });
 	};
 
 	render(): JSX.Element {
 		return (
-			<Carousel className="charts-view" id={ChartsView.containerName} interval={null} onSelect={this.onSelect}>
+			<Carousel
+				className="charts-view"
+				id={ChartsView.containerName}
+				interval={null}
+				nextIcon={
+					<OverlayTrigger
+						placement="top"
+						delay={{ show: 250, hide: 400 }}
+						overlay={this.renderTooltip('Next chart')}
+					>
+						<span aria-hidden="true" className="carousel-control-next-icon" />
+					</OverlayTrigger>
+				}
+				prevIcon={
+					<OverlayTrigger
+						placement="top"
+						delay={{ show: 250, hide: 400 }}
+						overlay={this.renderTooltip('Previous chart')}
+					>
+						<span aria-hidden="true" className="carousel-control-prev-icon" />
+					</OverlayTrigger>
+				}
+				onSelect={this.onSelect}
+			>
 				<Carousel.Item className="carousel-child">
 					<div
 						className={
