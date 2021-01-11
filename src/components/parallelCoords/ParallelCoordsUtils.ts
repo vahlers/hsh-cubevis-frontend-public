@@ -7,6 +7,7 @@ import { CellTypes } from '../../enums/cellTypes.enum';
 import { RangeFilter } from '../../models/rangeFilter.model';
 import { DataServiceHelper } from '../../helpers/dataService.helper';
 import { FilterOutOfRangeError } from '../../errors/FilterOutOfRangeError';
+import { CommonHelper } from '../../helpers/common.helper';
 
 export class ParallelCoordsUtils {
 	/**
@@ -263,7 +264,7 @@ export class ParallelCoordsUtils {
 			if (typeof filter === 'string' || typeof filter === 'number' || filter instanceof Ip) {
 				filter = filter === Infinity ? -1 : filter;
 				const filterValue = map[filter.toString()];
-				if (filterValue === null || filterValue === undefined)
+				if (CommonHelper.isNullOrUndefined(filterValue))
 					throw new FilterOutOfRangeError(filter, dimension.label);
 				constraintrange.push([filterValue, filterValue]);
 			} else {
@@ -272,8 +273,8 @@ export class ParallelCoordsUtils {
 				rangeFilter.to = rangeFilter.to === Infinity ? -1 : rangeFilter.to;
 				const from = map[rangeFilter.from.toString()];
 				const to = map[rangeFilter.to.toString()];
-				if (from === null || from === undefined) throw new FilterOutOfRangeError(from, dimension.label);
-				if (to === null || to === undefined) throw new FilterOutOfRangeError(to, dimension.label);
+				if (CommonHelper.isNullOrUndefined(from)) throw new FilterOutOfRangeError(from, dimension.label);
+				if (CommonHelper.isNullOrUndefined(to)) throw new FilterOutOfRangeError(to, dimension.label);
 				constraintrange.push([from, to]);
 			}
 		});

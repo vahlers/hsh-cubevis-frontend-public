@@ -48,7 +48,9 @@ class BarChart extends React.Component<ChartProps, ChartState> {
 		let showGraph = false;
 		const filter = this.getDimensionsForChart();
 		let currentCellType = null;
-		if (filter && this.props.data.length) {
+		if (ChartsViewUtils.getLooseDimensionsCount(this.state.currentFilters) !== 1) {
+			message = 'Please select at least one filter.';
+		} else if (filter && this.props.data.length) {
 			showGraph = true;
 			currentCellType = filter.type;
 			const lastFilterType = metaData[currentCellType];
@@ -59,8 +61,6 @@ class BarChart extends React.Component<ChartProps, ChartState> {
 				data.y.push(row[SCORE_KEY]);
 				data.marker.color.push(row[SCORE_KEY]);
 			});
-		} else if (!filter) {
-			message = 'Please select at least one filter.';
 		} else {
 			message = 'There is no data matching the given filters. Please choose other filters.';
 		}
