@@ -98,7 +98,6 @@ export class FilterStep extends Component<FilterStepProps, FilterStepState> {
 	}
 
 	componentDidUpdate = async (prevProps: FilterStepProps): Promise<void> => {
-		// if the dimension was changed, while disableClearing was set
 		if (this.props.disableLooseFiltering && this.props.disableLooseFiltering !== prevProps.disableLooseFiltering) {
 			this.setState({ mode: FilterStepMode.ByValue });
 			let currentOption = null;

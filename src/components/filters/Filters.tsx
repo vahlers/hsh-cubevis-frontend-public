@@ -239,15 +239,16 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 				(newValue.from === null && newValue.to === null) || (newValue.from !== null && newValue.to !== null);
 		}
 
-		// if the step has a loose value but n loose values are already selected, we need a default value
-		const needDefaultValue = this.state.disableFilterAdd && !this.state.elements[id].isLooseStep && isLoose;
-
+		// if the updated filter was loose before, and still is.
+		const disableFilterAdd = this.state.elements[id].isLooseStep && isLoose;
+		console.log(this.state.elements[id].isLooseStep, isLoose);
 		// here the state is set by using an object spread '{ }', inserting all of the old object '{ ...el'
 		// and then updating the changed properties ', filter: updatedFilter }'
 		await this.setState({
 			elements: this.state.elements.map((el) =>
 				el.id === id ? { ...el, filter: updatedFilter, isLooseStep: isLoose } : el,
 			),
+			disableFilterAdd: disableFilterAdd,
 		});
 
 		// get the updated optValues, can't do this before, because getDataValues depends on getFilterParamFromState,
@@ -262,7 +263,8 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 			elements: this.state.elements.map((el) => (el.id === id ? { ...el, values: optValues } : el)),
 		});
 
-		if (needDefaultValue) {
+		// if the step has a loose value but n loose values are already selected, we need to set a default value
+		if (this.state.disableFilterAdd && !this.state.elements[id].isLooseStep && isLoose) {
 			await this.setState({
 				elements: this.state.elements.map((el) =>
 					el.id === id
@@ -285,7 +287,7 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 	private checkAllowFilterAdd() {
 		// we filter all elements for those that have a * as filter and check the result length against the allowed
 		const result =
-			this.state.elements.length === all_dimensions.length ||
+			this.state.elements.filter((e) => !e.isDisabled).length === all_dimensions.length ||
 			this.state.elements
 				// remove disabled elements
 				.filter((elem) => !elem.isDisabled && elem.isLooseStep).length >= allowedLooseDim;
