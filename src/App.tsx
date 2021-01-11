@@ -207,11 +207,8 @@ class App extends React.Component<unknown, AppState> {
 							delay={{ show: 250, hide: 400 }}
 							overlay={this.renderTooltip("Anomaly score's color bar")}
 						>
-							<div className="colorbar-container item-container">
-								<Colorbar />
-							</div>
+							<Colorbar />
 						</OverlayTrigger>
-						<Colorbar />
 					</div>
 				</div>
 			</div>
