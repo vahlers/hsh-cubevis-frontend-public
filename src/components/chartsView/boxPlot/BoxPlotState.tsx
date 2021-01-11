@@ -1,7 +1,8 @@
+import { BoxPlotData } from './BoxPlotTypes';
 import { FilterParameter } from '../../../models/filter.model';
 
 type PlotState = {
-	data: any[];
+	data: BoxPlotData[];
 	layout: {
 		width: number;
 		hovermode: string;

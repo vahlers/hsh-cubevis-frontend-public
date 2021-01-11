@@ -31,7 +31,7 @@ export class HeatMapUtils {
 	 *  and rounds it in a way it makes sense to the user.
 	 * 	@returns The bounding rect with x1 (lower left), x2 (upper right), y1, y2
 	 */
-	static getCoordinatesFromSelection(event): HeatMapSelection {
+	static getCoordinatesFromSelection(event: Readonly<Plotly.PlotSelectionEvent>): HeatMapSelection {
 		if (!event || !event.range) return null;
 
 		const x1 = HeatMapUtils._handleLowerCoordinate(event.range.x[0]);

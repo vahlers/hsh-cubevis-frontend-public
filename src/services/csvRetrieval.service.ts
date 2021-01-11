@@ -44,7 +44,7 @@ class D3CsvRetrievalService extends CsvRetrievalService {
 					});
 					model.anomalyScore = parseFloat(row['count_z_score'].replace('[', '').replace(']', ''));
 					model.count = null;
-					models.push(<CubeCellModel>model);
+					models.push(model as CubeCellModel);
 				});
 				return models;
 			})
@@ -98,9 +98,10 @@ class D3CsvRetrievalService extends CsvRetrievalService {
 					model.countMean = parseFloat(row['count_z_score_mean']);
 					model.countStandardDeviation = parseFloat(row['count_z_score_standard_deviation']);
 					if (addToModel) {
-						models.push(<CubeCellModel>model);
-						const hashString: string = this.convertModelToHash(<CubeCellModel>model).toString();
-						hashTable[hashString] = <CubeCellModel>model;
+						const typedModel = model as CubeCellModel;
+						models.push(typedModel);
+						const hashString: string = this.convertModelToHash(typedModel).toString();
+						hashTable[hashString] = typedModel;
 					}
 				});
 
@@ -119,7 +120,7 @@ class D3CsvRetrievalService extends CsvRetrievalService {
 							model[DataServiceHelper.getModelKeyName(dim)] = new Ip(e);
 						else model[DataServiceHelper.getModelKeyName(dim)] = e;
 					});
-					const hashString: string = this.convertModelToHash(<CubeCellModel>model).toString();
+					const hashString: string = this.convertModelToHash(model as CubeCellModel).toString();
 					//find corresponding cubecell in existing model
 					const result = hashTable[hashString];
 					//Drop results with no corresponding mean and standard dev
@@ -159,7 +160,7 @@ class D3CsvRetrievalService extends CsvRetrievalService {
 			model?.networkTransport;
 
 		let hash = 0;
-		if (modelString.length == 0) {
+		if (modelString.length === 0) {
 			return hash;
 		}
 		for (let i = 0; i < modelString.length; i++) {

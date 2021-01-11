@@ -114,7 +114,7 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 
 		let newID = 0;
 		for (const elem of this.state.elements) {
-			if (elem.id == newID) {
+			if (elem.id === newID) {
 				newID++;
 			} else {
 				break;
@@ -330,7 +330,7 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 		this.state.elements.forEach((stateElem) => {
 			if (!stateElem.isDisabled) {
 				let value = stateElem.filter.value;
-				if (value === null || value == undefined) {
+				if (value === null || value === undefined) {
 					filters.addFilter(stateElem.filter.type, null);
 				} else if (typeof value === 'string' || typeof value === 'number' || value instanceof Ip) {
 					filters.addFilter(stateElem.filter.type, value);
@@ -341,7 +341,7 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 					const from = value.from;
 					const to = value.to;
 
-					if (from == to) {
+					if (from === to) {
 						filters.addFilter(stateElem.filter.type, from);
 					} else if (from !== null && to === null) {
 						filters.addFilter(stateElem.filter.type, from);
@@ -362,7 +362,7 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 	rotateArrow = (eventKey: number): void => {
 		const elements = this.state.elements;
 		elements.forEach((step) => {
-			if (step.id == eventKey) {
+			if (step.id === eventKey) {
 				step.expanded = !step.expanded;
 			} else {
 				step.expanded = false;

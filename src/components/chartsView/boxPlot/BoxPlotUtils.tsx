@@ -1,8 +1,8 @@
 import { COLOR_SCALE, SCORE_MIN, SCORE_MAX } from '../../../config';
-import { BoxPlotData } from './BoxPlotData';
+import { BoxPlotData, BoxTrace, HoverTrace, ScoreMarker } from './BoxPlotTypes';
 
 export class BoxPlotUtils {
-	static createBoxTrace(data: BoxPlotData) {
+	static createBoxTrace(data: BoxPlotData): BoxTrace {
 		return {
 			type: 'box',
 			name: data.dimension,
@@ -23,7 +23,7 @@ export class BoxPlotUtils {
 		};
 	}
 
-	static createHoverTrace(data: BoxPlotData) {
+	static createHoverTrace(data: BoxPlotData): HoverTrace {
 		return {
 			type: 'bar',
 			x: [data.meanValue],
@@ -47,7 +47,7 @@ export class BoxPlotUtils {
 		};
 	}
 
-	static createScoreMarker(data: BoxPlotData) {
+	static createScoreMarker(data: BoxPlotData): ScoreMarker {
 		return {
 			x: [data.countValue],
 			y: [data.dimension],

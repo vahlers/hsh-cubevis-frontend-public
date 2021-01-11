@@ -4,7 +4,7 @@ import ChartsView from '../ChartsView';
 import { initialState, PlotState } from './BoxPlotState';
 import { PlotProps } from './BoxPlotProps';
 import { BoxPlotUtils } from './BoxPlotUtils';
-import { BoxPlotData } from './BoxPlotData';
+import { BoxPlotData } from './BoxPlotTypes';
 import UserInfoMessage from '../messages/UserInfoMessage';
 import { SingleFilter } from '../../../models/filter.model';
 import { ChartsViewUtils } from '../ChartsViewUtils';

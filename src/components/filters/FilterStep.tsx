@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component, FormEvent } from 'react';
 import { Accordion, Button, Card, Col, Form, Row } from 'react-bootstrap';
 import './FilterStep.css';
 import { FaAngleRight, FaAngleDown, FaRegEye } from 'react-icons/fa';
@@ -305,9 +305,9 @@ export class FilterStep extends Component<FilterStepProps, FilterStepState> {
 		this.updateFilterLabel();
 	};
 
-	handleRadioBtnChange = (event: any): void => {
-		const value = parseInt(event.target.id.slice(-1)) as FilterStepMode;
-		if (value != FilterStepMode.ByValue && value != FilterStepMode.ByRange) return;
+	handleRadioBtnChange = (event: FormEvent<HTMLInputElement>): void => {
+		const value = parseInt(event.target['id'].slice(-1)) as FilterStepMode;
+		if (value !== FilterStepMode.ByValue && value !== FilterStepMode.ByRange) return;
 		this.setState({ mode: value });
 	};
 
@@ -368,7 +368,7 @@ export class FilterStep extends Component<FilterStepProps, FilterStepState> {
 
 			if (from === null && to === null) {
 				newLabel = '*';
-			} else if (from == to) {
+			} else if (from === to) {
 				newLabel = from.toString();
 			} else if (from !== null && to === null) {
 				newLabel = from.toString();
@@ -396,6 +396,7 @@ export class FilterStep extends Component<FilterStepProps, FilterStepState> {
 					name={`button-group-${this.props.id}`}
 					label={radio.name}
 					type="radio"
+					key={`radio-${this.props.id}-${idx}`}
 					id={`radio-${this.props.id}-${idx}`}
 					disabled={this.props.disableLooseFiltering}
 				/>,

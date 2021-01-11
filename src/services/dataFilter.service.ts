@@ -51,8 +51,8 @@ export class DataFilterService {
 						if (cellValue.toString() === filterValue.toString()) filterResult = true;
 					} else if (typeof filterValue === 'number' || typeof filterValue === 'string') {
 						if (cellValue === filterValue || cellValue?.toString() === filterValue) filterResult = true;
-					} else if (<RangeFilter<number | string | Ip>>filterValue !== undefined) {
-						const tempValue = <RangeFilter<number | string | Ip>>filterValue;
+					} else if ((filterValue as RangeFilter<Value>) !== undefined) {
+						const tempValue = filterValue as RangeFilter<Value>;
 						if (tempValue.from instanceof Ip && tempValue.to instanceof Ip) {
 							// We check bit for bit for evaluating ranges
 							if (

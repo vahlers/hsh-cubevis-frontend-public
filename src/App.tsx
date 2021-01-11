@@ -44,8 +44,8 @@ class App extends React.Component<unknown, AppState> {
 	};
 
 	// kinda hacky, but does its job. is there a better alternative?
-	setStateAsync(state): Promise<unknown> {
-		return new Promise((resolve) => this.setState(state, resolve));
+	setStateAsync(state: Partial<AppState>): Promise<void> {
+		return new Promise((resolve) => this.setState(state as AppState, resolve));
 	}
 
 	setup = async (): Promise<unknown> => {

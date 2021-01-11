@@ -4,7 +4,7 @@ import { SCORE_MIN, SCORE_MAX, COLOR_SCALE } from '../../../config';
 
 type HeatMapState = {
 	data: {
-		color: any;
+		color: number[];
 		type: string;
 		x: string[];
 		y: string[];

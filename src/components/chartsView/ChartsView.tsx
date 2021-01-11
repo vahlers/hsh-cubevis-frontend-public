@@ -55,9 +55,9 @@ class ChartsView extends React.Component<ChartsViewProps, ChartsViewState> {
 		}
 	}
 
-	setStateAsync(state): Promise<void> {
+	setStateAsync(state: Partial<ChartsViewState>): Promise<void> {
 		return new Promise((resolve) => {
-			this.setState(state, resolve);
+			this.setState(state as ChartsViewState, resolve);
 		});
 	}
 
@@ -78,7 +78,7 @@ class ChartsView extends React.Component<ChartsViewProps, ChartsViewState> {
 		};
 	}
 
-	onSelect = (selectedIndex: number, e: any): void => {
+	onSelect = (selectedIndex: number): void => {
 		this.setState({ selectedIndex });
 	};
 

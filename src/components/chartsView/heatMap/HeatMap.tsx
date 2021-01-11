@@ -1,5 +1,5 @@
 import React from 'react';
-import { FilterParameter, SingleFilter } from '../../../models/filter.model';
+import { FilterParameter, SingleFilter, Value } from '../../../models/filter.model';
 import '../ChartsView.css';
 import ChartsView from '../ChartsView';
 import { HeatMapUtils } from './HeatMapUtils';
@@ -9,6 +9,7 @@ import { SCORE_KEY } from '../../../config';
 import UserInfoMessage from '../messages/UserInfoMessage';
 import { DataServiceHelper } from '../../../helpers/dataService.helper';
 import { ChartsViewUtils } from '../ChartsViewUtils';
+import { PlotlyHTMLElement } from 'plotly.js';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Plotly = require('plotly.js-dist');
@@ -119,10 +120,11 @@ class HeatMap extends React.Component<HeatMapProps, HeatMapState> {
 		} else {
 			Plotly.newPlot(this.heatMap.current, [this.state.data], layout, this.state.config);
 			// add event handlers: if a user clicks the chart, or selects a range by rect
-			(this.heatMap.current as any).on('plotly_click', (event) => {
+			const heatmap = (this.heatMap.current as unknown) as PlotlyHTMLElement;
+			heatmap.on('plotly_click', (event) => {
 				this.onPlotlyClick(event);
 			});
-			(this.heatMap.current as any).on('plotly_selected', (event) => {
+			heatmap.on('plotly_selected', (event) => {
 				this.onPlotlySelected(event);
 			});
 			this.setState({ graphLoaded: true });
@@ -132,9 +134,10 @@ class HeatMap extends React.Component<HeatMapProps, HeatMapState> {
 	/** Once a user has clicked a tile on the heatmap,
 	 * 	a filter of the current dimensions,
 	 * 	specified to the value of the clicked tile, is emitted. */
-	onPlotlyClick = (event): void => {
-		if (!event || !event.points || event.points.length != 1) return;
-		const { x, y } = event.points[0];
+	onPlotlyClick = (event: Readonly<Plotly.PlotMouseEvent>): void => {
+		if (!event || !event.points || event.points.length !== 1) return;
+		const x = (event.points[0].x as unknown) as Value;
+		const y = (event.points[0].y as unknown) as Value;
 		const filters: FilterParameter = new FilterParameter();
 		filters.addFilter(this.state.cellTypeX, x);
 		filters.addFilter(this.state.cellTypeY, y);
@@ -143,7 +146,7 @@ class HeatMap extends React.Component<HeatMapProps, HeatMapState> {
 
 	/** Once a user has selected multiple tiles by rect in the heatmap,
 	 * 	a multivalue filter for both dimensions is emitted. */
-	onPlotlySelected = (event): void => {
+	onPlotlySelected = (event: Readonly<Plotly.PlotSelectionEvent>): void => {
 		const selectionRectangle = HeatMapUtils.getCoordinatesFromSelection(event);
 		if (!selectionRectangle) return;
 		const { x1, x2, y1, y2 } = selectionRectangle;

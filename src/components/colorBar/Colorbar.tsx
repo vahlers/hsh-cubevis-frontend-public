@@ -11,8 +11,7 @@ class Colorbar extends React.Component<unknown> {
 		let gradientStyle = 'linear-gradient(90deg';
 
 		COLOR_SCALE.forEach(([step, hex]) => {
-			const stepValue: any = step;
-			gradientStyle += `, ${hex} ${stepValue * 100}%`;
+			gradientStyle += `, ${hex} ${parseFloat(step) * 100}%`;
 		});
 
 		gradientStyle += ')';

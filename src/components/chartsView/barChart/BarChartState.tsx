@@ -1,4 +1,4 @@
-import { FilterParameter } from '../../../models/filter.model';
+import { FilterParameter, Value } from '../../../models/filter.model';
 import { CellTypes } from '../../../enums/cellTypes.enum';
 import { SCORE_MIN, SCORE_MAX } from '../../../config';
 
@@ -6,16 +6,16 @@ type ChartState = {
 	data: {
 		name: string;
 		type: string;
-		x: any[];
-		y: any[];
+		x: Value[];
+		y: Value[];
 		marker: {
-			color: any;
+			color: number[];
 			colorscale: Array<Array<string>>;
 			cmin: number;
 			cmax: number;
 			showscale: boolean;
 		};
-		selectedpoints: any;
+		selectedpoints: number[];
 	};
 
 	layout: {

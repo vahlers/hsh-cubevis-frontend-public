@@ -16,7 +16,7 @@ export class DataServiceHelper {
 	}[] = CONFIG_DATA_MAPPING;
 
 	public static getParameterForCelltype(cell: CubeCellModel, type: CellTypes): Value {
-		const propertyString = this.dataMapping.find((entries) => entries.cellType == type).cellProperty;
+		const propertyString = this.dataMapping.find((entries) => entries.cellType === type).cellProperty;
 		return cell[propertyString];
 	}
 
@@ -131,7 +131,7 @@ export class DataServiceHelper {
 			if (typeof a === 'string') b = b.toString();
 			else b = b.valueOf();
 		}
-		return a == b;
+		return a === b;
 	}
 
 	public static indexOf(arr: Array<number | string | Ip>, o: number | string | Ip): number {

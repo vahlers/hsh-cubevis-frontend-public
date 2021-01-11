@@ -1,5 +1,5 @@
 import React from 'react';
-import { FilterParameter } from '../../../models/filter.model';
+import { FilterParameter, Value } from '../../../models/filter.model';
 import '../ChartsView.css';
 import ChartsView from '../ChartsView';
 import { initialState, ChartState } from './BarChartState';
@@ -8,7 +8,7 @@ import UserInfoMessage from '../messages/UserInfoMessage';
 import { SCORE_KEY } from '../../../config';
 import { SingleFilter } from '../../../models/filter.model';
 import { ChartsViewUtils } from '../ChartsViewUtils';
-
+import { PlotlyHTMLElement } from 'plotly.js';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Plotly = require('plotly.js-dist');
 
@@ -79,11 +79,12 @@ class BarChart extends React.Component<ChartProps, ChartState> {
 			Plotly.redraw(this.barChart.current, [this.state.data], layout, this.state.config);
 		} else {
 			Plotly.newPlot(this.barChart.current, [this.state.data], layout, this.state.config);
+			const bc = (this.barChart.current as unknown) as PlotlyHTMLElement;
 			// add event handlers: if a user clicks the chart, or selects a range by rect
-			(this.barChart.current as any).on('plotly_click', (event) => {
+			bc.on('plotly_click', (event) => {
 				this.onPlotlyClick(event);
 			});
-			(this.barChart.current as any).on('plotly_selected', (event) => {
+			bc.on('plotly_selected', (event) => {
 				this.onPlotlySelected(event);
 			});
 			this.setState({ graphLoaded: true });
@@ -92,9 +93,9 @@ class BarChart extends React.Component<ChartProps, ChartState> {
 
 	/** Once a user has clicked a bar, a filter of the current dimension,
 	 * 	specified to the value of the clicked bar, is emitted. */
-	onPlotlyClick = (event: any): void => {
-		if (!event || !event.points || event.points.length != 1) return;
-		const { x } = event.points[0];
+	onPlotlyClick = (event: Readonly<Plotly.PlotMouseEvent>): void => {
+		if (!event || !event.points || event.points.length !== 1) return;
+		const x = (event.points[0].x as unknown) as Value;
 		const filters: FilterParameter = new FilterParameter();
 		filters.addFilter(this.state.currentCellType, x);
 		this.props.onSelection(filters);
@@ -102,13 +103,16 @@ class BarChart extends React.Component<ChartProps, ChartState> {
 
 	/** Once a user has selected a rectangle in the plot, a filter of the current dimension,
 	 * 	specified to the values of the selected bars, is emitted. */
-	onPlotlySelected = (selection: any): void => {
+	onPlotlySelected = (selection: Readonly<Plotly.PlotSelectionEvent>): void => {
 		if (!selection) return;
 		const filters: FilterParameter = new FilterParameter();
 		if (selection.points && selection.points.length) {
-			const selectedBars = selection.points.map((p) => p.x);
+			const selectedBars = selection.points.map((p) => p.x as Value);
 			if (selectedBars.length >= 2) {
-				const rangeFilter = { from: selectedBars[0], to: selectedBars[selectedBars.length - 1] };
+				const rangeFilter = {
+					from: selectedBars[0] as Value,
+					to: selectedBars[selectedBars.length - 1] as Value,
+				};
 				filters.addFilter(this.state.currentCellType, rangeFilter);
 			} else {
 				filters.addFilter(this.state.currentCellType, selectedBars);
