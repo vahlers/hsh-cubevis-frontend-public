@@ -273,8 +273,10 @@ export class ParallelCoordsUtils {
 				rangeFilter.to = rangeFilter.to === Infinity ? -1 : rangeFilter.to;
 				const from = map[rangeFilter.from.toString()];
 				const to = map[rangeFilter.to.toString()];
-				if (CommonHelper.isNullOrUndefined(from)) throw new FilterOutOfRangeError(from, dimension.label);
-				if (CommonHelper.isNullOrUndefined(to)) throw new FilterOutOfRangeError(to, dimension.label);
+				if (CommonHelper.isNullOrUndefined(from))
+					throw new FilterOutOfRangeError(rangeFilter.from.toString(), dimension.label);
+				if (CommonHelper.isNullOrUndefined(to))
+					throw new FilterOutOfRangeError(rangeFilter.to.toString(), dimension.label);
 				constraintrange.push([from, to]);
 			}
 		});
