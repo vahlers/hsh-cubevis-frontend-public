@@ -456,7 +456,7 @@ export class FilterStep extends Component<FilterStepProps, FilterStepState> {
 						<Col xs={4}>
 							<h6 className="text-center filter-text">{this.state.filterLabel}</h6>
 						</Col>
-						<Col xs={3}>
+						<Col>
 							<OverlayTrigger
 								placement="top"
 								delay={{ show: 250, hide: 250 }}
