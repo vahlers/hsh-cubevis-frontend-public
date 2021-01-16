@@ -53,7 +53,8 @@ class App extends React.Component<unknown, AppState> {
 	}
 
 	setup = async (): Promise<unknown> => {
-		await Promise.all([this.getMetadata(), this.getData()]);
+		await this.getMetadata();
+		await this.getData();
 
 		return this.setState({ filteredData: this.state.data, filteredCountData: this.state.data });
 	};
