@@ -8,6 +8,7 @@ import { FilterStep, FilterStepMode, FilterStepProps } from './FilterStep';
 
 import { RangeFilter } from '../../models/rangeFilter.model';
 import { Ip } from '../../models/ip.modell';
+import { DataServiceHelper } from '../../helpers/dataService.helper';
 
 export type Filter_ = {
 	type: CellTypes;
@@ -99,8 +100,6 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 		if (searchIndex > 0) {
 			applicableStateElems = this.state.elements.filter((elem, id) => id < searchIndex);
 		}
-		console.log('searching ' + searchIndex + ' in ', this.state.elements);
-		console.log(applicableStateElems);
 		// map our filters to an object, that fits the getCuboid Signature
 		let cuboidDimensions: CellTypes[] = applicableStateElems.map((elem) => elem.filter.type);
 		// append our new newDimensionType
@@ -248,7 +247,10 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 		) {
 			const newValue = updatedFilter.value as RangeFilter<Value>;
 			isLoose =
-				(newValue.from === null && newValue.to === null) || (newValue.from !== null && newValue.to !== null);
+				(newValue.from === null && newValue.to === null) ||
+				(newValue.from !== null &&
+					newValue.to !== null &&
+					!DataServiceHelper.equals(newValue.from, newValue.to));
 		}
 
 		// if the updated filter was loose before, and still is.
@@ -276,7 +278,7 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 		});
 
 		// if the step has a loose value but n loose values are already selected, we need to set a default value
-		if (this.state.disableFilterAdd && !this.state.elements.find((e) => e.id == id).isLooseStep && isLoose) {
+		if (this.state.disableFilterAdd && isLoose && !this.state.elements.find((e) => e.id == id).isLooseStep) {
 			await this.setState({
 				elements: this.state.elements.map((el) =>
 					el.id === id
