@@ -86,3 +86,5 @@ export const COLOR_SCALE = [
 	['0.66', '#EB9A65'],
 	['1.0', '#ff0000'],
 ];
+
+export const COLOR_PPRIMARY = '#007bff';

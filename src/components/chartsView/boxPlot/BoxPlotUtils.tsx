@@ -1,4 +1,4 @@
-import { COLOR_SCALE, SCORE_MIN, SCORE_MAX } from '../../../config';
+import { COLOR_SCALE, SCORE_MIN, SCORE_MAX, COLOR_PPRIMARY } from '../../../config';
 import { BoxPlotData, BoxTrace, HoverTrace, ScoreMarker } from './BoxPlotTypes';
 
 export class BoxPlotUtils {
@@ -18,7 +18,7 @@ export class BoxPlotUtils {
 			showlegend: false,
 			hoverinfo: 'skip',
 			marker: {
-				color: '#007bff',
+				color: COLOR_PPRIMARY,
 			},
 		};
 	}
@@ -41,7 +41,7 @@ export class BoxPlotUtils {
 				data.countValue +
 				'<extra></extra>',
 			hoverlabel: {
-				bgcolor: '#007bff',
+				bgcolor: COLOR_PPRIMARY,
 				align: 'auto',
 			},
 		};
