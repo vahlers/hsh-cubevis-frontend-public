@@ -11,18 +11,6 @@ import { CommonHelper } from '../../helpers/common.helper';
 
 export class ParallelCoordsUtils {
 	/**
-	 * Unpack a specific attribute from the table.
-	 * @param rows Array of objects, each object is a row from the file
-	 * @param columName The column to extract
-	 * @returns Array of objects, key is column name, value is cell value
-	 */
-	public static unpack = (rows: Array<DataRecord>, columName: string): Array<Value> => {
-		return rows.map(function (row) {
-			return row[columName];
-		});
-	};
-
-	/**
 	 * Converts a row from the raw data to a Dimension object, which is displayable by Plotly parallel coordinates.
 	 * @param rows Array of objects, each object is a row from the file
 	 * @param dimension Dimension info from the meta data.
@@ -44,7 +32,7 @@ export class ParallelCoordsUtils {
 				return ParallelCoordsUtils.convertToNumeric(rows, dimension.key, dimension.label, type, filters);
 			case DataType.NOMINAL:
 			default:
-				const rawData: Array<string> = ParallelCoordsUtils.unpack(rows, dimension.key) as Array<string>;
+				const rawData: Array<string> = CommonHelper.unpack(rows, dimension.key) as Array<string>;
 				return ParallelCoordsUtils.convertToNominal(rawData, dimension.label, type, filters);
 		}
 	};
@@ -138,7 +126,7 @@ export class ParallelCoordsUtils {
 		type: CellTypes,
 		filters: (Value | RangeFilter<Value>)[] = null,
 	): NominalDimension => {
-		const rawData: Array<Ip> = ParallelCoordsUtils.unpack(rows, key) as Array<Ip>;
+		const rawData: Array<Ip> = CommonHelper.unpack(rows, key) as Array<Ip>;
 		return ParallelCoordsUtils.convertToNominal(rawData, label, type, filters);
 	};
 
@@ -157,7 +145,7 @@ export class ParallelCoordsUtils {
 		type: CellTypes,
 		filters: (Value | RangeFilter<Value>)[] = null,
 	): OrdinalDimension => {
-		const rawData: Array<number> = ParallelCoordsUtils.unpack(rows, key) as Array<number>;
+		const rawData: Array<number> = CommonHelper.unpack(rows, key) as Array<number>;
 
 		const minimum = Math.min(...rawData) - 1;
 		const converted: Array<number> = rawData.map((d) =>
@@ -182,7 +170,7 @@ export class ParallelCoordsUtils {
 		type: CellTypes,
 		filters: (Value | RangeFilter<Value>)[] = null,
 	): NumericDimension => {
-		const rawData: Array<number> = ParallelCoordsUtils.unpack(rows, key) as Array<number>;
+		const rawData: Array<number> = CommonHelper.unpack(rows, key) as Array<number>;
 		const minimum = Math.min(...rawData) - 1;
 		const converted: Array<number> = rawData.map((d) =>
 			d === Number.POSITIVE_INFINITY ? (rawData[rawData.indexOf(d)] = minimum) : d,

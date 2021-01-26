@@ -10,6 +10,7 @@ import { CellTypes } from '../../enums/cellTypes.enum';
 import { initialState, ParallelCoordsState, ParallelCoordsData } from './ParallelCoordsState';
 import { ParallelCoordsProps } from './ParallelCoordsProps';
 import { Button, OverlayTrigger, Tooltip, Alert, Row, Col } from 'react-bootstrap';
+import { CommonHelper } from '../../helpers/common.helper';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Plotly = require('plotly.js-dist');
@@ -66,7 +67,7 @@ class ParallelCoords extends React.Component<ParallelCoordsProps, ParallelCoords
 		const rows = this.props.data;
 		const data = this.state.data;
 		data.dimensions = [];
-		data.line.color = ParallelCoordsUtils.unpack(rows, SCORE_KEY);
+		data.line.color = CommonHelper.unpack(rows, SCORE_KEY);
 
 		try {
 			this.getOrderedCellTypes().forEach((cellType) => {

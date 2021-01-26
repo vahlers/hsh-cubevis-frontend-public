@@ -1,3 +1,7 @@
+import { DataType } from '../../../enums/dataType.enum';
+import { DataServiceHelper } from '../../../helpers/dataService.helper';
+import { Ip } from '../../../models/ip.modell';
+
 interface HeatMapSelection {
 	x1: number;
 	x2: number;
@@ -45,5 +49,25 @@ export class HeatMapUtils {
 			y1,
 			y2,
 		};
+	}
+
+	/** Extract unique sorted values from axis string array.
+	 *	Required for selecting filters on the heatmap.
+	 *	@returns Unique sorted string values.
+	 */
+	public static getUniqueValuesForCellType(data: string[], cellType: string): string[] {
+		return data
+			.filter((item, i, ar) => DataServiceHelper.indexOf(ar, item) === i)
+			.sort((a, b) => {
+				let first, second;
+				if (cellType === DataType.IP) {
+					first = new Ip(a);
+					second = new Ip(b);
+				} else {
+					first = a;
+					second = b;
+				}
+				return first > second ? 1 : -1;
+			});
 	}
 }

@@ -33,6 +33,7 @@ type HeatMapState = {
 		xaxis: {
 			type: string;
 			title: string;
+			categoryarray: Array<string>;
 		};
 		width: number;
 		yaxis: {
@@ -43,6 +44,7 @@ type HeatMapState = {
 				text: string;
 				standoff: number;
 			};
+			categoryarray: Array<string>;
 		};
 	};
 	config: {
@@ -92,6 +94,7 @@ const initialState = (): HeatMapState => {
 			xaxis: {
 				type: 'category',
 				title: 'dimension',
+				categoryarray: [],
 			},
 			yaxis: {
 				type: 'category',
@@ -101,6 +104,7 @@ const initialState = (): HeatMapState => {
 					text: 'dimension',
 					standoff: 10,
 				},
+				categoryarray: [],
 			},
 		},
 		config: {

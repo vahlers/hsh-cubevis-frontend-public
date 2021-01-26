@@ -10,6 +10,8 @@ import UserInfoMessage from '../messages/UserInfoMessage';
 import { DataServiceHelper } from '../../../helpers/dataService.helper';
 import { ChartsViewUtils } from '../ChartsViewUtils';
 import { PlotlyHTMLElement } from 'plotly.js';
+import { CommonHelper } from '../../../helpers/common.helper';
+import { DataType } from '../../../enums/dataType.enum';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Plotly = require('plotly.js-dist');
@@ -75,17 +77,28 @@ class HeatMap extends React.Component<HeatMapProps, HeatMapState> {
 
 			// setting the axis labels and hovertemplate
 			layout.xaxis.title = lastFilterType.label;
-			if (lastFilterType.type == 'nominal') {
+			if (lastFilterType.type === DataType.NUMERIC) {
 				layout.xaxis.type = 'linear';
+				layout.xaxis.categoryarray = [];
 			} else {
 				layout.xaxis.type = 'category';
+				layout.xaxis.categoryarray = CommonHelper.getUniqueSortedValues(arrays, lastFilterType.key).map((v) =>
+					v.toString(),
+				);
 			}
+
 			layout.yaxis.title.text = secondLastFilterType.label;
-			if (secondLastFilterType.type == 'nominal') {
+			if (secondLastFilterType.type === DataType.NUMERIC) {
 				layout.yaxis.type = 'linear';
+				layout.yaxis.categoryarray = [];
 			} else {
-				layout.xaxis.type = 'category';
+				layout.yaxis.type = 'category';
+				layout.yaxis.categoryarray = CommonHelper.getUniqueSortedValues(
+					arrays,
+					secondLastFilterType.key,
+				).map((v) => v.toString());
 			}
+
 			data.hovertemplate =
 				layout.xaxis.title +
 				': <b>%{x}</b><br>' +
@@ -164,8 +177,15 @@ class HeatMap extends React.Component<HeatMapProps, HeatMapState> {
 		// invalid selection from user, do nothing
 		if (y2 < y1 || x2 < x1) return;
 
-		const uniqueX = this.state.data.x.filter((item, i, ar) => DataServiceHelper.indexOf(ar, item) === i);
-		const uniqueY = this.state.data.y.filter((item, i, ar) => DataServiceHelper.indexOf(ar, item) === i);
+		const uniqueX = HeatMapUtils.getUniqueValuesForCellType(
+			this.state.data.x,
+			this.props.metadata[this.state.cellTypeX].type,
+		);
+
+		const uniqueY = HeatMapUtils.getUniqueValuesForCellType(
+			this.state.data.y,
+			this.props.metadata[this.state.cellTypeY].type,
+		);
 
 		// find values based on selection
 		let lowerValueDimX = uniqueX.find((elem, idx) => idx === x1);
