@@ -31,10 +31,12 @@ type HeatMapState = {
 		height: number;
 		autosize: boolean;
 		xaxis: {
+			type: string;
 			title: string;
 		};
 		width: number;
 		yaxis: {
+			type: string;
 			automargin: boolean;
 			tickformat: string;
 			title: {
@@ -88,9 +90,11 @@ const initialState = (): HeatMapState => {
 			height: 0,
 			autosize: true,
 			xaxis: {
+				type: 'category',
 				title: 'dimension',
 			},
 			yaxis: {
+				type: 'category',
 				tickformat: 'd',
 				automargin: false,
 				title: {

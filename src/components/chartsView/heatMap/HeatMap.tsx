@@ -75,7 +75,17 @@ class HeatMap extends React.Component<HeatMapProps, HeatMapState> {
 
 			// setting the axis labels and hovertemplate
 			layout.xaxis.title = lastFilterType.label;
+			if (lastFilterType.type == 'nominal') {
+				layout.xaxis.type = 'linear';
+			} else {
+				layout.xaxis.type = 'category';
+			}
 			layout.yaxis.title.text = secondLastFilterType.label;
+			if (secondLastFilterType.type == 'nominal') {
+				layout.yaxis.type = 'linear';
+			} else {
+				layout.xaxis.type = 'category';
+			}
 			data.hovertemplate =
 				layout.xaxis.title +
 				': <b>%{x}</b><br>' +
