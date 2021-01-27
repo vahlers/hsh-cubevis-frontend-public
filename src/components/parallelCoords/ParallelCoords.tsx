@@ -1,5 +1,4 @@
 import React from 'react';
-import './ParallelCoords.css';
 
 import { ParallelCoordsUtils } from './ParallelCoordsUtils';
 import { FilterOutOfRangeError } from '../../errors/FilterOutOfRangeError';
@@ -304,7 +303,7 @@ class ParallelCoords extends React.Component<ParallelCoordsProps, ParallelCoords
 
 	render(): JSX.Element {
 		return (
-			<div ref={this.rootContainer} className="h-100 sample">
+			<div ref={this.rootContainer} className="h-100 parcoords-container">
 				<div className={this.state.filtersMatch ? '' : 'd-none'}>
 					<div ref={this.buttonContainer} className="m-0 p-0">
 						<Row className="btn-container">{this.createButtons()}</Row>

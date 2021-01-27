@@ -1,5 +1,4 @@
 import React from 'react';
-import './Filters.css';
 import { Accordion, Alert, Col, Row } from 'react-bootstrap';
 import { CellTypes } from '../../enums/cellTypes.enum';
 import { FilterParameter, Value } from '../../models/filter.model';
@@ -456,7 +455,7 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 						</button>
 					</Col>
 					<Col md="10" className="m-0 p-0 text-center my-auto">
-						<Alert className={this.state.disableFilterAdd ? 'm-4' : 'm-4 hide-alert'} variant="secondary">
+						<Alert className={this.state.disableFilterAdd ? 'm-4' : 'm-4 d-none'} variant="secondary">
 							{this.state.elements.filter((e) => !e.isDisabled).length < all_dimensions.length
 								? `You have selected the maximum number of ranges (${allowedLooseDim}).`
 								: 'You have added a filter for every dimension.'}

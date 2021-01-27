@@ -1,6 +1,5 @@
 import React from 'react';
 import { COLOR_SCALE, SCORE_MIN, SCORE_MAX } from '../../config';
-import './Colorbar.css';
 
 class Colorbar extends React.Component<unknown> {
 	state = {

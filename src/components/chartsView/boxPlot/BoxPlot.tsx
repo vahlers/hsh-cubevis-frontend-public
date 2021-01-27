@@ -1,5 +1,4 @@
 import React from 'react';
-import '../ChartsView.css';
 import ChartsView from '../ChartsView';
 import { initialState, PlotState } from './BoxPlotState';
 import { PlotProps } from './BoxPlotProps';
@@ -131,11 +130,11 @@ class BoxPlot extends React.Component<PlotProps, PlotState> {
 	render(): JSX.Element {
 		return (
 			<div>
-				<div className={this.state.showGraph ? 'chart' : 'chart hide-chart'}>
+				<div className={this.state.showGraph ? 'chart' : 'chart d-none'}>
 					<div ref={this.boxPlot} id="barChart" />
 				</div>
 				<UserInfoMessage
-					className={!this.state.showGraph ? 'chart chart-no-data' : 'chart chart-no-data hide-chart'}
+					className={!this.state.showGraph ? 'chart chart-no-data' : 'chart chart-no-data d-none'}
 					message={this.state.message}
 				/>
 			</div>

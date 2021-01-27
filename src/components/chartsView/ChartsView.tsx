@@ -1,7 +1,6 @@
 import React from 'react';
 import { CubeCellModel } from '../../models/cell.model';
 import { FilterParameter } from '../../models/filter.model';
-import './ChartsView.css';
 import BarChart from './barChart/BarChart';
 import BoxPlot from './boxPlot/BoxPlot';
 import HeatMap from './heatMap/HeatMap';
@@ -91,7 +90,7 @@ class ChartsView extends React.Component<ChartsViewProps, ChartsViewState> {
 	render(): JSX.Element {
 		return (
 			<Carousel
-				className="charts-view"
+				className="w-100 h-100"
 				id={ChartsView.containerName}
 				interval={null}
 				nextIcon={
@@ -119,7 +118,7 @@ class ChartsView extends React.Component<ChartsViewProps, ChartsViewState> {
 						className={
 							this.state.looseDimensions <= this.state.looseDimensionMapping[this.state.selectedIndex]
 								? ''
-								: 'hide-chart'
+								: 'd-none'
 						}
 					>
 						<BarChart
@@ -133,8 +132,8 @@ class ChartsView extends React.Component<ChartsViewProps, ChartsViewState> {
 						message="To enable the chart, choose at most one filter which is not settled to a specific value."
 						className={
 							this.state.looseDimensions <= this.state.looseDimensionMapping[this.state.selectedIndex]
-								? 'hide-chart chart chart-no-data'
-								: 'chart chart-no-data'
+								? 'd-none chart-no-data'
+								: 'chart-no-data'
 						}
 					/>
 				</Carousel.Item>
@@ -143,7 +142,7 @@ class ChartsView extends React.Component<ChartsViewProps, ChartsViewState> {
 						className={
 							this.state.looseDimensions === this.state.looseDimensionMapping[this.state.selectedIndex]
 								? ''
-								: 'hide-chart'
+								: 'd-none'
 						}
 					>
 						<HeatMap
@@ -157,7 +156,7 @@ class ChartsView extends React.Component<ChartsViewProps, ChartsViewState> {
 						message="To enable the chart, add exactly two filters which are not settled to a specific value."
 						className={
 							this.state.looseDimensions === this.state.looseDimensionMapping[this.state.selectedIndex]
-								? 'hide-chart chart chart-no-data'
+								? 'd-none chart chart-no-data'
 								: 'chart chart-no-data'
 						}
 					/>
@@ -167,7 +166,7 @@ class ChartsView extends React.Component<ChartsViewProps, ChartsViewState> {
 						className={
 							this.state.looseDimensions <= this.state.looseDimensionMapping[this.state.selectedIndex]
 								? ''
-								: 'hide-chart'
+								: 'd-none'
 						}
 					>
 						<BoxPlot
@@ -180,7 +179,7 @@ class ChartsView extends React.Component<ChartsViewProps, ChartsViewState> {
 						message="To enable the chart, choose at most one filter which is not settled to a specific value."
 						className={
 							this.state.looseDimensions <= this.state.looseDimensionMapping[this.state.selectedIndex]
-								? 'hide-chart chart chart-no-data'
+								? 'd-none chart chart-no-data'
 								: 'chart chart-no-data'
 						}
 					/>

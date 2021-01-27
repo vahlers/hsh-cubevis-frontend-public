@@ -1,6 +1,5 @@
 import React, { Component, FormEvent } from 'react';
 import { Accordion, Button, Card, Col, Form, Row, OverlayTrigger, Tooltip } from 'react-bootstrap';
-import './FilterStep.css';
 import { FaAngleRight, FaAngleDown, FaRegEye } from 'react-icons/fa';
 import { ImCross } from 'react-icons/im';
 import Select, { ValueType } from 'react-select';
@@ -413,7 +412,7 @@ export class FilterStep extends Component<FilterStepProps, FilterStepState> {
 	render(): React.ReactNode {
 		const { values } = this.props;
 		return (
-			<Card id={this.props.id.toString()} className="overflow-visible">
+			<Card id={this.props.id.toString()} className="overflow-visible filter-step">
 				<Card.Header className="filter-header">
 					<Row>
 						<OverlayTrigger
@@ -481,7 +480,7 @@ export class FilterStep extends Component<FilterStepProps, FilterStepState> {
 				<Accordion.Collapse eventKey={this.props.id.toString()}>
 					<Card.Body className="filter-body">
 						{this.radioButtons()}
-						<div className={this.state.mode === FilterStepMode.ByRange ? '' : 'hide-filter-step'}>
+						<div className={this.state.mode === FilterStepMode.ByRange ? '' : 'd-none'}>
 							<Row>
 								<Col>
 									<Form.Group>
@@ -522,7 +521,7 @@ export class FilterStep extends Component<FilterStepProps, FilterStepState> {
 								allowCross={true}
 							/>
 						</div>
-						<div className={this.state.mode === FilterStepMode.ByValue ? '' : 'hide-filter-step'}>
+						<div className={this.state.mode === FilterStepMode.ByValue ? '' : 'd-none'}>
 							<Form.Group>
 								<Form.Label>Select</Form.Label>
 								<Select

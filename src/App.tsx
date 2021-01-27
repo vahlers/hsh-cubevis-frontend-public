@@ -1,5 +1,4 @@
 import React from 'react';
-import './App.css';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 
 import { DataProcessingService } from './services/dataProcessing.service';
@@ -120,7 +119,7 @@ class App extends React.Component<unknown, AppState> {
 
 	render(): React.ReactNode {
 		return (
-			<div className="App flex-container">
+			<div className="cubevis-frontend">
 				<Resizable
 					defaultSize={{
 						width: '45vw',
@@ -131,7 +130,7 @@ class App extends React.Component<unknown, AppState> {
 					bounds="parent"
 					enable={{ right: true }}
 					onResizeStop={this.refreshAfterResize}
-					className="filter-container-flex item-container"
+					className="item-container filter-container layout-left-column"
 				>
 					<OverlayTrigger
 						placement="right"
@@ -140,9 +139,7 @@ class App extends React.Component<unknown, AppState> {
 							'Add a filter by specifying a dimension and a value, or a star to show all the values of the current filtered dimension. There must be only up to two dimensions with a star to show data. Clicking on an eye icon enables or disables the filter.',
 						)}
 					>
-						<span className="infoGrid">
-							<FcInfo size={25}></FcInfo>
-						</span>
+						<FcInfo className="info-button" size={25}></FcInfo>
 					</OverlayTrigger>
 					<Filters
 						onChange={this.handleFilterChange}
@@ -151,7 +148,7 @@ class App extends React.Component<unknown, AppState> {
 					/>
 				</Resizable>
 
-				<div className="charts-container">
+				<div className="layout-right-column">
 					<Resizable
 						enable={{ bottom: true }}
 						defaultSize={{
@@ -162,7 +159,7 @@ class App extends React.Component<unknown, AppState> {
 						minWidth="20vh"
 						minHeight="30vh"
 						maxHeight="60vh"
-						className="parallel-container-flex item-container"
+						className="item-container parcoords-container"
 					>
 						<OverlayTrigger
 							placement="left"
@@ -171,9 +168,7 @@ class App extends React.Component<unknown, AppState> {
 								'Parallel coordinates show the filtered data in a more global way. It can be used to see the available dimensions, and understand what to filter next. A column represents a dimension, and can be dragged horizontally or sorted vertically.',
 							)}
 						>
-							<span className="infoGrid">
-								<FcInfo size={25}></FcInfo>
-							</span>
+							<FcInfo className="info-button" size={25}></FcInfo>
 						</OverlayTrigger>
 						<ParallelCoords
 							metadata={this.state.metadata}
@@ -181,7 +176,8 @@ class App extends React.Component<unknown, AppState> {
 							filters={this.state.filters}
 						/>
 					</Resizable>
-					<div className="chart-container-flex item-container">
+
+					<div className="item-container chartsview-container">
 						<OverlayTrigger
 							placement="left"
 							delay={{ show: 250, hide: 400 }}
@@ -189,9 +185,7 @@ class App extends React.Component<unknown, AppState> {
 								'You can navigate between charts using the left and right arrows or the bottom bars. The elements are colored according to their anomaly score.',
 							)}
 						>
-							<span className="infoGrid">
-								<FcInfo size={25}></FcInfo>
-							</span>
+							<FcInfo className="info-button" size={25}></FcInfo>
 						</OverlayTrigger>
 						<ChartsView
 							data={this.state.filteredData}
@@ -202,7 +196,8 @@ class App extends React.Component<unknown, AppState> {
 							ref={this.chartRef}
 						/>
 					</div>
-					<div className="colorbar-container item-container">
+
+					<div className="item-container colorbar-container">
 						<OverlayTrigger
 							placement="top"
 							delay={{ show: 250, hide: 400 }}

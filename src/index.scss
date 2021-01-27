@@ -1,0 +1,186 @@
+$background-color: #435165;
+$text-color: #5b6574;
+$white-color: white;
+$black-color: black;
+$font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans',
+	'Droid Sans', 'Helvetica Neue', sans-serif;
+
+@import '~bootstrap/scss/bootstrap';
+
+body {
+	margin: 0;
+	font-family: $font-family;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+.overflow-visible {
+	overflow: visible !important;
+}
+
+.cubevis-frontend {
+	color: $white-color;
+	background-color: $background-color;
+	padding: 1em;
+	display: flex;
+	height: 100vh;
+	overflow: hidden;
+
+	.layout-left-column {
+		flex-basis: 40%;
+		z-index: 10;
+		margin-right: 16px;
+		overflow-y: auto;
+	}
+
+	.layout-right-column {
+		display: flex;
+		max-width: 100%;
+		height: 100%;
+		width: 100%;
+		overflow: hidden;
+		margin-bottom: 8px;
+		padding-bottom: 8px;
+		flex-direction: column;
+	}
+
+	.info-button {
+		position: absolute;
+		right: 3px;
+		top: 3px;
+		z-index: 99;
+	}
+
+	h1 {
+		text-align: center;
+		color: $text-color;
+		font-size: 2.5rem;
+	}
+
+	.item-container {
+		background-color: $white-color;
+		box-shadow: 0 0 9px 0 rgba(0, 0, 0, 0.3);
+		border-radius: 10px;
+		padding: 1em;
+		color: $text-color;
+		overflow: hidden;
+		position: relative;
+
+		&.filter-container {
+			.filter-body {
+				color: darkgray;
+			}
+
+			.filter-header {
+				color: $black-color;
+			}
+
+			.card {
+				border-left: 0px !important;
+				border-right: 0px !important;
+				border-radius: 0rem !important;
+			}
+
+			.add-step-btn {
+				height: 48px;
+			}
+
+			.filter-step {
+				.collapsible {
+					margin-bottom: 0.25em;
+				}
+
+				.filter-text {
+					margin: 0px;
+					height: 100%;
+					display: flex;
+					justify-content: center;
+					align-items: center;
+				}
+
+				.select-form {
+					height: 100% !important;
+				}
+
+				.step-number {
+					text-align: center;
+					vertical-align: middle;
+					font-size: 1.5em;
+					margin: auto;
+					font-weight: bold;
+				}
+
+				.arrow-button {
+					padding: 0.1em !important;
+					margin-right: 5px;
+				}
+			}
+		}
+
+		&.parcoords-container {
+			margin-bottom: 16px;
+
+			.btn-container {
+				margin: 0 10px 0 10px !important;
+				padding: 0 0 2px 0 !important;
+			}
+		}
+
+		&.chartsview-container {
+			justify-self: stretch;
+			margin-bottom: 16px;
+			flex: 1;
+			height: 100%;
+
+			.switch-chart-buttons {
+				margin: 0 auto;
+				text-align: center;
+			}
+
+			.chart-no-data {
+				text-align: center;
+				padding-top: 4em;
+			}
+
+			/* TODO: find out to how to make it blue */
+			.carousel-control-next,
+			.carousel-control-prev,
+			.carousel-indicators {
+				filter: invert(100%);
+			}
+
+			.carousel-control-prev,
+			.carousel-control-next {
+				width: 2% !important;
+			}
+
+			#barChart,
+			#heatMap {
+				margin: 0 auto 0 auto;
+				width: 95%;
+			}
+
+			.svg-container,
+			.main-svg,
+			.subplot .xy {
+				width: 100% !important;
+			}
+		}
+
+		&.colorbar-container {
+			justify-self: stretch;
+			padding: 0 !important;
+
+			.color-bar-container {
+				display: flex;
+				flex-direction: row;
+				justify-content: space-between;
+				align-items: center;
+				height: 100%;
+				width: 100%;
+				padding: 0 1em;
+				color: $black-color;
+			}
+		}
+	}
+}
