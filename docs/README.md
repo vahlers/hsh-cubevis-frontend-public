@@ -15,6 +15,9 @@ This documentation contains information of things we found worthy to mention in 
 	- [Data-Service](#data-service)
 		- [Config file structure](#config-file-structure)
 		- [How to add a new dimension](#how-to-add-a-new-dimension)
+	- [Selected visualization techniques](#selected-visualization-techniques)
+		- [Parallel Coordinates](#parallel-coordinates)
+		- [Charts View](#charts-view)
 	- [Impacts of the iceberg data model on the parallel coordinates diagram](#impacts-of-the-iceberg-data-model-on-the-parallel-coordinates-diagram)
 		- [Comparison](#comparison)
 			- [Full Model Cube](#full-model-cube)
@@ -125,6 +128,29 @@ The only thing left is to add a new object to the `configDataMapping` array in t
 If the filename-pattern changes, the `filePathPattern` property has to be adjusted as well.
 
 And that's all! The new dimension should now appear in the application.
+
+## Selected visualization techniques
+
+This section provides a brief overview of why we chose each visualization technique.
+
+### Parallel Coordinates
+
+The parallel coordinate system is one of the few ways to represent multidimensional data in a meaningful way. By coloring each line of the chart, it is additionally possible to see groupings or patterns in the data. Therefore, on the one hand, the parallel coordinate system is intended to provide an overview of the data, but on the other hand, it is also intended to be a decision-making aid for the selection of suitable filters.
+
+Since the range of functions of the parallel coordinates was only partially sufficient, along each axis still another button was implemented for ascending and/or descending sorting.
+
+Due to the iceberg condition, the effect we hoped for from the parallel coordinates is only partially effective. Details of this problem are documented [here](parcoords-comparison.md).
+
+### Charts View
+
+The main advantage of the charts view is the extensibility. It is possible to create a new visualization component and add it to the charts view. A fourth page in the slider view will be created automatically.
+
+-   Bar chart
+    -   The bar chart gives a good overview of the distribution of anomaly values for a single dimension.
+-   Heat Map
+    -   A heat map is useful to contrast two dimensions and additionally represent the anomaly value by a color scale. Humans have trouble visually processing more than two dimensions - so we opted for a two-dimensional representation. By using the filter step view it is possible to switch between the dimensions.
+-   Box Plot
+    -   With the help of the box plot it is possible to visualize the scatter around the expected value of a dimension.
 
 ## Impacts of the iceberg data model on the parallel coordinates diagram
 
