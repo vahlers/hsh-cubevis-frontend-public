@@ -33,9 +33,13 @@ This documentation contains information of things we found worthy to mention in 
 		- [Use a 3D Scatter Plot](#use-a-3d-scatter-plot)
 		- [Use state management](#use-state-management)
 
+<div style="page-break-after: always"></div>
+
 ## Dataflow
 
 This document describes the pattern this software follows to let data flow between different components.
+
+![UML Component Diagram](img/cube-vis-component.png)
 
 ### Data origin
 
@@ -48,6 +52,8 @@ To find out more about the exact configuration and further details check out the
 Once the data is retrieved by the data service, it is available to the React components. The chosen architecture has **one** main component (`App`) that takes care of retrieving the data from the data service. From there on it is passed to the child components via React props. These child components are `Filters`, `ChartsView` and `ParallelCoords`. Those components get mainly three props that are propagated: `data` being the full cube, `filteredData` being the current cube selected and filtered and `metadata` providing information about available dimensions, its values etc. When there is a filter added in `Filters` is added, the component emits an event that `App` listens to and adapts the `filteredData` which automatically causes all child components depending on it to rerender accordingly.
 
 So far, this pattern follows the best practice of dataflow between components recommended by React.
+
+<div style="page-break-after: always"></div>
 
 ### Dataflow between child components
 
@@ -83,7 +89,11 @@ export const filePathPattern = {
 	separator: ', ',
 	notIncludedFlag: '_',
 };
+```
 
+<div style="page-break-after: always"></div>
+
+```javascript
 export const filePaths = {
 	countFilePath: '/data/checkpoints/epoch_0/',
 	countFileName: 'cell_models.csv',
@@ -91,6 +101,7 @@ export const filePaths = {
 	singleCountFilePath: './data/validation_data/epoch_0/batch_0/item_0_sub_item_0/',
 };
 ```
+
 `configDataMapping` is an array which consists of data-mapping objects which do have the following attributes:
 
 - `cellProperty`: the name of the cell property found in `src/models/cell.model.ts`. To add a new dimension it is necessary to add a new field with the same name in said file. So if the value in `cellProperty` is `sourceIp`, there has to be a `sourceIp` property in `cell.model.ts`.
@@ -114,6 +125,8 @@ export const filePaths = {
 - `anomalyFilePath`: Filepath for the folder which contains the anomaly-values.
 - `singleCountFilePath`: Filepath for the folder which containts the validation-data.
 
+<div style="page-break-after: always"></div>
+
 ### How to add a new dimension
 
 To add a new dimension to the dataservice, there are multiple files which have to be changed. Namely:
@@ -125,9 +138,7 @@ First of all, the new name of the dimension has to specified in the `src/models/
 
 The only thing left is to add a new object to the `configDataMapping` array in the `dataservice.config.js` using the schema explained above. For anomaly scores it is assumed that there is a file for each possible cuboid. The new dimensionname has to appear in the filename, so it can be parsed correctly.
 
-If the filename-pattern changes, the `filePathPattern` property has to be adjusted as well.
-
-And that's all! The new dimension should now appear in the application.
+If the filename-pattern changes, the `filePathPattern` property has to be adjusted as well. And that's all! The new dimension should now appear in the application.
 
 ## Selected visualization techniques
 
@@ -151,6 +162,8 @@ The main advantage of the charts view is the extensibility. It is possible to cr
     -   A heat map is useful to contrast two dimensions and additionally represent the anomaly value by a color scale. Humans have trouble visually processing more than two dimensions - so we opted for a two-dimensional representation. By using the filter step view it is possible to switch between the dimensions.
 -   Box Plot
     -   With the help of the box plot it is possible to visualize the scatter around the expected value of a dimension.
+
+<div style="page-break-after: always"></div>
 
 ## Impacts of the iceberg data model on the parallel coordinates diagram
 
@@ -184,9 +197,8 @@ The chart always displays the same cube: the full cube. When filters are chosen,
 
 Shows the cube containing all dimensions that have existing filters. When a filter is added, a new cube with different entries is loaded. Has to use stars for dims that do not have a filter applied yet.
 
-![iceberg cube with all entries](img/iceberg-cube-all.png)
-
-![iceberg cube with filtered entries](img/iceberg-cube-filtered.png)
+<img src="./img/iceberg-cube-all.png" width="1000">
+<img src="./img/iceberg-cube-filtered.png" width="1000">
 
 ##### Pros
 
