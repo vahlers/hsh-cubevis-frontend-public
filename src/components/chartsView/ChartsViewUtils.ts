@@ -9,11 +9,22 @@ export class ChartsViewUtils {
 	 * 		Filter value is null -> wildcard / *
 	 * 		Filter is an Array with at least 2 values
 	 * 		Filter is a Range filter with from != to
+	 * @param filters The filters.
+	 * @returns Count of loose dimensions.
 	 */
 	public static getLooseDimensionsCount = (filters: FilterParameter): number => {
 		return ChartsViewUtils.getLooseDimensions(filters).length;
 	};
 
+	/**
+	 * Retrieve loose dimensions from FilterParameter object.
+	 * 	Loose means:
+	 * 		Filter value is null -> wildcard / *
+	 * 		Filter is an Array with at least 2 values
+	 * 		Filter is a Range filter with from != to
+	 * @param filters The filters.
+	 * @returns List of filters that are loose.
+	 */
 	public static getLooseDimensions = (filters: FilterParameter): SingleFilter[] => {
 		return filters
 			.getOrderedFilters()

@@ -30,6 +30,11 @@ class BarChart extends React.Component<ChartProps, ChartState> {
 		return looseFilters.length ? looseFilters.pop() : orderedFilters.pop();
 	};
 
+	/**
+	 * Pre-processes new or changed data to prepare the bar chart plot
+	 * This Method also checks if all necessary information for the plot is provided.
+	 * If not there will be a message for the user set in this method.
+	 */
 	preProcess = (): void => {
 		if (this.props.data === null) return;
 		if (this.props.metadata == null) return;
@@ -69,6 +74,10 @@ class BarChart extends React.Component<ChartProps, ChartState> {
 		);
 	};
 
+	/**
+	 * Draw the actual plot. For performance reasons, it will newly draw the plot on the first time.
+	 * After each update, only the redraw function from Plotly is called.
+	 */
 	draw = (): void => {
 		if (!this.state.showGraph) return;
 		const layout = this.state.layout;
@@ -127,16 +136,19 @@ class BarChart extends React.Component<ChartProps, ChartState> {
 		window.addEventListener('resize', this.resizeChart);
 	}
 
+	/** Get width of parent (charts view) for re-rendering. */
 	currentParentWidth = (): number => {
 		const parent = document.getElementById(ChartsView.containerName);
 		return parent ? parent.clientWidth * 0.95 : 0;
 	};
 
+	/** Get height of parent (charts view) for re-rendering. */
 	currentParentHeight = (): number => {
 		const parent = document.getElementById(ChartsView.containerName);
 		return parent ? parent.clientHeight * 0.95 : 0;
 	};
 
+	/** Resize chart after resizing the window. This is required because plotly plots are not fully responsive. */
 	resizeChart = (): void => {
 		if (!this.state.showGraph) return;
 		const layoutUpdate = { width: this.currentParentWidth(), height: this.currentParentHeight() };

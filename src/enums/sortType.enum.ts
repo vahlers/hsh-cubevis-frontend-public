@@ -1,6 +1,6 @@
 export enum SortType {
 	ASC,
 	DESC,
-	SCORE_ASC,
-	SCORE_DESC,
+	SCORE_ASC, //Sorting by Anomalyscore
+	SCORE_DESC, //Sorting by Anomalyscore
 }

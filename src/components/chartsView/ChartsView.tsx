@@ -28,6 +28,7 @@ type ChartsViewState = {
 
 class ChartsView extends React.Component<ChartsViewProps, ChartsViewState> {
 	static containerName = 'charts-view';
+
 	async componentDidUpdate(prevProps: ChartsViewProps): Promise<void> {
 		// meta data is only needed once
 		if (prevProps.metadata !== this.props.metadata) {
@@ -54,6 +55,10 @@ class ChartsView extends React.Component<ChartsViewProps, ChartsViewState> {
 		}
 	}
 
+	/**
+	 * Async pendant of setState.
+	 * @param state The partial state of this component.
+	 */
 	setStateAsync(state: Partial<ChartsViewState>): Promise<void> {
 		return new Promise((resolve) => {
 			this.setState(state as ChartsViewState, resolve);
@@ -83,6 +88,10 @@ class ChartsView extends React.Component<ChartsViewProps, ChartsViewState> {
 	 */
 	renderTooltip = (message: string): JSX.Element => <Tooltip id="button-tooltip">{message}</Tooltip>;
 
+	/**
+	 * Save the selected index from carousel.
+	 * @param selectedIndex Selected index from carousel.
+	 */
 	onSelect = (selectedIndex: number): void => {
 		this.setState({ selectedIndex });
 	};

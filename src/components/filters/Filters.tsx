@@ -9,27 +9,52 @@ import { RangeFilter } from '../../models/rangeFilter.model';
 import { Ip } from '../../models/ip.modell';
 import { DataServiceHelper } from '../../helpers/dataService.helper';
 
+/**
+ * The FilterStateParam Class doesn't let us handle the filters for each step in a react appropriate way.
+ * The Filter_ type is a workaround for the Filters Components only
+ */
 export type Filter_ = {
 	type: CellTypes;
 	value: Value | Value[] | RangeFilter<Value>;
 };
 
+/**
+ * Type for the Dimension Select
+ */
 export type Dimension = {
 	value: CellTypes;
 	label: string;
 };
 
+/**
+ * Type for dimension value selects
+ */
 export type OptionType = {
 	value: string;
 	label: string;
 };
-
+/**
+ * type for this classes state
+ * elements: represent all info for every step
+ * disableFilterAdd: if n dimensions are loose (set to filter for more than one value), adding filters is disabled
+ * unused_dimensions: all dimensions, used in filters or not
+ */
 type FilterState = {
 	elements: StateElem[];
 	disableFilterAdd: boolean;
 	available_dimensions: Dimension[];
 };
-
+/**
+ * type to be used in FilterState, represents a FilterStep
+ * dimensions: the available dimensions for that steps select
+ * values: the available dimension values for that steps selects
+ * filter: the filter last set by that FilterStep
+ * filterStep: the filterStep element
+ * isDisabled: bool if that step is currently disabled
+ * isLooseStep: bool if that step has a filter set to a loose value
+ * expanded: bool if that FilterStep is currently folded out
+ * setFilterFromChart: needed to setting the steps filter to the received chart selection
+ */
 type StateElem = {
 	id: number;
 	dimensions: Dimension[];
@@ -42,15 +67,30 @@ type StateElem = {
 	setFilterFromChart: Filter_;
 };
 
+/**
+ * Properties needed by the filters object
+ * onChange: the method that is called whenever the Filters changes
+ * chartSelection: if chartSelection is set it is handed to applyChartSelection
+ * metadata: the metadata for initialisation, see componentDidUpdate
+ */
 type FilterProps = {
 	onChange: (FilterParameter) => void;
 	chartSelection: FilterParameter;
 	metadata: { [p: string]: { key: string; label: string; type: string } };
 };
+
+/** The maximum number of allowed loose FilterSteps. Loose meaning the Filter is set to multiple Values or a Range */
 const allowedLooseDim = 2;
 const dataService = DataProcessingService.instance();
+/** all dimensions of the domain, set in componentDidUpdate*/
 let all_dimensions: Dimension[] = [];
 
+/**
+ * The Filters class manages the GUI for the user to configure Filters. It's essentially an Accordion containing
+ * FilterSteps. It manages logic when a filter can be added, what dimension and dimension values it can set and listens
+ * for these Steps to change.
+ * When a chartSelection is passed in, the Filters also transmits the changes to the FilterSteps
+ */
 export class Filters extends React.Component<FilterProps, FilterState> {
 	constructor(props: FilterProps) {
 		super(props);
@@ -58,6 +98,8 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 		// Initial empty state
 		this.state = { elements: [], disableFilterAdd: true, available_dimensions: [] };
 	}
+
+	/** we need extra logic when the metadata is first set and whenever the chartSelection changes*/
 	componentDidUpdate = (prevProps: FilterProps): void => {
 		if (this.props.chartSelection !== null && this.props.chartSelection !== prevProps.chartSelection) {
 			// get the last added filter, need to reverse as well because order is flipped
@@ -66,7 +108,7 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 			allFilters.forEach((filterStep) => {
 				let newFilter = filterStep.filter;
 				if (Array.isArray(newFilter)) {
-					// TODO this ignores the Type RangeFilter[] because i dont think that is ever used
+					// this ignores the Type RangeFilter[], but that is never used
 					newFilter = newFilter as Value[];
 				} else if ((newFilter as RangeFilter<Value>).from !== undefined) {
 					newFilter = newFilter as RangeFilter<Value>;
@@ -78,6 +120,8 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 			this.applyChartSelection(newFilterArray);
 		}
 
+		// if metadata object changes, reload all_dimensions.
+		// if all_dimensions is undefined, the initial loading is not finished and no steps can be added
 		if (this.props.metadata !== prevProps.metadata) {
 			all_dimensions =
 				this.props.metadata === null
@@ -90,6 +134,11 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 		}
 	};
 
+	/**
+	 * Requests all available values, for the given dimension.
+	 * @param newDimensionType The dimension for which the values are requested
+	 * @param filterId The filter
+	 */
 	async getDataValues(newDimensionType: CellTypes, filterId: number): Promise<OptionType[]> {
 		// get all elems with an id smaller than the given one
 		const searchIndex = this.state.elements.findIndex((e) => e.id == filterId);
@@ -114,10 +163,14 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 			label: val.toString(),
 		}));
 	}
-
+	/**
+	 * Creates a new FilterStep
+	 */
 	addFilter = async (): Promise<void> => {
+		// The default dimension is the first unused dimension
 		const newFilterDimension: Dimension = this.state.available_dimensions[0];
 
+		// Set id to the lowest unused id
 		let newID = 0;
 		for (const elem of this.state.elements) {
 			if (elem.id === newID) {
@@ -126,7 +179,7 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 				break;
 			}
 		}
-
+		// create a new StateElement to append to this.state
 		const result: StateElem = {
 			id: newID,
 			dimensions: this.state.available_dimensions,
@@ -139,6 +192,7 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 			setFilterFromChart: null,
 		};
 
+		// create the properties for the new FilterStep
 		const props: FilterStepProps = {
 			id: result.id,
 			values: result.values,
@@ -156,6 +210,7 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 		};
 		result.filterStep = new FilterStep(props);
 
+		// if this filterStep is the first, initialize state.elements
 		if (this.state.elements === null) {
 			await this.setState({ elements: [result] });
 		} else {
@@ -166,16 +221,30 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 		this.updateAvailableDimensions();
 	};
 
+	/**
+	 * Takes filters and adapts the current state and all FilterSteps within so that they represent the given filters.
+	 * @param chartSelection The filters that the current state needs to be set to
+	 */
 	async applyChartSelection(chartSelection: Filter_[]): Promise<void> {
 		await this.setState({
+			// create a new elements array, by changing the filters of the elements which have the same
+			// filter.type (dimension) as the given filters
 			elements: this.state.elements.map((el) => {
+				// find the filter in the chartSelection with the same dimension as the element
 				const corresponding_chartSelection = chartSelection.find((filter) => filter.type === el.filter.type);
+				// if there is a corresponding filter, set that as the element.setFilterFromChart
 				return corresponding_chartSelection !== undefined
 					? { ...el, setFilterFromChart: corresponding_chartSelection }
 					: el;
 			}),
 		});
 
+		/*
+		 * this is a workaround! when setting multiple FilterSteps via setFilterFromChart they would trigger their
+		 * onChange Method (which is Filters.handleChange) would be called multiple times in parallel, resulting in an
+		 * inconsistent state, since only the last handleChange would be persistent. To prevent this we call
+		 * handleChange manually here.
+		 */
 		for (const newFilter of chartSelection) {
 			const id = this.state.elements.find((ele) => ele.filter.type === newFilter.type).id;
 			await this.handleChange(
@@ -188,12 +257,19 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 		}
 	}
 
-	//sends all non disabled filters to the props.onChange
+	/**
+	 * Send the result of getFilterParamFromState to our onChange handler
+	 */
 	emitChange = (): void => {
 		this.props.onChange(this.getFilterParamFromState());
 	};
 
+	/**
+	 * Deletes the FilterStep which has the given id from state.
+	 * @param id The id of the filter to be deleted
+	 */
 	deleteFilter = async (id: number): Promise<void> => {
+		// set state.elements to an array which doesn't have the element with the given filter
 		await this.setState({
 			elements: this.state.elements.filter((elem) => elem.id !== id),
 		});
@@ -202,6 +278,10 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 		this.updateAvailableDimensions();
 	};
 
+	/**
+	 * Toggles the FilterStep with the given id, if possible, meaning disable them if enabled and vice versa.
+	 * @param id The id of the FilterStep which will be enabled / disabled
+	 */
 	handleEyeClick = async (id: number): Promise<void> => {
 		if (this.state.elements.find((e) => e.id == id).isDisabled) {
 			if (this.state.disableFilterAdd && this.state.elements.find((e) => e.id == id).isLooseStep) {
@@ -228,18 +308,26 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 		this.updateAvailableDimensions();
 	};
 
+	/**
+	 * The handleChange method will be handed over to the FilterSteps so they can call it onChange
+	 * Also determines whether a step is loose
+	 * @param id The changed Steps ID
+	 * @param mode If the Step is set to value selection or range selection
+	 * @param updatedFilter The Filter that changed
+	 */
 	handleChange = async (id: number, mode: FilterStepMode, updatedFilter: Filter_): Promise<void> => {
+		// determine which step in FilterState needs to change
 		const prevDimension = this.state.elements.find((e) => e.id == id).filter.type;
 
 		let isLoose = false;
 
-		// if we want to set a default value, we actually prevent the step from being loose
+		// null values are interpreted as * and are therefore loose
 		if (updatedFilter === null || updatedFilter.value === null) {
 			isLoose = true;
 			// if filter is array, and has more than one element, it's considered loose
 		} else if (Array.isArray(updatedFilter)) {
 			isLoose = updatedFilter.length > 1;
-			// if filter is RangeFilter, and has either both or neither from and to set, it's considered loose
+			// if filter is RangeFilter, and has either both or neither 'from' and 'to' set to different values
 		} else if (
 			updatedFilter.value !== undefined &&
 			(updatedFilter.value as RangeFilter<Value>).from !== undefined
@@ -255,7 +343,8 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 		// if the updated filter was loose before, and still is.
 		const disableFilterAdd =
 			this.state.disableFilterAdd && this.state.elements.find((e) => e.id == id).isLooseStep && isLoose;
-		// here the state is set by using an object spread '{ }', inserting all of the old object '{ ...el'
+
+		// here the state is set by using an "object spread" '{ }', inserting all of the old object '{ ...el'
 		// and then updating the changed properties ', filter: updatedFilter }'
 		await this.setState({
 			elements: this.state.elements.map((el) =>
@@ -272,11 +361,13 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 			optValues = await this.getDataValues(updatedFilter.type, id);
 		}
 
+		// set the new dimension attribute options
 		await this.setState({
 			elements: this.state.elements.map((el) => (el.id === id ? { ...el, values: optValues } : el)),
 		});
 
-		// if the step has a loose value but n loose values are already selected, we need to set a default value
+		// if the step has changed dimensions but n loose values are already selected, we need to set a default value
+		// also need to prevent emitting an update since we are briefly in an inconsitstent state
 		if (this.state.disableFilterAdd && isLoose && !this.state.elements.find((e) => e.id == id).isLooseStep) {
 			await this.setState({
 				elements: this.state.elements.map((el) =>
@@ -285,19 +376,21 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 						: el,
 				),
 			});
+			// manually calling handleChange
 			await this.handleChange(id, FilterStepMode.ByValue, {
 				type: updatedFilter.type,
 				value: optValues?.[0].value,
 			});
 		} else {
-			// prevent emitting update until the FilterStep call handleChange again with the default Value
 			this.emitChange();
 			this.checkAllowFilterAdd();
 			this.updateAvailableDimensions();
 		}
 	};
 
-	private checkAllowFilterAdd() {
+	// iterates all FilterStateElements and check if n of them are loose
+	// then disableFilterAdd is set appropriately
+	private checkAllowFilterAdd(): void {
 		// we filter all elements for those that have a * as filter and check the result length against the allowed
 		const result =
 			this.state.elements.filter((e) => !e.isDisabled).length === all_dimensions.length ||
@@ -307,7 +400,8 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 		this.setState({ disableFilterAdd: result });
 	}
 
-	private updateAvailableDimensions() {
+	// check which of the dimensions are already used in the FilterState
+	private updateAvailableDimensions(): void {
 		// all dimensions that are not included in a filter already
 		const new_dimensions = all_dimensions.filter(
 			(dim) =>
@@ -357,7 +451,11 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 		});
 	}
 
-	private getFilterParamFromState() {
+	/**
+	 * Creates a FilterParam model out of the FilterState
+	 * @returns A FilterParam representing the FilterState
+	 */
+	private getFilterParamFromState(): FilterParameter {
 		const filters: FilterParameter = new FilterParameter();
 		this.state.elements.forEach((stateElem) => {
 			if (!stateElem.isDisabled) {
@@ -391,6 +489,10 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 		return filters;
 	}
 
+	/**
+	 * Flips the expanded boolean for a step with the given id
+	 * @param eventKey The id of the FilterStep that is opened or closed
+	 */
 	rotateArrow = (eventKey: number): void => {
 		const elements = this.state.elements;
 		elements.forEach((step) => {
@@ -405,6 +507,9 @@ export class Filters extends React.Component<FilterProps, FilterState> {
 		});
 	};
 
+	/**
+	 * The React
+	 */
 	render(): React.ReactNode {
 		// Use bootstrap classes
 		return (

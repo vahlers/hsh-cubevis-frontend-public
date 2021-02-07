@@ -3,6 +3,11 @@ import { Value } from '../models/filter.model';
 import { DataServiceHelper } from './dataService.helper';
 
 export class CommonHelper {
+	/**
+	 * Check if an element is null or undefined.
+	 * @param elem Any element of type Value.
+	 * @returns true if the element is null or undefined
+	 */
 	public static isNullOrUndefined(elem: Value): boolean {
 		return elem === null || elem === undefined;
 	}

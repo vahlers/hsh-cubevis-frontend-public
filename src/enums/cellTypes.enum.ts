@@ -1,3 +1,4 @@
+//Enum describing different dimensions of a cuboid
 export enum CellTypes {
 	SOURCE_IP,
 	DESTINATION_IP,
