@@ -15,6 +15,7 @@ This documentation contains information of things we found worthy to mention in 
 	- [Data-Service](#data-service)
 		- [Config file structure](#config-file-structure)
 		- [How to add a new dimension](#how-to-add-a-new-dimension)
+	- [Filters](#filters)
 	- [Selected visualization techniques](#selected-visualization-techniques)
 		- [Parallel Coordinates](#parallel-coordinates)
 		- [Charts View](#charts-view)
@@ -140,6 +141,17 @@ The only thing left is to add a new object to the `configDataMapping` array in t
 
 If the filename-pattern changes, the `filePathPattern` property has to be adjusted as well. And that's all! The new dimension should now appear in the application.
 
+## Filters
+
+The filtering is done in steps, to enable the user to retrace his steps and keep a good overview.
+In each step one of currently seven dimensions is chosen and one or more values can be selected. To make these selections more comfortable, the user can also select a range of values.
+The logic of the filters is seperated into a managing component (Filters.tsx) with mostly logic and a visual component with mostly ui management (FilterSteps.tsx).
+
+The FilterSteps maintains a State that each manages one filter, while the Filters component keeps a list over all of the steps and provides the necessary onChange methods.
+The Filters component then parses these observed filters into a FilterParameter and passes it on to its own onChange handler, provided by the App.tsx.
+It is also responsible to only let the users take valid actions, such as limiting him to only n (currently 2) "loose" filters. A loose filters is one that selects more than a single value.
+This is limited so that the graphs can visualize the data properly.
+
 ## Selected visualization techniques
 
 This section provides a brief overview of why we chose each visualization technique.
@@ -237,3 +249,16 @@ To allow even more dimensions to be shown a 3D scatter plot could be implemented
 ### Use state management
 
 When propagating filter events from ChartsView up to the App component and then down to the Filters component, using a state management system for filters seems more appropiate. Since this was the only occourence in the project where state management it was not worth it to include it in the final product.
+
+###  Auto open new step when it is added 
+
+When a user creates a new step, he probably wants to set its filter right away. So it would be more comfortable if the step were to open when it is added.
+This is however not a critical feature and came up very late during development.
+
+###  Eye should disable all elements of FilterStep, except (un)folding
+
+The eye button sets a "disabled" state to the FilterStep, but the elements are mostly just drawn as disabled and can still be used. I.e.:
+- deleting a Step
+- changing a Step
+This may confuse the user.
+This is once again not a critical feature and also came up very late during development.
