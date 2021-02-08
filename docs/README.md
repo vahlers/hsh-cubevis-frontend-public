@@ -33,6 +33,8 @@ This documentation contains information of things we found worthy to mention in 
 		- [Display all entries of all cubes in parallel coordinates](#display-all-entries-of-all-cubes-in-parallel-coordinates)
 		- [Use a 3D Scatter Plot](#use-a-3d-scatter-plot)
 		- [Use state management](#use-state-management)
+		- [Auto open new step when it is added](#auto-open-new-step-when-it-is-added)
+		- [Eye should disable all elements of FilterStep, except (un)folding](#eye-should-disable-all-elements-of-filterstep-except-unfolding)
 
 <div style="page-break-after: always"></div>
 
@@ -151,6 +153,8 @@ The FilterSteps maintains a State that each manages one filter, while the Filter
 The Filters component then parses these observed filters into a FilterParameter and passes it on to its own onChange handler, provided by the App.tsx.
 It is also responsible to only let the users take valid actions, such as limiting him to only n (currently 2) "loose" filters. A loose filters is one that selects more than a single value.
 This is limited so that the graphs can visualize the data properly.
+
+<div style="page-break-after: always"></div>
 
 ## Selected visualization techniques
 
