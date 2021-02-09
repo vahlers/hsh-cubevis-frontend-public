@@ -1,4 +1,12 @@
-# Documentation
+# Master Project Visualization of Data Cubes for Anomaly Detection in Security Data Streams
+
+**Collaborators:**
+- Badenhop, Jannik
+- Bublitz, Marvin
+- Duprat, Rémi
+- Senge, Maximilian
+- Schlenk, Darwin
+- Ottlik, Manuel
 
 This documentation contains information of things we found worthy to mention in some kind of documentation. It is by no means a complete description of the application or a guide on how to use it as an enduser. Instead, its goal is to explain everything that is not self explanatory by the code itself, gives partial insights in the descision process throughout the project and enable future developments to happen as easily as possible.
 
@@ -6,8 +14,9 @@ This documentation contains information of things we found worthy to mention in 
 
 ## Table of Contents
 
-- [Documentation](#documentation)
+- [Master Project Visualization of Data Cubes for Anomaly Detection in Security Data Streams](#master-project-visualization-of-data-cubes-for-anomaly-detection-in-security-data-streams)
 	- [Table of Contents](#table-of-contents)
+	- [Overview](#overview)
 	- [Dataflow](#dataflow)
 		- [Data origin](#data-origin)
 		- [Data propagation to child components](#data-propagation-to-child-components)
@@ -17,6 +26,7 @@ This documentation contains information of things we found worthy to mention in 
 		- [How to add a new dimension](#how-to-add-a-new-dimension)
 	- [Filters](#filters)
 	- [Selected visualization techniques](#selected-visualization-techniques)
+		- [Coloring Scheme](#coloring-scheme)
 		- [Parallel Coordinates](#parallel-coordinates)
 		- [Charts View](#charts-view)
 	- [Impacts of the iceberg data model on the parallel coordinates diagram](#impacts-of-the-iceberg-data-model-on-the-parallel-coordinates-diagram)
@@ -37,6 +47,10 @@ This documentation contains information of things we found worthy to mention in 
 		- [Eye should disable all elements of FilterStep, except (un)folding](#eye-should-disable-all-elements-of-filterstep-except-unfolding)
 
 <div style="page-break-after: always"></div>
+
+## Overview
+
+![Application Overview](img/overview.JPG)
 
 ## Dataflow
 
@@ -160,6 +174,12 @@ This is limited so that the graphs can visualize the data properly.
 
 This section provides a brief overview of why we chose each visualization technique.
 
+### Coloring Scheme
+
+![Anomaly Score Color Bar](img/coloring.JPG)
+
+The central metric of the visualized data is the "anomaly score". The anomaly score is defined as the number of standard deviations the actual count deviates from the model mean. `0.0` means that the record is most likely not an anomaly, where `10` is most likely an anomaly. The color mapping tries to visualize anomaly values in between.
+
 ### Parallel Coordinates
 
 The parallel coordinate system is one of the few ways to represent multidimensional data in a meaningful way. By coloring each line of the chart, it is additionally possible to see groupings or patterns in the data. Therefore, on the one hand, the parallel coordinate system is intended to provide an overview of the data, but on the other hand, it is also intended to be a decision-making aid for the selection of suitable filters.
@@ -172,12 +192,12 @@ Due to the iceberg condition, the effect we hoped for from the parallel coordina
 
 The main advantage of the charts view is the extensibility. It is possible to create a new visualization component and add it to the charts view. A fourth page in the slider view will be created automatically.
 
--   Bar chart
-    -   The bar chart gives a good overview of the distribution of anomaly values for a single dimension.
--   Heat Map
-    -   A heat map is useful to contrast two dimensions and additionally represent the anomaly value by a color scale. Humans have trouble visually processing more than two dimensions - so we opted for a two-dimensional representation. By using the filter step view it is possible to switch between the dimensions.
--   Box Plot
-    -   With the help of the box plot it is possible to visualize the scatter around the expected value of a dimension.
+-   **Bar chart**: The bar chart gives a good overview of the distribution of anomaly values for a single dimension.
+	![Bar Chart Example](img/ex_barchart.png)
+-   **Heat Map**: A heat map is useful to contrast two dimensions and additionally represent the anomaly value by a color scale. Humans have trouble visually processing more than two dimensions - so we opted for a two-dimensional representation. By using the filter step view it is possible to switch between the dimensions.
+	![Heat Map Example](img/ex_heatmap.png)
+-   **Box Plot**: With the help of the box plot it is possible to visualize the scatter around the expected value of a dimension.
+	![Box Plot Example](img/ex_boxplot.png)
 
 <div style="page-break-after: always"></div>
 
@@ -240,7 +260,7 @@ This documents features a few possible extensions to the project after CubeVis m
 
 ### Add hierarchies within dimensions
 
-In a dimension there could be internal hierarchies that group values of a dimension by some kind. A very obvious example would be to group IPs by their bits. A more sophisticated idea, that also needs additional data is the grouping of IPs by their origin, for example a country or state. Given these hierarchies, there could be filters applied to the data in respect to the internal groups. Since these hierarchies are not present in the data yet it was not in the scope of the final product.
+In a dimension there could be internal hierarchies that group values of a dimension by some kind. A very obvious example would be to group IPs by their bytes. A more sophisticated idea, that also needs additional data is the grouping of IPs by their origin, for example a country or state. Given these hierarchies, there could be filters applied to the data in respect to the internal groups. Since these hierarchies are not present in the data yet it was not in the scope of the final product.
 
 ### Display all entries of all cubes in parallel coordinates
 
