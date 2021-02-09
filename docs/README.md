@@ -4,6 +4,7 @@
 - Badenhop, Jannik
 - Bublitz, Marvin
 - Duprat, Rémi
+- Kirch, Eike
 - Senge, Maximilian
 - Schlenk, Darwin
 - Ottlik, Manuel
