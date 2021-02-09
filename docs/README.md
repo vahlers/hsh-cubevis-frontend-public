@@ -197,7 +197,7 @@ The main advantage of the charts view is the extensibility. It is possible to cr
 	![Bar Chart Example](img/ex_barchart.png)
 -   **Heat Map**: A heat map is useful to contrast two dimensions and additionally represent the anomaly value by a color scale. Humans have trouble visually processing more than two dimensions - so we opted for a two-dimensional representation. By using the filter step view it is possible to switch between the dimensions.
 	![Heat Map Example](img/ex_heatmap.png)
--   **Box Plot**: With the help of the box plot it is possible to visualize the scatter around the expected value of a dimension.
+-   **Box Plot**: In contrast to the bar chart or the heat map, the boxplot chart does not (only) show the relative anomaly scores, but the absolute measured values. The center of the box represents the expected reference value from the training data, while the box shows the calculated standard deviation. The twofold standard deviation is enclosed by the whiskers. The colored dot represents the real measured count of the specific cuboid cell. The color here shows the anomaly score, which is formed by the count of standard deviations from the reference value shown in the plot.
 	![Box Plot Example](img/ex_boxplot.png)
 
 <div style="page-break-after: always"></div>
