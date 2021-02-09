@@ -9,13 +9,15 @@
 - Schlenk, Darwin
 - Ottlik, Manuel
 
+# Documentation
+
 This documentation contains information of things we found worthy to mention in some kind of documentation. It is by no means a complete description of the application or a guide on how to use it as an enduser. Instead, its goal is to explain everything that is not self explanatory by the code itself, gives partial insights in the descision process throughout the project and enable future developments to happen as easily as possible.
 
 **Caution:** Links might not work as expected in the compiled pdf versions. For the full experience, take a look at the docs in the [repository](https://github.com/manuelottlik/hsh-cubevis-frontend/tree/main/docs). There you can see even more details concerning our decision process in the issues and pull requests.
 
 ## Table of Contents
-
 - [Master Project Visualization of Data Cubes for Anomaly Detection in Security Data Streams](#master-project-visualization-of-data-cubes-for-anomaly-detection-in-security-data-streams)
+- [Documentation](#documentation)
 	- [Table of Contents](#table-of-contents)
 	- [Overview](#overview)
 	- [Dataflow](#dataflow)
@@ -46,6 +48,8 @@ This documentation contains information of things we found worthy to mention in 
 		- [Use state management](#use-state-management)
 		- [Auto open new step when it is added](#auto-open-new-step-when-it-is-added)
 		- [Eye should disable all elements of FilterStep, except (un)folding](#eye-should-disable-all-elements-of-filterstep-except-unfolding)
+		- [Auto open new step when it is added](#auto-open-new-step-when-it-is-added)
+		- [Eye should disable all elements of FilterStep, except (un)folding](#eye-should-disable-all-elements-of-filterstep-except-unfolding)
 
 <div style="page-break-after: always"></div>
 
@@ -58,6 +62,9 @@ This documentation contains information of things we found worthy to mention in 
 This document describes the pattern this software follows to let data flow between different components.
 
 ![UML Component Diagram](img/cube-vis-component.png)
+This is limited so that the graphs can visualize the data properly.
+
+<div style="page-break-after: always"></div>
 
 ### Data origin
 
@@ -175,11 +182,13 @@ This is limited so that the graphs can visualize the data properly.
 
 This section provides a brief overview of why we chose each visualization technique.
 
+
 ### Coloring Scheme
 
 ![Anomaly Score Color Bar](img/coloring.JPG)
 
 The central metric of the visualized data is the "anomaly score". The anomaly score is defined as the number of standard deviations the actual count deviates from the model mean. `0.0` means that the record is most likely not an anomaly, where `10` is most likely an anomaly. The color mapping tries to visualize anomaly values in between.
+
 
 ### Parallel Coordinates
 
@@ -193,7 +202,7 @@ Due to the iceberg condition, the effect we hoped for from the parallel coordina
 
 The main advantage of the charts view is the extensibility. It is possible to create a new visualization component and add it to the charts view. A fourth page in the slider view will be created automatically.
 
--   **Bar chart**: The bar chart gives a good overview of the distribution of anomaly values for a single dimension.
+-	**Bar chart**: The bar chart gives a good overview of the distribution of anomaly values for a single dimension.
 	![Bar Chart Example](img/ex_barchart.png)
 -   **Heat Map**: A heat map is useful to contrast two dimensions and additionally represent the anomaly value by a color scale. Humans have trouble visually processing more than two dimensions - so we opted for a two-dimensional representation. By using the filter step view it is possible to switch between the dimensions.
 	![Heat Map Example](img/ex_heatmap.png)
